@@ -1,8 +1,14 @@
 <?php
-// Get database URL from Render environment
 $databaseUrl = getenv('DATABASE_URL');
 
-// Connect to PostgreSQL
+if (!$databaseUrl) {
+    echo json_encode([
+        "status" => false,
+        "message" => "DATABASE_URL env variable not found"
+    ]);
+    exit;
+}
+
 $conn = pg_connect($databaseUrl);
 
 if (!$conn) {
@@ -12,4 +18,9 @@ if (!$conn) {
     ]);
     exit;
 }
+
+echo json_encode([
+    "status" => true,
+    "message" => "DB connected successfully"
+]);
 ?>
