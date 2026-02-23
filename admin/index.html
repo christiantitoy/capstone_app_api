@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard | Capstone App</title>
+  <!-- Main styles -->
+<link rel="stylesheet" href="../admin/style.css?v=<?php echo filemtime('style.css'); ?>">
+<link rel="stylesheet" href="../admin/style2.css?v=<?php echo filemtime('style2.css'); ?>">
+</head>
+
+
+
+<body>
+  <div class="admin-container">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="logo">
+        <div>
+          <img src="../admin/images/app_icon.png">
+        </div>
+        <!-- <p>logo here</p> -->
+      </div>
+      <nav>
+        <ul>
+          <li data-section="dashboard" class="active">📊 Dashboard</li>
+          <li data-section="buyers">👥 Buyers</li>
+          <li data-section="sellers">🏪 Sellers</li>
+          <li data-section="products">🛍️ Products</li>
+        </ul>
+      </nav>
+      <button id="logoutBtn">Logout</button>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+      <div class="navbar">
+        <h1>Admin Dashboard</h1>
+      </div>
+
+      <main>
+        <!-- Dashboard Section -->
+        <section id="dashboardSection" class="section active">
+          <div class="data-section">
+            <h2>Welcome to Admin Dashboard</h2>
+            <p>Use the sidebar to manage buyers, sellers, and products.</p>
+          </div>
+          <div class="stats">
+            <div class="card">
+              <h2>Total Buyers</h2>
+              <p id="buyerCount">0</p>
+            </div>
+            <div class="card">
+              <h2>Total Sellers</h2>
+              <p id="sellerCount">0</p>
+            </div>
+            <div class="card">
+              <h2>Total Products</h2>
+              <p id="productCount">0</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Buyers Section -->
+        <section id="buyersSection" class="section hidden">
+          <div class="section-header">
+              <h2>Buyers</h2>
+              <div class="search-container">
+                  <input type="text" class="search-field" placeholder="Search buyer...">
+                  <span class="search-icon"></span>
+              </div>
+          </div>
+
+          <div class="table-container">
+
+            <div class="buyer_holder">
+              <div class="table-header">
+                <div class="col-id">ID</div>
+                <div class="col-username">Username</div>
+                <div class="col-email">Email</div>
+                <div class="col-avatar">Avatar</div>
+              </div>
+            
+              <div class="table-body" id="buyersTableBody">
+                <!-- JavaScript will populate this -->
+              </div>
+            </div>
+      
+          </div>
+        </section>
+
+        <!-- Sellers Section -->
+        <section id="sellersSection" class="section hidden">
+          <div class="section-header">
+            <h2>Sellers</h2>
+            <div class="search-container">
+              <input type="text" class="search-field" placeholder="Search seller...">
+              <span class="search-icon"></span>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <div class="seller_holder">
+              <div class="seller-table-header">
+                <div class="col-id">ID</div>
+                <div class="col-shop">Shop</div>
+                <div class="col-category">Category</div>
+                <div class="col-status">Status</div>
+                <div class="col-actions">Actions</div>
+              </div>
+              
+              <div class="table-body" id="sellersTableBody">
+                <!-- JavaScript will populate this -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Products Section -->
+        <section id="productsSection" class="section hidden">
+          <div class="section-header">
+            <h2>Products</h2>
+            <div class="search-container">
+              <input type="text" class="search-field" placeholder="Search product...">
+              <span class="search-icon"></span>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <div class="product_holder">
+              <div class="product-table-header">
+                <div class="col-id">ID</div>
+                <div class="col-name">Product Name</div>
+                <div class="col-price">Price</div>
+                <div class="col-stock">Stock</div>
+                <div class="col-status">Status</div>
+                <div class="col-actions">Actions</div>
+              </div>
+              
+              <div class="table-body" id="productsTableBody">
+                <!-- JavaScript will populate this -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+      </main>
+    </div>
+  </div>
+
+<script>
+// Sidebar navigation
+document.querySelectorAll(".sidebar li").forEach(li => {
+  li.addEventListener("click", () => {
+    document.querySelectorAll(".sidebar li").forEach(item => item.classList.remove("active"));
+    li.classList.add("active");
+    const target = li.getAttribute("data-section");
+    document.querySelectorAll(".section").forEach(sec => sec.classList.add("hidden"));
+    document.getElementById(target + "Section").classList.remove("hidden");
+
+    if(target === "buyers") loadBuyers();
+    if(target === "sellers") loadSellers();
+    if(target === "products") loadProducts();
+    if(target === "dashboard") loadDashboardStats();
+  });
+});
+
+// Dashboard stats
+function loadDashboardStats() {
+  Promise.all([
+    fetch("../admin/backend.php?type=buyers").then(r => r.json()),
+    fetch("../admin/backend.php?type=sellers").then(r => r.json()),
+    fetch("../admin/backend.php?type=products").then(r => r.json())
+  ]).then(([buyers, sellers, products]) => {
+    document.getElementById("buyerCount").textContent = buyers.length;
+    document.getElementById("sellerCount").textContent = sellers.length;
+    document.getElementById("productCount").textContent = products.length;
+  });
+}
+loadDashboardStats();
+
+// Load buyers
+function loadBuyers() {
+  fetch("../admin/backend.php?type=buyers")
+    .then(res => res.json())
+    .then(buyers => {
+      const tableBody = document.querySelector("#buyersTableBody");
+      tableBody.innerHTML = buyers.map(b => `
+        <div class="buyer-row">
+          <div class="col-id">${b.id}</div>
+          <div class="col-username">${b.username}</div>
+          <div class="col-email">${b.email}</div>
+          <div class="col-avatar">
+            ${b.avatar_url ? `<img src="${b.avatar_url}" alt="${b.username}">` : "—"}
+          </div>
+        </div>
+      `).join("");
+    });
+}
+
+// Load sellers
+function loadSellers() {
+  fetch("../admin/backend.php?type=sellers")
+    .then(res => res.json())
+    .then(sellers => {
+      const tableBody = document.querySelector("#sellersTableBody");
+      tableBody.innerHTML = sellers.map(s => {
+        // Status column
+        let statusLabel = s.is_approved == 1 ? "✅ Approved" :
+                          s.is_approved == 2 ? "❌ Rejected" :
+                          "⏳ Pending";
+
+        // Action buttons
+        let actionBtns = `
+          <button class="approve-btn" onclick="event.stopPropagation(); updateSeller(${s.id}, 'approve_seller')">Approve</button>
+          <button class="reject-btn" onclick="event.stopPropagation(); updateSeller(${s.id}, 'reject_seller')">Reject</button>
+        `;
+
+        return `
+          <div class="seller-row" data-seller-id="${s.id}">
+            <div class="col-id">${s.id}</div>
+            <div class="col-shop">${s.shop_name}</div>
+            <div class="col-category">${s.shop_category}</div>
+            <div class="col-status">${statusLabel}</div>
+            <div class="col-actions">${actionBtns}</div>
+          </div>
+          <div class="seller-modal hidden" data-modal-for="${s.id}">
+            <div class="modal-content" id="modalContent-${s.id}">
+              <div class="modal-loading">Loading seller details...</div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      // Add click event to seller rows for modal
+      document.querySelectorAll('.seller-row').forEach(row => {
+        row.addEventListener('click', function(e) {
+          // Don't trigger if clicking action buttons
+          if (e.target.tagName === 'BUTTON') return;
+          
+          const sellerId = this.getAttribute('data-seller-id');
+          const modal = document.querySelector(`.seller-modal[data-modal-for="${sellerId}"]`);
+          
+          // Toggle modal visibility
+          if (modal.classList.contains('hidden')) {
+            modal.classList.remove('hidden');
+            loadSellerDetails(sellerId);
+          } else {
+            modal.classList.add('hidden');
+          }
+        });
+      });
+    });
+}
+
+// Load detailed seller information for modal
+function loadSellerDetails(sellerId) {
+  fetch(`../admin/backend.php?type=seller_details&id=${sellerId}`)
+    .then(res => res.json())
+    .then(sellerData => {
+      const modalContent = document.getElementById(`modalContent-${sellerId}`);
+      modalContent.innerHTML = createSellerModalContent(sellerData);
+    })
+    .catch(error => {
+      const modalContent = document.getElementById(`modalContent-${sellerId}`);
+      modalContent.innerHTML = `<div class="modal-error">Error loading seller details</div>`;
+    });
+}
+
+// Create modal content HTML
+function createSellerModalContent(seller) {
+  const statusText = seller.is_approved == 1 ? 'Approved' : 
+                     seller.is_approved == 2 ? 'Rejected' : 'Pending';
+  
+  const statusClass = seller.is_approved == 1 ? 'status-approved' : 
+                      seller.is_approved == 2 ? 'status-rejected' : 'status-pending';
+
+  return `
+    <div class="modal-header">
+      <h3>Seller Details - ${seller.shop_name}</h3>
+      <span class="status-badge ${statusClass}">${statusText}</span>
+    </div>
+    
+    <div class="modal-body">
+      <div class="modal-column">
+        <div class="info-section">
+          <h4>Basic Information</h4>
+          <div class="info-item">
+            <label>Full Name:</label>
+            <span>${seller.fullname || '—'}</span>
+          </div>
+          <div class="info-item">
+            <label>Buyer Name:</label>
+            <span>${seller.buyer_username || '—'}</span>
+          </div>
+          <div class="info-item">
+            <label>Email:</label>
+            <span>${seller.email || '—'}</span>
+          </div>
+          <div class="info-item">
+            <label>Phone:</label>
+            <span>${seller.phone_number || '—'}</span>
+          </div>
+          <div class="info-item">
+            <label>Registration Date:</label>
+            <span>${seller.created_at ? new Date(seller.created_at).toLocaleDateString() : '—'}</span>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h4>Business Details</h4>
+          <div class="info-item">
+            <label>Business Type:</label>
+            <span>${seller.business_type || '—'}</span>
+          </div>
+          <div class="info-item">
+            <label>Shop Category:</label>
+            <span>${seller.shop_category || '—'}</span>
+          </div>
+          <div class="info-item full-width">
+            <label>Business Address:</label>
+            <span>${seller.business_address || '—'}</span>
+          </div>
+          <div class="info-item full-width">
+            <label>Shop Description:</label>
+            <span>${seller.shop_description || '—'}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-column">
+        <div class="info-section">
+          <h4>Documents (${seller.documents ? seller.documents.length : 0})</h4>
+          ${seller.documents && seller.documents.length > 0 ? `
+            <div class="documents-preview">
+              ${seller.documents[0].document_url.match(/\.(jpg|jpeg|png|gif)$/i) ? 
+                `<img src="${seller.documents[0].document_url}" alt="Document Preview" class="doc-preview">` : 
+                '<div class="doc-placeholder">📄 Document File</div>'
+              }
+              <div class="documents-info">
+                <p><strong>${seller.documents.length} document(s) uploaded</strong></p>
+                <button class="view-all-btn" onclick="viewAllDocuments(${seller.id}, '${seller.shop_name}')">
+                  📁 View All Documents
+                </button>
+              </div>
+            </div>
+          ` : '<p>No documents uploaded</p>'}
+        </div>
+
+        <div class="info-section">
+          <h4>Account Information</h4>
+          <div class="info-item">
+            <label>Seller ID:</label>
+            <span>${seller.id}</span>
+          </div>
+          <div class="info-item">
+            <label>Buyer ID:</label>
+            <span>${seller.buyer_id}</span>
+          </div>
+          <div class="info-item">
+            <label>Last Updated:</label>
+            <span>${seller.updated_at ? new Date(seller.updated_at).toLocaleDateString() : '—'}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// Update seller
+function updateSeller(id, actionType){
+  fetch(`../admin/backend.php?type=${actionType}`,{
+    method: "POST",
+    headers: {"Content-Type": "application/x-www-form-urlencoded"},
+    body: `id=${id}`
+  }).then(() => loadSellers());
+}
+
+// Load products
+function loadProducts() {
+  fetch("../admin/backend.php?type=products")
+    .then(res => res.json())
+    .then(products => {
+      const tableBody = document.querySelector("#productsTableBody");
+      tableBody.innerHTML = products.map(p => {
+        let statusLabel = "";
+        let actions = "";
+        switch(p.status){
+          case "approved":
+            statusLabel = "✅ Approved";
+            actions = `
+              <button class="hold-btn" onclick="event.stopPropagation(); updateProduct(${p.id}, 'hold_product')">Hold</button>
+              <button class="remove-btn" onclick="event.stopPropagation(); updateProduct(${p.id}, 'remove_product')">Remove</button>
+            `;
+            break;
+          case "on_hold":
+            statusLabel = "🟠 On Hold";
+            actions = `
+              <button class="restore-btn" onclick="event.stopPropagation(); updateProduct(${p.id}, 'restore_product')">Restore</button>
+              <button class="remove-btn" onclick="event.stopPropagation(); updateProduct(${p.id}, 'remove_product')">Remove</button>
+            `;
+            break;
+          case "removed":
+            statusLabel = "🔴 Removed";
+            actions = `
+              <button class="restore-btn" onclick="event.stopPropagation(); updateProduct(${p.id}, 'restore_product')">Restore</button>
+            `;
+            break;
+        }
+
+        return `
+          <div class="product-row" data-product-id="${p.id}">
+            <div class="col-id">${p.id}</div>
+            <div class="col-name">${p.product_name}</div>
+            <div class="col-price">₱${parseFloat(p.price).toFixed(2)}</div>
+            <div class="col-stock">${p.stock}</div>
+            <div class="col-status">${statusLabel}</div>
+            <div class="col-actions">${actions}</div>
+          </div>
+          <div class="product-modal" data-modal-for="${p.id}">
+            <div class="modal-content" id="productModalContent-${p.id}">
+              <div class="modal-loading">Loading product details...</div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      // Add click event to product rows for modal
+      document.querySelectorAll('.product-row').forEach(row => {
+        row.addEventListener('click', function(e) {
+          // Don't trigger if clicking action buttons
+          if (e.target.tagName === 'BUTTON') return;
+          
+          const productId = this.getAttribute('data-product-id');
+          const modal = document.querySelector(`.product-modal[data-modal-for="${productId}"]`);
+          
+          // Toggle modal visibility - exactly like sellers
+          if (modal.classList.contains('active')) {
+            modal.classList.remove('active');
+          } else {
+            // Close all other modals first
+            document.querySelectorAll('.product-modal').forEach(m => m.classList.remove('active'));
+            modal.classList.add('active');
+            loadProductDetails(productId);
+          }
+        });
+      });
+    });
+}
+
+// Load detailed product information for modal
+function loadProductDetails(productId) {
+  const modalContent = document.getElementById(`productModalContent-${productId}`);
+  
+  // Get fresh product data for details
+  fetch("../admin/backend.php?type=products")
+    .then(res => res.json())
+    .then(products => {
+      const product = products.find(p => p.id == productId);
+      if (product) {
+        modalContent.innerHTML = createProductModalContent(product);
+      }
+    })
+    .catch(error => {
+      modalContent.innerHTML = `<div class="modal-error">Error loading product details</div>`;
+    });
+}
+
+// Create product modal content HTML
+function createProductModalContent(product) {
+  const statusText = product.status === 'approved' ? 'Approved' : 
+                     product.status === 'on_hold' ? 'On Hold' : 'Removed';
+  
+  const statusClass = product.status === 'approved' ? 'status-approved' : 
+                      product.status === 'on_hold' ? 'status-pending' : 'status-rejected';
+
+  return `
+    <div class="modal-header">
+      <h3>Product Details - ${product.product_name}</h3>
+      <span class="status-badge ${statusClass}">${statusText}</span>
+    </div>
+    
+    <div class="modal-body">
+      <div class="modal-column">
+        <div class="info-section">
+          <h4>Product Images</h4>
+          <div class="product-images">
+            ${product.main_image_url ? 
+              `<img src="${product.main_image_url}" alt="${product.product_name}" class="product-image-main">` : 
+              '<div class="no-image">No Image Available</div>'
+            }
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h4>Product Description</h4>
+          <div class="info-item full-width">
+            <span>${product.product_description || 'No description available'}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-column">
+        <div class="info-section">
+          <h4>Seller Information</h4>
+          <div class="info-item">
+            <label>Seller:</label>
+            <span>${product.seller_name || '—'}</span>
+          </div>
+          <div class="info-item">
+            <label>Shop:</label>
+            <span>${product.shop_name || '—'}</span>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h4>Product Details</h4>
+          <div class="info-item">
+            <label>Category:</label>
+            <span>${product.category || '—'}</span>
+          </div>
+          <div class="info-item">
+            <label>Price:</label>
+            <span>₱${parseFloat(product.price).toFixed(2)}</span>
+          </div>
+          <div class="info-item">
+            <label>Stock:</label>
+            <span>${product.stock}</span>
+          </div>
+          <div class="info-item">
+            <label>Product ID:</label>
+            <span>${product.id}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// Update product
+function updateProduct(id, actionType){
+  fetch(`../admin/backend.php?type=${actionType}`,{
+    method: "POST",
+    headers: {"Content-Type": "application/x-www-form-urlencoded"},
+    body: `id=${id}`
+  }).then(() => loadProducts());
+}
+
+// View all documents function
+function viewAllDocuments(sellerId, shopName) {
+  // Open documents page in new tab
+  const documentsUrl = `seller-documents.html?seller_id=${sellerId}&shop_name=${encodeURIComponent(shopName)}`;
+  window.open(documentsUrl, '_blank');
+}
+
+</script>
+</body>
+</html>

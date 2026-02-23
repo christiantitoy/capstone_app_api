@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Seller Documents | Capstone Admin</title>
+  <link rel="stylesheet" href="../admin/documents-style.css" />
+</head>
+<body>
+  <div class="documents-container">
+    <!-- Header -->
+    <header class="documents-header">
+      <div class="header-content">
+        <h1 id="shopName">Seller Documents</h1>
+        <button class="back-btn" onclick="window.close()">Close</button>
+      </div>
+      <div class="documents-summary">
+        <div class="summary-card">
+          <span class="summary-label">Total Documents</span>
+          <span class="summary-count" id="totalDocuments">0</span>
+        </div>
+        <div class="summary-card">
+          <span class="summary-label">Seller ID</span>
+          <span class="summary-value" id="sellerId">—</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Documents Grid -->
+    <main class="documents-main">
+      <div class="documents-grid" id="documentsGrid">
+        <!-- Documents will be loaded here -->
+      </div>
+      
+      <!-- Loading State -->
+      <div class="loading-state" id="loadingState">
+        <div class="spinner"></div>
+        <p>Loading documents...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state hidden" id="emptyState">
+        <div class="empty-icon">📄</div>
+        <h3>No Documents Found</h3>
+        <p>This seller hasn't uploaded any documents yet.</p>
+      </div>
+    </main>
+
+    <!-- Image Modal -->
+    <div class="image-modal hidden" id="imageModal">
+      <div class="modal-overlay" onclick="closeImageModal()"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="modalTitle">Document Preview</h3>
+          <button class="close-btn" onclick="closeImageModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <img id="modalImage" src="" alt="Document Preview">
+          <div class="modal-actions">
+            <a id="downloadLink" href="#" download class="download-btn">Download</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Get URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const sellerId = urlParams.get('seller_id');
+    const shopName = urlParams.get('shop_name');
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+      if (shopName) {
+        document.getElementById('shopName').textContent = `${shopName} - Documents`;
+      }
+      if (sellerId) {
+        document.getElementById('sellerId').textContent = sellerId;
+        loadSellerDocuments(sellerId);
+      }
+    });
+
+    // Load seller documents
+    function loadSellerDocuments(sellerId) {
+      const loadingState = document.getElementById('loadingState');
+      const emptyState = document.getElementById('emptyState');
+      const documentsGrid = document.getElementById('documentsGrid');
+
+      fetch(`../admin/backend.php?type=seller_documents&seller_id=${sellerId}`)
+        .then(res => res.json())
+        .then(documents => {
+          loadingState.classList.add('hidden');
+          
+          if (documents.length === 0) {
+            emptyState.classList.remove('hidden');
+            return;
+          }
+
+          // Update total count
+          document.getElementById('totalDocuments').textContent = documents.length;
+          
+          // Render documents grid
+          documentsGrid.innerHTML = documents.map(doc => `
+            <div class="document-card">
+              <div class="document-preview" onclick="openImageModal('${doc.document_url}', '${doc.business_id_type || 'Document'}')">
+                ${doc.document_url.match(/\.(jpg|jpeg|png|gif)$/i) ? 
+                  `<img src="${doc.document_url}" alt="${doc.business_id_type}" class="document-image">` :
+                  `<div class="document-file">
+                    <div class="file-icon">📄</div>
+                    <span>Document File</span>
+                  </div>`
+                }
+              </div>
+              <div class="document-info">
+                <h4>${doc.business_id_type || 'Document'}</h4>
+                <p class="upload-date">Uploaded: ${new Date(doc.uploaded_at).toLocaleDateString()}</p>
+                <div class="document-actions">
+                  <a href="${doc.document_url}" download class="action-btn download">Download</a>
+                  <button onclick="openImageModal('${doc.document_url}', '${doc.business_id_type || 'Document'}')" class="action-btn view">View</button>
+                </div>
+              </div>
+            </div>
+          `).join('');
+        })
+        .catch(error => {
+          loadingState.classList.add('hidden');
+          documentsGrid.innerHTML = `<div class="error-state">Error loading documents</div>`;
+        });
+    }
+
+    // Image modal functions
+    function openImageModal(imageUrl, title) {
+      if (!imageUrl.match(/\.(jpg|jpeg|png|gif)$/i)) {
+        // If not an image, just download
+        window.open(imageUrl, '_blank');
+        return;
+      }
+      
+      const modal = document.getElementById('imageModal');
+      const modalImage = document.getElementById('modalImage');
+      const modalTitle = document.getElementById('modalTitle');
+      const downloadLink = document.getElementById('downloadLink');
+      
+      modalTitle.textContent = title;
+      modalImage.src = imageUrl;
+      downloadLink.href = imageUrl;
+      downloadLink.download = title.toLowerCase().replace(/\s+/g, '-') + '.jpg';
+      
+      modal.classList.remove('hidden');
+    }
+
+    function closeImageModal() {
+      document.getElementById('imageModal').classList.add('hidden');
+    }
+
+    // Close modal on ESC key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeImageModal();
+    });
+  </script>
+</body>
+</html>

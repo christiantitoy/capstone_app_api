@@ -1,0 +1,544 @@
+package com.duma.daguitzone.buyerscreens
+
+import android.content.Context
+import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import com.duma.daguitzone.backends.ApiClient
+import com.duma.daguitzone.reusables.AppText
+import com.duma.daguitzone.userinterface.buyerlogininterface.BuyerEmailTF
+import com.duma.daguitzone.userinterface.buyerlogininterface.BuyerPassTF
+import com.duma.daguitzone.userinterface.buyerlogininterface.RoleButton
+import com.duma.daguitzone.userinterface.buyerlogininterface.SignInButton
+import kotlinx.coroutines.launch
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun UserLogInForm(navController: NavController) {
+    var buyerEmail by remember { mutableStateOf("") }
+    var buyerPass by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
+
+    // ✨ Modern background gradient
+    val gradient = Brush.verticalGradient(
+        listOf(
+            Color(0xFFFF914D),
+            Color(0xFFFF6A00)
+        )
+    )
+
+    Scaffold(
+        containerColor = Color.White
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(gradient)
+                .padding(innerPadding),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(
+                        rememberScrollState()
+                    )
+                    .padding(horizontal = 24.dp, vertical = 40.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+
+                // 🔹 Header
+                AppText(
+                    text = "Welcome Back",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 30.sp,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = "Sign in to continue shopping with PalitOra",
+                    fontSize = 14.sp,
+                    color = Color.White.copy(alpha = 0.85f),
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.height(40.dp))
+
+                // 🔹 Card container for form
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(12.dp, RoundedCornerShape(24.dp)),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(horizontal = 24.dp, vertical = 32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Login as Buyer",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 22.sp,
+                            color = Color(0xFFff6a00)
+                        )
+
+                        Spacer(Modifier.height(24.dp))
+
+                        BuyerEmailTF(
+                            buyerEmail = buyerEmail,
+                            buyerEmailChange = { buyerEmail = it },
+                            label = "Email",
+                            placeholder = "Enter your email"
+                        )
+
+                        Spacer(Modifier.height(16.dp))
+
+                        BuyerPassTF(
+                            buyerPass = buyerPass,
+                            buyerPassChange = { buyerPass = it },
+                            passwordVisible = passwordVisible,
+                            onVisibilityChange = { passwordVisible = it },
+                            label = "Password",
+                            placeholder = "Enter your password"
+                        )
+
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = "Forgot Password?",
+                            modifier = Modifier
+                                .align(Alignment.End)
+                                .clickable(
+                                    indication = null,
+                                    interactionSource = remember { MutableInteractionSource() }
+                                ) {
+                                    Toast
+                                        .makeText(context, "Forgot password clicked", Toast.LENGTH_SHORT)
+                                        .show()
+                                },
+                            color = Color(0xFFff6a00),
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 14.sp
+                        )
+
+                        Spacer(Modifier.height(24.dp))
+
+                        SignInButton("Sign In") {
+                            (context as ComponentActivity).lifecycleScope.launch {
+                                try {
+                                    val response = ApiClient.api.loginUser(buyerEmail, buyerPass)
+                                    if (response.isSuccessful) {
+                                        val body = response.body()
+                                        if (body?.status == "success") {
+                                            Toast.makeText(context, "Welcome back!", Toast.LENGTH_SHORT).show()
+
+                                            val sharedPref =
+                                                context.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
+                                            with(sharedPref.edit()) {
+                                                putInt("user_id", body.id ?: -1)
+                                                putString("username", body.username ?: "")
+                                                putString("email", body.email ?: "")
+                                                val avatarUrl = if (!body.avatar_url.isNullOrEmpty()) {
+                                                    if (body.avatar_url.startsWith("http")) body.avatar_url
+                                                    else "http://10.46.179.249/capstone_app_api/${body.avatar_url}"
+                                                } else ""
+                                                putString("avatar_url", avatarUrl)
+                                                apply()
+                                            }
+                                            navController.navigate("home") {
+                                                popUpTo("login") { inclusive = true }
+                                            }
+
+                                        } else {
+                                            Toast.makeText(context, body?.message ?: "Login failed", Toast.LENGTH_SHORT)
+                                                .show()
+                                        }
+                                    } else {
+                                        Toast.makeText(context, "Error: ${response.code()}", Toast.LENGTH_SHORT).show()
+                                    }
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+
+                        Spacer(Modifier.height(20.dp))
+
+                        Row(
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Don’t have an account?", color = Color.Gray)
+                            Spacer(Modifier.width(5.dp))
+                            Text(
+                                "Sign Up",
+                                color = Color(0xFF1a55ff),
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.clickable {
+                                    navController.navigate("createAcc")
+                                }
+                            )
+                        }
+                    }
+                }
+
+//                Spacer(Modifier.height(32.dp))
+//
+//                // 🔹 Continue as section
+//                Text(
+//                    text = "or continue as",
+//                    color = Color.White,
+//                    fontWeight = FontWeight.SemiBold,
+//                    fontSize = 14.sp
+//                )
+//                Spacer(Modifier.height(12.dp))
+//
+//                Row(horizontalArrangement = Arrangement.Center) {
+//                    RoleButton(
+//                        label = "Seller",
+//                        textColor = 0xFF000000,
+//                        color = 0xFFfff0e6,
+//                        onClick = { navController.navigate("sellerLogIn") }
+//                    )
+//                    Spacer(Modifier.width(16.dp))
+//                    RoleButton(
+//                        label = "Rider",
+//                        textColor = 0xFFffffff,
+//                        color = 0xFF1a75ff,
+//                        onClick = { navController }
+//                    )
+//                }
+            }
+        }
+    }
+}
+
+@Preview(showSystemUi = true)
+@Composable
+fun PreviewModernLogin() {
+    val navController = rememberNavController()
+    UserLogInForm(navController)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+package com.duma.daguitzone.userinterface.buyerlogininterface
+
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.dp
+import com.duma.daguitzone.R
+
+@Composable
+fun BuyerUsernameTF(buyerUsername: String, buyerUsernameChange: (String) -> Unit, label: String, placeholder: String) {
+    TextTF(
+        buyerUsername,
+        buyerUsernameChange,
+        label,
+        placeholder)
+}
+
+@Composable
+fun BuyerEmailTF(buyerEmail: String, buyerEmailChange: (String) -> Unit, label: String, placeholder: String) {
+    TextTF(
+        buyerEmail,
+        buyerEmailChange,
+        label,
+        placeholder)
+}
+
+@Composable
+fun BuyerPassTF(buyerPass: String, buyerPassChange: (String) -> Unit, passwordVisible: Boolean, onVisibilityChange: (Boolean) -> Unit, label: String, placeholder: String) {
+    PassTF(
+        buyerPass,
+        buyerPassChange,
+        passwordVisible,
+        onVisibilityChange,
+        label,
+        placeholder
+    )
+}
+
+@Composable
+fun BuyerConfirmpassTF(buyerConfirmpass: String, buyerConfirmpassChange: (String) -> Unit, passwordVisible: Boolean, onVisibilityChange: (Boolean) -> Unit, label: String, placeholder: String) {
+    PassTF(
+        buyerConfirmpass,
+        buyerConfirmpassChange,
+        passwordVisible,
+        onVisibilityChange,
+        label,
+        placeholder
+    )
+}
+
+@Composable
+fun TextTF(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    placeholder: String
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(text = label) },
+        placeholder = { Text(placeholder) },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = Color.Transparent,      // Transparent when focused
+            unfocusedContainerColor = Color(0xFFfff0e6),    // Transparent when unfocused
+            focusedIndicatorColor = Color(0xFFff8533),
+            unfocusedIndicatorColor = Color.Transparent,
+            errorIndicatorColor = Color(0xFFB00020),         // Red - Error border
+            focusedLabelColor = Color(0xFF000000),           // Purple - Focused label
+            unfocusedLabelColor = Color(0xFF666666),         // Gray - Unfocused label
+            focusedTextColor = Color(0xFF000000),            // Black - Focused text
+            unfocusedTextColor = Color(0xFF000000),          // Black - Unfocused text
+        )
+    )
+}
+
+@Composable
+fun PassTF(
+    value: String,
+    onValueChange: (String) -> Unit,
+    passwordVisible: Boolean,
+    onVisibilityChange: (Boolean) -> Unit,
+    label: String,
+    placeholder: String
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        placeholder = { Text(placeholder) },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = Color.Transparent,      // Transparent when focused
+            unfocusedContainerColor = Color(0xFFfff0e6),    // Transparent when unfocused
+            focusedIndicatorColor = Color(0xFFff8533),
+            unfocusedIndicatorColor = Color.Transparent,
+            errorIndicatorColor = Color(0xFFB00020),         // Red - Error border
+            focusedLabelColor = Color(0xFF000000),           // Purple - Focused label
+            unfocusedLabelColor = Color(0xFF666666),         // Gray - Unfocused label
+            focusedTextColor = Color(0xFF000000),            // Black - Focused text
+            unfocusedTextColor = Color(0xFF000000),          // Black - Unfocused text
+        ),
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Password,
+            imeAction = ImeAction.Done
+        ),
+        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+        trailingIcon = {
+            val image = if (passwordVisible) painterResource(id = R.drawable.eye) else painterResource(id = R.drawable.eyeoff)
+            val description = if (passwordVisible) "Hide password" else "Show password"
+
+            IconButton(onClick = { onVisibilityChange(!passwordVisible) }) {
+                Icon(
+                    painter = image,
+                    contentDescription = description,
+                    modifier = Modifier.size(23.dp))
+            }
+        }
+    )
+}
+
+
+
+
+
+
+--------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+package com.duma.daguitzone.userinterface.buyerlogininterface
+
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
+@Composable
+fun SignInButton(label: String, onclick: () -> Unit) {
+    Button(
+        onClick = onclick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(55.dp),
+        shape = RoundedCornerShape(3.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFFff8533)
+        )
+    ) {
+        Text(label,
+            color = Color(0xFFffffff),
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp
+        )
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+---------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+package com.duma.daguitzone.reusables
+
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
+@Composable
+fun ErrorDialog(
+    text: String,
+    showDialog: Boolean,
+    onDismiss: () -> Unit
+) {
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { onDismiss() },
+            title = {
+                Text(
+                    text = "⚠\uFE0F Error",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                ) },
+            text = {
+                Text(
+                    text = text,
+                    fontSize = 16.sp
+                ) },
+            confirmButton = {
+                TextButton(
+                    onClick = { onDismiss() }
+                ) {
+                    Text("OK",
+                        color = Color(0xFF00b300)
+                        )
+                }
+            },
+            shape = RoundedCornerShape(10.dp),
+            containerColor = Color(0xFFffffff)
+        )
+    }
+}

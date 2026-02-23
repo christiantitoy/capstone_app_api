@@ -1,0 +1,106 @@
+/* Products Table Styles */
+.product_holder {
+  width: 100%;
+  transform: translateY(-25px);
+  height: 600px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Product Table Header */
+.product-table-header {
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  height: 50px;
+  font-weight: bold;
+  background: var(--main-color);
+  color: white;
+  border-radius: 8px;
+}
+
+.product-table-header > div {
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* Product Header Column Widths */
+.product-table-header .col-id { width: 80px; flex-shrink: 0; }
+.product-table-header .col-name { flex: 2; }
+.product-table-header .col-price { width: 100px; flex-shrink: 0; }
+.product-table-header .col-stock { width: 80px; flex-shrink: 0; }
+.product-table-header .col-status { width: 120px; flex-shrink: 0; }
+.product-table-header .col-actions { width: 200px; flex-shrink: 0; }
+
+/* Product Rows */
+.product-row {
+  height: 70px;
+  min-height: 70px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.product-row:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Product Row Column Widths */
+.product-row .col-id { width: 80px; flex-shrink: 0; font-weight: bold; }
+.product-row .col-name { flex: 2; min-width: 0; }
+.product-row .col-price { width: 100px; flex-shrink: 0; }
+.product-row .col-stock { width: 80px; flex-shrink: 0; }
+.product-row .col-status { width: 120px; flex-shrink: 0; }
+.product-row .col-actions { width: 200px; flex-shrink: 0; }
+
+/* Ensure text doesn't break the height */
+.product-row > div {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Product Modal - Initially Hidden */
+.product-modal {
+  display: none;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin: 5px 0;
+  padding: 0;
+  border-left: 4px solid var(--sub-color);
+}
+
+.product-modal.active {
+  display: block;
+}
+
+.product-modal .modal-content {
+  margin: 0;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+/* Product image in modal */
+.product-image-main {
+  width: 100%;
+  max-width: 300px;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+.no-image {
+  padding: 40px;
+  text-align: center;
+  color: #666;
+  background: #f5f5f5;
+  border-radius: 8px;
+}

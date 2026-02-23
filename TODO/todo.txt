@@ -1,0 +1,125 @@
+ALLWAYS DO THIS!!!!!!:
+(always edit the fetch_product, seller_upload_documents and upload_product_image phps if the ip is changed)
+
+
+
+
+Here are the TODO's:
+
+Ahhh I see 👍 you want it in a **clean column/row data-flow format** like we did earlier — not paragraph explanation.
+
+Here is your **DFD Level 1 formatted properly in rows and columns** so it's easier to follow and draw.
+
+---
+
+# 📘 3.X.2 DFD Level 1 (Detailed)
+
+## 📌 Overview
+
+The Level 1 DFD decomposes the PaliOra System into major processes and shows how data flows between external entities, processes, and data stores.
+
+---
+
+# 🧩 External Entities
+
+* Customer
+* Seller
+* Rider
+* Admin (Web-Based)
+
+---
+
+# ⚙️ Processes
+
+1.0 User Management
+2.0 Product & Order Management
+3.0 Delivery Management
+4.0 Payment Processing
+5.0 Admin Management
+
+---
+
+# 🗄️ Data Stores
+
+D1 – User Database
+D2 – Product Database
+D3 – Order Database
+D4 – Payment Database
+
+---
+
+# 🔎 DETAILED DATA FLOW (ROW FORMAT)
+
+---
+
+## 🔹 1.0 User Management
+
+| From                  | Data                       | To                    |
+| --------------------- | -------------------------- | --------------------- |
+| Customer              | Registration Details       | 1.0 User Management   |
+| Seller                | Registration Details       | 1.0 User Management   |
+| Rider                 | Registration Details       | 1.0 User Management   |
+| Customer/Seller/Rider | Login Credentials          | 1.0 User Management   |
+| 1.0 User Management   | Store/Retrieve User Info   | D1 User Database      |
+| 1.0 User Management   | Login Confirmation / Error | Customer/Seller/Rider |
+
+---
+
+## 🔹 2.0 Product & Order Management
+
+| From                   | Data                | To                     |
+| ---------------------- | ------------------- | ---------------------- |
+| Seller                 | Product Information | 2.0 Product Management |
+| 2.0 Product Management | Store Product Data  | D2 Product Database    |
+| Customer               | Order Request       | 2.0 Order Management   |
+| 2.0 Order Management   | Store Order Record  | D3 Order Database      |
+| 2.0 Order Management   | Order Notification  | Seller                 |
+| 2.0 Order Management   | Order Confirmation  | Customer               |
+
+---
+
+## 🔹 3.0 Delivery Management
+
+| From                    | Data                          | To                      |
+| ----------------------- | ----------------------------- | ----------------------- |
+| 2.0 Order Management    | Confirmed Order               | 3.0 Delivery Management |
+| 3.0 Delivery Management | Delivery Request              | Rider                   |
+| Rider                   | Accept/Reject + Status Update | 3.0 Delivery Management |
+| 3.0 Delivery Management | Update Delivery Status        | D3 Order Database       |
+| 3.0 Delivery Management | Delivery Status Update        | Customer                |
+
+---
+
+## 🔹 4.0 Payment Processing
+
+| From                   | Data                      | To                     |
+| ---------------------- | ------------------------- | ---------------------- |
+| Customer               | Payment Information       | 4.0 Payment Processing |
+| 4.0 Payment Processing | Store Payment Record      | D4 Payment Database    |
+| 4.0 Payment Processing | Payment Confirmation      | Customer               |
+| 4.0 Payment Processing | Transaction Record Access | Admin                  |
+
+---
+
+## 🔹 5.0 Admin Management
+
+| From                 | Data                                      | To                   |
+| -------------------- | ----------------------------------------- | -------------------- |
+| Admin                | Report Request                            | 5.0 Admin Management |
+| Admin                | Management Commands                       | 5.0 Admin Management |
+| 5.0 Admin Management | Retrieve Data                             | D1 User Database     |
+| 5.0 Admin Management | Retrieve Data                             | D2 Product Database  |
+| 5.0 Admin Management | Retrieve Data                             | D3 Order Database    |
+| 5.0 Admin Management | Retrieve Data                             | D4 Payment Database  |
+| 5.0 Admin Management | Reports / User Data / Transaction Records | Admin                |
+
+---
+
+Now this format is:
+
+✔ Easy to convert into a diagram
+✔ Clean for documentation
+✔ Defense-ready
+✔ Very clear where data starts and ends
+
+If you want, I can now also make the **Level 2 DFD (just for 2.0 Order Management)** in the same row-column format.
