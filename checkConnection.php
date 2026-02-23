@@ -1,8 +1,11 @@
 <?php
-header('Content-Type: application/json');
+include 'db_connection.php';
 
-// Optional: just respond OK
+$result = pg_query($conn, "SELECT NOW()");
+$row = pg_fetch_assoc($result);
+
 echo json_encode([
     "status" => true,
-    "message" => "Server is reachable"
+    "time" => $row['now']
 ]);
+?>

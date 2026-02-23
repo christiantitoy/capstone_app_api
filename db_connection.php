@@ -1,16 +1,15 @@
 <?php
-$hostname = 'localhost';
-$username = 'root';
-$password = '';
-$dbname = 'capstone_app';
+// Get database URL from Render environment
+$databaseUrl = getenv('DATABASE_URL');
 
-$conn = new mysqli($hostname, $username, $password, $dbname);
+// Connect to PostgreSQL
+$conn = pg_connect($databaseUrl);
 
-if ($conn->connect_error) {
-  die(json_encode([
-    'status' => 'error',
-    'message' => 'Ohmaymay ERROOORRRRR!'
-  ]));
+if (!$conn) {
+    echo json_encode([
+        "status" => false,
+        "message" => "Database connection failed"
+    ]);
+    exit;
 }
-
 ?>
