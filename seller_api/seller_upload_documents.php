@@ -56,7 +56,7 @@ try {
 
         // Initialize cURL to upload to Cloudinary endpoint
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, 'http://10.216.143.249/capstone_app_api/uploading/upload_seller_documents.php');
+        curl_setopt($ch, CURLOPT_URL, 'http://10.216.143.249/capstone_app_api/connection/upload_apis/upload_seller_documents.php');
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, ['image' => $curlFile]);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
