@@ -1,73 +1,74 @@
 <?php
 header('Content-Type: application/json');
-require 'db_connection.php';
 
-$data = json_decode(file_get_contents("php://input"), true);
+require_once '/var/www/html/connection/db_connection.php';
 
-if (!$data) {
-    echo json_encode([
-        "status" => "error",
-        "message" => "Invalid JSON payload"
-    ]);
-    exit;
-}
+try {
+    $data = json_decode(file_get_contents("php://input"), true);
 
-// Validate required fields
-$required = [
-    'buyer_id',
-    'address_id',
-    'payment_method',
-    'subtotal',
-    'shipping_fee',
-    'discount',
-    'total_amount',
-    'items'
-];
-
-foreach ($required as $field) {
-    if (!isset($data[$field])) {
+    if (!$data) {
         echo json_encode([
             "status" => "error",
-            "message" => "Missing field: $field"
+            "message" => "Invalid JSON payload"
         ]);
         exit;
     }
-}
 
-if (empty($data['items'])) {
-    echo json_encode([
-        "status" => "error",
-        "message" => "Order must contain at least one item"
-    ]);
-    exit;
-}
+    // Validate required fields
+    $required = [
+        'buyer_id',
+        'address_id',
+        'payment_method',
+        'subtotal',
+        'shipping_fee',
+        'discount',
+        'total_amount',
+        'items'
+    ];
 
-try {
-    $conn->begin_transaction();
+    foreach ($required as $field) {
+        if (!isset($data[$field])) {
+            echo json_encode([
+                "status" => "error",
+                "message" => "Missing field: $field"
+            ]);
+            exit;
+        }
+    }
+
+    if (empty($data['items'])) {
+        echo json_encode([
+            "status" => "error",
+            "message" => "Order must contain at least one item"
+        ]);
+        exit;
+    }
+
+    $conn->beginTransaction();
 
     // 1️⃣ Insert order
     $orderSql = "
         INSERT INTO orders (
             buyer_id, address_id, payment_method,
             subtotal, shipping_fee, discount, total_amount
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (
+            :buyer_id, :address_id, :payment_method,
+            :subtotal, :shipping_fee, :discount, :total_amount
+        )
     ";
 
     $stmt = $conn->prepare($orderSql);
-    $stmt->bind_param(
-        "iisdddd",
-        $data['buyer_id'],
-        $data['address_id'],
-        $data['payment_method'],
-        $data['subtotal'],
-        $data['shipping_fee'],
-        $data['discount'],
-        $data['total_amount']
-    );
+    $stmt->execute([
+        ':buyer_id' => $data['buyer_id'],
+        ':address_id' => $data['address_id'],
+        ':payment_method' => $data['payment_method'],
+        ':subtotal' => $data['subtotal'],
+        ':shipping_fee' => $data['shipping_fee'],
+        ':discount' => $data['discount'],
+        ':total_amount' => $data['total_amount']
+    ]);
 
-    $stmt->execute();
-    $orderId = $stmt->insert_id;
-    $stmt->close();
+    $orderId = $conn->lastInsertId();
 
     // 2️⃣ Insert order items
     $itemSql = "
@@ -79,7 +80,15 @@ try {
             quantity,
             unit_price,
             total_price
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (
+            :order_id,
+            :product_id,
+            :variation_id,
+            :selected_options,
+            :quantity,
+            :unit_price,
+            :total_price
+        )
     ";
 
     $itemStmt = $conn->prepare($itemSql);
@@ -87,42 +96,34 @@ try {
     foreach ($data['items'] as $item) {
         $totalPrice = $item['unit_price'] * $item['quantity'];
 
-        $itemStmt->bind_param(
-            "iiisidd",
-            $orderId,
-            $item['product_id'],
-            $item['variation_id'],
-            $item['selected_options'],
-            $item['quantity'],
-            $item['unit_price'],
-            $totalPrice
-        );
-
-        $itemStmt->execute();
+        $itemStmt->execute([
+            ':order_id' => $orderId,
+            ':product_id' => $item['product_id'],
+            ':variation_id' => $item['variation_id'],
+            ':selected_options' => $item['selected_options'],
+            ':quantity' => $item['quantity'],
+            ':unit_price' => $item['unit_price'],
+            ':total_price' => $totalPrice
+        ]);
 
         // 3️⃣ Mark cart items as purchased
         // Find cart items for this buyer + product + variation that are not yet purchased
         $updateSql = "
             UPDATE cart_items
             SET is_purchased = 1
-            WHERE buyer_id = ?
-              AND product_id = ?
-              AND (variation_id = ? OR (variation_id IS NULL AND ? IS NULL))
+            WHERE buyer_id = :buyer_id
+              AND product_id = :product_id
+              AND (variation_id = :variation_id OR (variation_id IS NULL AND :variation_id2 IS NULL))
               AND is_purchased = 0
         ";
         $updateStmt = $conn->prepare($updateSql);
-        $updateStmt->bind_param(
-            "iiii",
-            $data['buyer_id'],
-            $item['product_id'],
-            $item['variation_id'],
-            $item['variation_id']
-        );
-        $updateStmt->execute();
-        $updateStmt->close();
+        $updateStmt->execute([
+            ':buyer_id' => $data['buyer_id'],
+            ':product_id' => $item['product_id'],
+            ':variation_id' => $item['variation_id'],
+            ':variation_id2' => $item['variation_id'] // Duplicate for the NULL check
+        ]);
     }
-
-    $itemStmt->close();
 
     $conn->commit();
 
@@ -132,13 +133,24 @@ try {
         "order_id" => $orderId
     ]);
 
+} catch (PDOException $e) {
+    if ($conn->inTransaction()) {
+        $conn->rollBack();
+    }
+    echo json_encode([
+        "status" => "error",
+        "message" => "Database error: " . $e->getMessage()
+    ]);
 } catch (Exception $e) {
-    $conn->rollback();
-
+    if ($conn->inTransaction()) {
+        $conn->rollBack();
+    }
     echo json_encode([
         "status" => "error",
         "message" => "Failed to place order",
         "error" => $e->getMessage()
     ]);
 }
+
+$conn = null; // Close PDO connection
 ?>

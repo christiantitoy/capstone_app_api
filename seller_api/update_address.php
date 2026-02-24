@@ -1,7 +1,8 @@
 <?php
 // File: update_address.php
 header('Content-Type: application/json');
-require 'db_connection.php';
+
+require_once '/var/www/html/connection/db_connection.php';
 
 try {
     $data = json_decode(file_get_contents('php://input'), true);
@@ -61,62 +62,66 @@ try {
     }
     
     // Check if address exists and belongs to buyer
-    $check_sql = "SELECT id FROM buyer_addresses WHERE id = ? AND buyer_id = ?";
+    $check_sql = "SELECT id FROM buyer_addresses WHERE id = :address_id AND buyer_id = :buyer_id";
     $check_stmt = $conn->prepare($check_sql);
-    $check_stmt->bind_param("ii", $address_id, $buyer_id);
-    $check_stmt->execute();
-    $check_stmt->store_result();
-    
-    if ($check_stmt->num_rows === 0) {
+    $check_stmt->execute([
+        ':address_id' => $address_id,
+        ':buyer_id' => $buyer_id
+    ]);
+
+    if ($check_stmt->rowCount() === 0) {
         echo json_encode([
             'status' => 'error',
             'message' => 'Address not found or does not belong to user'
         ]);
         exit;
     }
-    
+
     // Start transaction
-    $conn->begin_transaction();
-    
+    $conn->beginTransaction();
+
     try {
         // If setting as default, unset other defaults first
         if ($is_default) {
-            $unset_sql = "UPDATE buyer_addresses SET is_default = 0 WHERE buyer_id = ? AND id != ?";
+            $unset_sql = "UPDATE buyer_addresses SET is_default = 0 WHERE buyer_id = :buyer_id AND id != :address_id";
             $unset_stmt = $conn->prepare($unset_sql);
-            $unset_stmt->bind_param("ii", $buyer_id, $address_id);
-            $unset_stmt->execute();
+            $unset_stmt->execute([
+                ':buyer_id' => $buyer_id,
+                ':address_id' => $address_id
+            ]);
         }
-        
+
         // Update the address
-        $update_sql = "UPDATE buyer_addresses 
-                       SET recipient_name = ?, phone_number = ?, barangay = ?, 
-                           street_address = ?, is_default = ?, updated_at = CURRENT_TIMESTAMP
-                       WHERE id = ? AND buyer_id = ?";
-        
+        $update_sql = "UPDATE buyer_addresses
+                       SET recipient_name = :recipient_name,
+                           phone_number = :phone_number,
+                           barangay = :barangay,
+                           street_address = :street_address,
+                           is_default = :is_default,
+                           updated_at = CURRENT_TIMESTAMP
+                       WHERE id = :address_id AND buyer_id = :buyer_id";
+
         $update_stmt = $conn->prepare($update_sql);
-        $update_stmt->bind_param(
-            "ssssiii", 
-            $recipient_name, 
-            $phone_number, 
-            $barangay, 
-            $street_address, 
-            $is_default,
-            $address_id,
-            $buyer_id
-        );
-        
-        if ($update_stmt->execute()) {
-            if ($update_stmt->affected_rows > 0) {
+        $result = $update_stmt->execute([
+            ':recipient_name' => $recipient_name,
+            ':phone_number' => $phone_number,
+            ':barangay' => $barangay,
+            ':street_address' => $street_address,
+            ':is_default' => $is_default,
+            ':address_id' => $address_id,
+            ':buyer_id' => $buyer_id
+        ]);
+
+        if ($result) {
+            if ($update_stmt->rowCount() > 0) {
                 $conn->commit();
-                
+
                 // Get updated address
-                $get_sql = "SELECT * FROM buyer_addresses WHERE id = ?";
+                $get_sql = "SELECT * FROM buyer_addresses WHERE id = :address_id";
                 $get_stmt = $conn->prepare($get_sql);
-                $get_stmt->bind_param("i", $address_id);
-                $get_stmt->execute();
-                $result = $get_stmt->get_result();
-                $updated_address = $result->fetch_assoc();
-                
+                $get_stmt->execute([':address_id' => $address_id]);
+                $updated_address = $get_stmt->fetch(PDO::FETCH_ASSOC);
+
                 echo json_encode([
                     'status' => 'success',
                     'message' => 'Address updated successfully',
@@ -134,28 +139,35 @@ try {
                     ]
                 ]);
             } else {
-                $conn->rollback();
+                $conn->rollBack();
                 echo json_encode([
                     'status' => 'error',
                     'message' => 'No changes made to address'
                 ]);
             }
         } else {
-            $conn->rollback();
+            $conn->rollBack();
             echo json_encode([
                 'status' => 'error',
-                'message' => 'Failed to update address: ' . $update_stmt->error
+                'message' => 'Failed to update address'
             ]);
         }
     } catch (Exception $e) {
-        $conn->rollback();
+        $conn->rollBack();
         throw $e;
     }
-    
+
+} catch (PDOException $e) {
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Database error: ' . $e->getMessage()
+    ]);
 } catch (Exception $e) {
     echo json_encode([
         'status' => 'error',
         'message' => $e->getMessage()
     ]);
 }
+
+$conn = null; // Close PDO connection
 ?>

@@ -79,13 +79,13 @@ try {
     // Prepare and execute main query
     $stmt = $conn->prepare($sql);
 
-    // Bind parameters
-    $stmt->bindParam(':seller_id', $seller_id, PDO::PARAM_INT);
-    $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-    $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+    // Bind parameters - use bindValue for LIMIT and OFFSET as they need to be treated as integers
+    $stmt->bindValue(':seller_id', $seller_id, PDO::PARAM_INT);
+    $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
 
     if ($status && $status !== 'all') {
-        $stmt->bindParam(':status', $status, PDO::PARAM_STR);
+        $stmt->bindValue(':status', $status, PDO::PARAM_STR);
     }
 
     $stmt->execute();
@@ -143,10 +143,10 @@ try {
     }
 
     $count_stmt = $conn->prepare($count_sql);
-    $count_stmt->bindParam(':seller_id', $seller_id, PDO::PARAM_INT);
+    $count_stmt->bindValue(':seller_id', $seller_id, PDO::PARAM_INT);
 
     if ($status && $status !== 'all') {
-        $count_stmt->bindParam(':status', $status, PDO::PARAM_STR);
+        $count_stmt->bindValue(':status', $status, PDO::PARAM_STR);
     }
 
     $count_stmt->execute();
@@ -157,8 +157,8 @@ try {
         "message" => "Orders retrieved successfully",
         "seller_id" => $seller_id,
         "total_orders" => (int)$total_count,
-        "current_page" => ($offset / $limit) + 1,
-        "total_pages" => ceil($total_count / $limit),
+        "current_page" => $limit > 0 ? ($offset / $limit) + 1 : 1,
+        "total_pages" => $limit > 0 ? ceil($total_count / $limit) : 1,
         "orders" => $orders
     ]);
 
@@ -166,6 +166,11 @@ try {
     echo json_encode([
         "status" => "error",
         "message" => "Database error: " . $e->getMessage()
+    ]);
+} catch (Exception $e) {
+    echo json_encode([
+        "status" => "error",
+        "message" => $e->getMessage()
     ]);
 }
 
