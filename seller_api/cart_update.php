@@ -1,6 +1,7 @@
 <?php
 header('Content-Type: application/json');
-require 'db_connection.php';
+
+require_once '/var/www/html/connection/db_connection.php';
 
 try {
     $data = json_decode(file_get_contents('php://input'), true);
@@ -26,11 +27,11 @@ try {
     
     if ($quantity <= 0) {
         // If quantity is 0 or negative, remove the item
-        $delete_sql = "DELETE FROM cart_items WHERE id = ?";
+        $delete_sql = "DELETE FROM cart_items WHERE id = :cart_item_id";
         $delete_stmt = $conn->prepare($delete_sql);
-        $delete_stmt->bind_param("i", $cart_item_id);
-        
-        if ($delete_stmt->execute()) {
+        $result = $delete_stmt->execute([':cart_item_id' => $cart_item_id]);
+
+        if ($result) {
             echo json_encode([
                 'status' => 'success',
                 'message' => 'Item removed from cart'
@@ -43,15 +44,18 @@ try {
         }
     } else {
         // Update quantity
-        $update_sql = "UPDATE cart_items 
-                      SET quantity = ?, 
-                          updated_at = CURRENT_TIMESTAMP 
-                      WHERE id = ?";
-        
+        $update_sql = "UPDATE cart_items
+                      SET quantity = :quantity,
+                          updated_at = CURRENT_TIMESTAMP
+                      WHERE id = :cart_item_id";
+
         $update_stmt = $conn->prepare($update_sql);
-        $update_stmt->bind_param("ii", $quantity, $cart_item_id);
-        
-        if ($update_stmt->execute()) {
+        $result = $update_stmt->execute([
+            ':quantity' => $quantity,
+            ':cart_item_id' => $cart_item_id
+        ]);
+
+        if ($result) {
             echo json_encode([
                 'status' => 'success',
                 'message' => 'Cart updated',
@@ -64,11 +68,18 @@ try {
             ]);
         }
     }
-    
+
+} catch (PDOException $e) {
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Database error: ' . $e->getMessage()
+    ]);
 } catch (Exception $e) {
     echo json_encode([
         'status' => 'error',
         'message' => $e->getMessage()
     ]);
 }
+
+$conn = null; // Close PDO connection
 ?>

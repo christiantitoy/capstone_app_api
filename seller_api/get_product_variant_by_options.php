@@ -4,59 +4,66 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 
-require_once 'db_connection.php';
+require_once '/var/www/html/connection/db_connection.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-    // Get query parameters
-    $product_id = isset($_GET['product_id']) ? intval($_GET['product_id']) : 0;
-    $options_value = isset($_GET['options_value']) ? trim($_GET['options_value']) : '';
-
-    if ($product_id <= 0 || empty($options_value)) {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Product ID and options_value are required'
-        ]);
-        exit;
-    }
-
-    // Clean the options_value
-    $options_value = $conn->real_escape_string($options_value);
-    
     try {
+        // Get query parameters
+        $product_id = isset($_GET['product_id']) ? intval($_GET['product_id']) : 0;
+        $options_value = isset($_GET['options_value']) ? trim($_GET['options_value']) : '';
+
+        if ($product_id <= 0 || empty($options_value)) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Product ID and options_value are required'
+            ]);
+            exit;
+        }
+
         // Split the search values
         $searchValues = explode(',', $options_value);
-        
-        // Build a more flexible SQL query
-        $query = "SELECT * FROM product_variants 
-                 WHERE product_id = $product_id";
-        
-        $result = $conn->query($query);
-        
-        if ($result && $result->num_rows > 0) {
+        $searchValues = array_map('trim', $searchValues); // Trim all values
+
+        // Get all variants for this product
+        $query = "SELECT * FROM product_variants
+                 WHERE product_id = :product_id";
+
+        $stmt = $conn->prepare($query);
+        $stmt->execute([':product_id' => $product_id]);
+
+        $variants = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (count($variants) > 0) {
             $foundVariant = null;
-            
-            while ($row = $result->fetch_assoc()) {
-                $dbOptions = $row['options_json_value'];
+
+            foreach ($variants as $variant) {
+                $dbOptions = $variant['options_json_value'] ?? '';
+
+                // Skip if empty
+                if (empty($dbOptions)) {
+                    continue;
+                }
+
                 $dbValues = explode(',', $dbOptions);
-                
+                $dbValues = array_map('trim', $dbValues);
+
                 // Check if both arrays contain the same values (order doesn't matter)
                 if (count($searchValues) == count($dbValues)) {
                     $allMatch = true;
                     foreach ($searchValues as $value) {
-                        $trimmedValue = trim($value);
-                        if (!in_array($trimmedValue, array_map('trim', $dbValues))) {
+                        if (!in_array($value, $dbValues)) {
                             $allMatch = false;
                             break;
                         }
                     }
-                    
+
                     if ($allMatch) {
-                        $foundVariant = $row;
+                        $foundVariant = $variant;
                         break;
                     }
                 }
             }
-            
+
             if ($foundVariant) {
                 echo json_encode([
                     'success' => true,
@@ -74,11 +81,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
                 'message' => 'No variants found for product ID: ' . $product_id
             ]);
         }
-        
-    } catch (Exception $e) {
+
+    } catch (PDOException $e) {
         echo json_encode([
             'success' => false,
             'message' => 'Database error: ' . $e->getMessage()
+        ]);
+    } catch (Exception $e) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Error: ' . $e->getMessage()
         ]);
     }
 } else {
@@ -88,5 +100,5 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     ]);
 }
 
-$conn->close();
+$conn = null; // Close PDO connection
 ?>

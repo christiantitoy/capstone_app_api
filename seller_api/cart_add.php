@@ -1,6 +1,7 @@
 <?php
 header('Content-Type: application/json');
-require 'db_connection.php';
+
+require_once '/var/www/html/connection/db_connection.php';
 
 try {
     $data = json_decode(file_get_contents('php://input'), true);
@@ -36,25 +37,25 @@ try {
     $insert_sql = "
         INSERT INTO cart_items
         (buyer_id, product_id, variation_id, selected_options, quantity, unit_price)
-        VALUES (?, ?, ?, ?, ?, ?)
+        VALUES (:buyer_id, :product_id, :variation_id, :selected_options, :quantity, :unit_price)
     ";
 
     $stmt = $conn->prepare($insert_sql);
-    $stmt->bind_param(
-        "iiisid",
-        $buyer_id,
-        $product_id,
-        $variation_id,
-        $selected_options,
-        $quantity,
-        $unit_price
-    );
 
-    if ($stmt->execute()) {
+    $result = $stmt->execute([
+        ':buyer_id' => $buyer_id,
+        ':product_id' => $product_id,
+        ':variation_id' => $variation_id,
+        ':selected_options' => $selected_options,
+        ':unit_price' => $unit_price,
+        ':quantity' => $quantity
+    ]);
+
+    if ($result) {
         echo json_encode([
             'status' => 'success',
             'message' => 'Item added to cart',
-            'cart_item_id' => $conn->insert_id
+            'cart_item_id' => $conn->lastInsertId()
         ]);
     } else {
         echo json_encode([
@@ -63,10 +64,17 @@ try {
         ]);
     }
 
+} catch (PDOException $e) {
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Database error: ' . $e->getMessage()
+    ]);
 } catch (Exception $e) {
     echo json_encode([
         'status' => 'error',
         'message' => $e->getMessage()
     ]);
 }
+
+$conn = null; // Close PDO connection
 ?>

@@ -1,53 +1,49 @@
 <?php
-
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 
-require 'db_connection.php';
+require_once '/var/www/html/connection/db_connection.php';
 
 try {
+    // Check if connection is established (PDO throws exception if connection fails)
+    if (!$conn) {
+        throw new Exception("DATABASE CONNECTION FAILED");
+    }
 
-	// E CHECK NATO KUNG NI CONNECT BA SA DB
-	if (!$conn) {
-		throw new Exception("DATABASE CONNECTION FAILED");
-	}
+    $sql = "SELECT id, shop_name, business_address, shop_category FROM seller_profiles";
+    $stmt = $conn->query($sql);
 
-	$sql = "SELECT id, shop_name, business_address, shop_category FROM seller_profiles";
-	$result = mysqli_query($conn, $sql);
+    $shops = [];
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $shops[] = [
+            'id' => $row['id'],
+            'shop_name' => $row['shop_name'],
+            'business_address' => $row['business_address'],
+            'shop_category' => $row['shop_category']
+        ];
+    }
 
-	// E CHECK NATO KUNG NI CONNECT BA SA DB
-	if (!$result) {
-		throw new Exception("ERROR: " .mysqli_error($conn));
-	}
+    echo json_encode([
+        'status' => 'success',
+        'message' => 'YEHEY NA FETCHED NA!',
+        'data' => [
+            'shops' => $shops
+        ]
+    ]);
 
-	$shops = [];
-	while ($row = mysqli_fetch_assoc($result)) {
-		$shops[] = [
-			'id' => $row['id'],
-			'shop_name' => $row['shop_name'],
-			'business_address' => $row['business_address'],
-			'shop_category' => $row['shop_category']
-		];
-	}
-
-	echo json_encode([
-		'status' => 'success',
-		'message' => 'YEHEY NA FETCHED NA!',
-		'data' => [
-			'shops' => $shops
-		]
-	]);
-
+} catch (PDOException $e) {
+    http_response_code(500);
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Database error: ' . $e->getMessage()
+    ]);
 } catch (Exception $e) {
-	http_response_code(500);
-	echo json_encode([
-		'status' => 'error',
-		'message' => $e->getMessage()
-	]);
+    http_response_code(500);
+    echo json_encode([
+        'status' => 'error',
+        'message' => $e->getMessage()
+    ]);
 } finally {
-	if ($conn) {
-		mysqli_close($conn);
-	}
+    $conn = null; // Close PDO connection
 }
-
-?> 
+?>

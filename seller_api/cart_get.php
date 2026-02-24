@@ -1,6 +1,7 @@
 <?php
 header('Content-Type: application/json');
-require 'db_connection.php';
+
+require_once '/var/www/html/connection/db_connection.php';
 
 try {
     if (!isset($_GET['buyer_id'])) {
@@ -37,19 +38,18 @@ try {
             LEFT JOIN products p ON ci.product_id = p.id
             LEFT JOIN seller_profiles sp ON p.seller_id = sp.id
             LEFT JOIN product_variants pv ON ci.variation_id = pv.id
-            WHERE ci.buyer_id = ?
+            WHERE ci.buyer_id = :buyer_id
             AND p.status = 'approved'
             AND ci.is_purchased = 0
             ORDER BY ci.added_at DESC";
 
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $buyer_id);
-    $stmt->execute();
+    $stmt->execute([':buyer_id' => $buyer_id]);
 
-    $result = $stmt->get_result();
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
     $grouped_items = [];
 
-    while ($row = $result->fetch_assoc()) {
+    foreach ($rows as $row) {
 
         // Build unique key for grouping
         $key = $row['product_id'] . '|' .
@@ -111,10 +111,17 @@ try {
         'count' => count($grouped_items)
     ]);
 
+} catch (PDOException $e) {
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Database error: ' . $e->getMessage()
+    ]);
 } catch (Exception $e) {
     echo json_encode([
         'status' => 'error',
         'message' => $e->getMessage()
     ]);
 }
+
+$conn = null; // Close PDO connection
 ?>
