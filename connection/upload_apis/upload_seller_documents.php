@@ -9,8 +9,8 @@ header("Access-Control-Allow-Headers: Content-Type");
 // Return JSON responses
 header('Content-Type: application/json');
 
-// Load Composer's autoloader
-require __DIR__ . '/var/www/html/vendor/autoload.php';
+// Use ABSOLUTE path to vendor folder
+require '/var/www/html/connection/vendor/autoload.php';
 
 use Cloudinary\Configuration\Configuration;
 use Cloudinary\Api\Upload\UploadApi;
