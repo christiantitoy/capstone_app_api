@@ -2,11 +2,19 @@
 header("Content-Type: application/json");
 
 // Database connection
-require_once 'db_connection.php';
+require_once '../db_connection.php';
 
-// Read and trim POST values
-$email = isset($_POST['email']) ? trim($_POST['email']) : '';
-$password = isset($_POST['password']) ? trim($_POST['password']) : '';
+// Read POST values (can be JSON or form data)
+$input = json_decode(file_get_contents('php://input'), true);
+
+// Check if input is JSON, otherwise use POST
+if ($input) {
+    $email = isset($input['email']) ? trim($input['email']) : '';
+    $password = isset($input['password']) ? trim($input['password']) : '';
+} else {
+    $email = isset($_POST['email']) ? trim($_POST['email']) : '';
+    $password = isset($_POST['password']) ? trim($_POST['password']) : '';
+}
 
 if (empty($email) || empty($password)) {
     echo json_encode([
@@ -16,37 +24,43 @@ if (empty($email) || empty($password)) {
     exit;
 }
 
-// Check if user exists - FIXED: Added avatar_url to SELECT
-$stmt = $conn->prepare("SELECT id, username, email, password, avatar_url FROM buyers WHERE email = ?");
-$stmt->bind_param("s", $email);
-$stmt->execute();
-$result = $stmt->get_result();
+try {
+    // Check if user exists
+    $stmt = $conn->prepare("SELECT id, username, email, password, avatar_url FROM buyers WHERE email = :email");
+    $stmt->execute([':email' => $email]);
+    
+    if ($stmt->rowCount() > 0) {
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $hashedPassword = $row['password'];
 
-if ($result->num_rows > 0) {
-    $row = $result->fetch_assoc();
-    $hashedPassword = $row['password'];
-
-    if (password_verify($password, $hashedPassword)) {
-        echo json_encode([
-            "status" => "success",
-            "message" => "Login successful",
-            "id" => $row['id'],
-            "username" => $row['username'],
-            "email" => $row['email'],
-            "avatar_url" => $row['avatar_url'] // ADD THIS LINE
-        ]);
+        if (password_verify($password, $hashedPassword)) {
+            echo json_encode([
+                "status" => "success",
+                "message" => "Login successful",
+                "id" => $row['id'],
+                "username" => $row['username'],
+                "email" => $row['email'],
+                "avatar_url" => $row['avatar_url']
+            ]);
+        } else {
+            echo json_encode([
+                "status" => "error", 
+                "message" => "Password is incorrect"
+            ]);
+        }
     } else {
         echo json_encode([
-            "status" => "error", 
-            "message" => "Password is incorrect"
+            "status" => "error",
+            "message" => "Email not found"
         ]);
     }
-} else {
+} catch (PDOException $e) {
     echo json_encode([
         "status" => "error",
-        "message" => "Email not found"
+        "message" => "Database error: " . $e->getMessage()
     ]);
 }
 
-$conn->close();
+// Close connection (PDO automatically closes at end of script, but you can explicitly null it)
+$conn = null;
 ?>
