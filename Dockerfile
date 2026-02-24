@@ -20,13 +20,14 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy composer files first (for caching)
-COPY composer.json composer.lock ./
+# Copy only composer.json first for caching
+COPY composer.json ./
 
-# Install PHP dependencies
+# Install PHP dependencies (composer.lock will be created automatically)
 RUN composer install --no-interaction --no-dev --optimize-autoloader
 
-# Copy the rest of your app
+# Copy the rest of the app
 COPY . .
 
+# Expose port 80
 EXPOSE 80
