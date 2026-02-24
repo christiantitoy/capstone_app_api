@@ -1,6 +1,7 @@
 <?php
 header('Content-Type: application/json');
-require 'db_connection.php';
+
+require_once '/var/www/html/connection/db_connection.php';
 
 try {
 
@@ -27,17 +28,16 @@ try {
             JOIN seller_profiles s ON s.id = p.seller_id
             JOIN product_options po ON po.product_id = p.id
             JOIN product_variants pv ON pv.product_id = p.id
-            WHERE p.id = ? 
+            WHERE p.id = :id 
               AND p.status = 'approved'";
 
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $id);
-    $stmt->execute();
-
-    $result = $stmt->get_result();
+    $stmt->execute([':id' => $id]);
+    
+    $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     $products = [];
 
-    while ($row = $result->fetch_assoc()) {
+    foreach ($result as $row) {
         $products[] = [
             'id' => (int)$row['id'],
             'seller_id' => (int)$row['seller_id'],
@@ -62,9 +62,10 @@ try {
         ]);
     }
 
-} catch (Exception $e) {
+} catch (PDOException $e) {
     echo json_encode([
         'status' => 'error',
         'message' => $e->getMessage()
     ]);
 }
+?>
