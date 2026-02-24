@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Cloudinary Upload</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h2 {
+            color: #333;
+            margin-top: 0;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .upload-form {
+            margin-bottom: 30px;
+            padding: 30px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+        }
+        
+        input[type="file"] {
+            margin: 20px 0;
+            padding: 15px;
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        input[type="file"]:hover {
+            border-color: #764ba2;
+            background: #f8f9ff;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 600;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        /* Popup Notification Styles */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .popup-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .popup-header h3 {
+            margin: 0;
+            font-size: 24px;
+            color: #333;
+        }
+        
+        .popup-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.2s ease;
+            padding: 5px;
+        }
+        
+        .popup-close:hover {
+            color: #333;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .popup-body {
+            margin-bottom: 20px;
+        }
+        
+        .popup-footer {
+            text-align: right;
+            padding-top: 15px;
+            border-top: 2px solid #f0f0f0;
+        }
+        
+        .popup-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.2s ease;
+        }
+        
+        .popup-button:hover {
+            transform: translateY(-2px);
+        }
+        
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 500;
+            z-index: 2000;
+            animation: slideInRight 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .toast.success {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            color: #333;
+        }
+        
+        .toast.error {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .toast.info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .image-preview {
+            max-width: 100%;
+            margin: 20px 0;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .image-preview img {
+            width: 100%;
+            display: block;
+        }
+        
+        .details {
+            margin: 20px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+            border-radius: 10px;
+            word-break: break-all;
+        }
+        
+        .details h4 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 18px;
+        }
+        
+        .details p {
+            margin: 10px 0;
+            color: #555;
+        }
+        
+        .details strong {
+            color: #333;
+        }
+        
+        .url-box {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 12px;
+            overflow-x: auto;
+            border: 1px solid #ddd;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .debug-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #2d2d2d;
+            color: #00ff00;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+        }
+        
+        .url-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        
+        .url-button {
+            padding: 8px 15px;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .url-button:hover {
+            background: #e0e0e0;
+            border-color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>📸 Cloudinary Image Upload</h2>
+        
+        <div class="upload-form">
+            <form id="uploadForm" enctype="multipart/form-data">
+                <label for="image">Select an image to upload:</label><br>
+                <input type="file" id="image" name="image" accept="image/*" required>
+                <br>
+                <button type="submit">Upload to Cloudinary</button>
+            </form>
+        </div>
+
+        <!-- Loading indicator -->
+        <div id="loading" class="loading">
+            <p>Uploading to Cloudinary...</p>
+            <div class="spinner"></div>
+        </div>
+    </div>
+
+    <!-- Popup Modal -->
+    <div id="popupOverlay" class="popup-overlay">
+        <div id="popupContent" class="popup-content">
+            <div class="popup-header">
+                <h3 id="popupTitle">Upload Result</h3>
+                <button class="popup-close" onclick="closePopup()">&times;</button>
+            </div>
+            <div id="popupBody" class="popup-body">
+                <!-- Content will be inserted here -->
+            </div>
+            <div class="popup-footer">
+                <button class="popup-button" onclick="closePopup()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Show toast notification
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+        
+        // Show popup
+        function showPopup(title, content, isSuccess = true) {
+            document.getElementById('popupTitle').textContent = title;
+            document.getElementById('popupBody').innerHTML = content;
+            document.getElementById('popupOverlay').style.display = 'flex';
+        }
+        
+        // Close popup
+        function closePopup() {
+            document.getElementById('popupOverlay').style.display = 'none';
+        }
+        
+        // Copy to clipboard
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('URL copied to clipboard!', 'success');
+            }).catch(() => {
+                showToast('Failed to copy URL', 'error');
+            });
+        }
+        
+        // Format JSON for display
+        function formatJSON(obj) {
+            return '<pre>' + JSON.stringify(obj, null, 2) + '</pre>';
+        }
+        
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('image');
+            const loadingDiv = document.getElementById('loading');
+            
+            if (!fileInput.files[0]) {
+                showToast('Please select an image first!', 'error');
+                return;
+            }
+            
+            // Show loading
+            loadingDiv.style.display = 'block';
+            
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+            
+            try {
+                // Send to upload.php endpoint
+                const response = await fetch('http://10.216.143.249/capstone_app_api/uploading/upload_seller_documents.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                // Hide loading
+                loadingDiv.style.display = 'none';
+                
+                if (data.success) {
+                    showToast('✅ Upload successful!', 'success');
+                    
+                    // Create popup content
+                    const popupContent = `
+                        <div class="image-preview">
+                            <img src="${data.data.url}" alt="Uploaded image">
+                        </div>
+                        
+                        <div class="url-buttons">
+                            <button class="url-button" onclick="copyToClipboard('${data.data.url}')">📋 Copy URL</button>
+                            <button class="url-button" onclick="window.open('${data.data.url}', '_blank')">🌐 Open Original</button>
+                            <button class="url-button" onclick="window.open('${data.data.thumbnail_url}', '_blank')">🖼️ Open Thumbnail</button>
+                            <button class="url-button" onclick="window.open('${data.data.optimized_url}', '_blank')">⚡ Open Optimized</button>
+                        </div>
+                        
+                        <div class="details">
+                            <h4>📊 Image Details:</h4>
+                            <p><strong>Public ID:</strong> ${data.data.public_id}</p>
+                            <p><strong>Original File:</strong> ${data.data.original_filename}</p>
+                            <p><strong>Size:</strong> ${data.data.size_kb} KB (${data.data.bytes} bytes)</p>
+                            <p><strong>Dimensions:</strong> ${data.data.width} x ${data.data.height} px</p>
+                            <p><strong>Format:</strong> ${data.data.format}</p>
+                            <p><strong>Folder:</strong> ${data.data.folder}</p>
+                            <p><strong>Upload Time:</strong> ${data.upload_time_ms} ms</p>
+                            <p><strong>Created:</strong> ${new Date(data.data.created_at).toLocaleString()}</p>
+                            <p><strong>Tags:</strong> ${data.data.tags.join(', ')}</p>
+                        </div>
+                        
+                        <div class="details">
+                            <h4>🔗 URLs:</h4>
+                            <p><strong>Original:</strong></p>
+                            <div class="url-box">${data.data.url}</div>
+                            <p><strong>Thumbnail (200x200):</strong></p>
+                            <div class="url-box">${data.data.thumbnail_url}</div>
+                            <p><strong>Optimized (auto):</strong></p>
+                            <div class="url-box">${data.data.optimized_url}</div>
+                        </div>
+                        
+                        <div class="debug-info">
+                            <h4 style="color: #00ff00; margin-top: 0;">🔧 Debug Info:</h4>
+                            <p><strong>Upload Time:</strong> ${data.upload_time_ms}ms</p>
+                            <p><strong>Response Status:</strong> ${response.status}</p>
+                            <p><strong>Timestamp:</strong> ${data.debug.timestamp}</p>
+                            <p><strong>Method:</strong> ${data.debug.method}</p>
+                        </div>
+                        
+                        <div class="details">
+                            <h4>📋 Full Response:</h4>
+                            ${formatJSON(data)}
+                        </div>
+                    `;
+                    
+                    showPopup('✅ Upload Successful!', popupContent, true);
+                } else {
+                    showToast('❌ Upload failed', 'error');
+                    
+                    // Create error popup content
+                    const errorContent = `
+                        <div class="details" style="background: #f8d7da; color: #721c24;">
+                            <h4 style="color: #721c24; margin-top: 0;">❌ Error Details:</h4>
+                            <p><strong>Message:</strong> ${data.error || 'Unknown error'}</p>
+                            <p><strong>Code:</strong> ${data.error_code || 'N/A'}</p>
+                        </div>
+                        
+                        <div class="debug-info">
+                            <h4 style="color: #00ff00; margin-top: 0;">🔧 Debug Info:</h4>
+                            <p><strong>Timestamp:</strong> ${data.debug?.timestamp || 'N/A'}</p>
+                            <p><strong>Method:</strong> ${data.debug?.method || 'N/A'}</p>
+                            <p><strong>Files:</strong> ${data.debug?.files?.join(', ') || 'None'}</p>
+                        </div>
+                        
+                        <div class="details">
+                            <h4>📋 Full Response:</h4>
+                            ${formatJSON(data)}
+                        </div>
+                        
+                        <div class="details">
+                            <h4>💡 Troubleshooting Tips:</h4>
+                            <ul style="margin: 10px 0; padding-left: 20px;">
+                                <li>Check if file is a valid image (JPG, PNG, GIF, WebP)</li>
+                                <li>Ensure file size is under 10MB</li>
+                                <li>Verify CLOUDINARY_URL is set in Render environment</li>
+                                <li>Check Render logs for more details</li>
+                            </ul>
+                        </div>
+                    `;
+                    
+                    showPopup('❌ Upload Failed', errorContent, false);
+                }
+            } catch (error) {
+                loadingDiv.style.display = 'none';
+                showToast('❌ Network Error: ' + error.message, 'error');
+                
+                // Show network error popup
+                const errorContent = `
+                    <div class="details" style="background: #f8d7da; color: #721c24;">
+                        <h4 style="color: #721c24; margin-top: 0;">🌐 Network Error:</h4>
+                        <p><strong>Message:</strong> ${error.message}</p>
+                    </div>
+                    
+                    <div class="details">
+                        <h4>💡 Troubleshooting Tips:</h4>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li>Check if your Render app is running</li>
+                            <li>Verify the URL in fetch is correct (${window.location.origin}/upload.php)</li>
+                            <li>Check browser console for more details (F12)</li>
+                            <li>Ensure CORS headers are properly set</li>
+                        </ul>
+                    </div>
+                `;
+                
+                showPopup('🌐 Network Error', errorContent, false);
+            }
+        });
+        
+        // Close popup when clicking outside
+        window.onclick = function(event) {
+            const popup = document.getElementById('popupOverlay');
+            if (event.target === popup) {
+                closePopup();
+            }
+        }
+        
+        // Close popup with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closePopup();
+            }
+        });
+    </script>
+</body>
+</html>
