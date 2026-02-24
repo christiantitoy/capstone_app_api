@@ -1,50 +1,59 @@
 <?php
 header('Content-Type: application/json');
-require 'db_connection.php';
 
-// Get JSON input
-$data = json_decode(file_get_contents("php://input"), true);
+require_once '/var/www/html/connection/db_connection.php';
 
-if (!$data || !isset($data['email'], $data['password'])) {
-    echo json_encode(["status" => "error", "message" => "Invalid input"]);
-    exit;
-}
+try {
+    // Get JSON input
+    $data = json_decode(file_get_contents("php://input"), true);
 
-$email = $data['email'];
-$password = $data['password'];
+    if (!$data || !isset($data['email'], $data['password'])) {
+        echo json_encode(["status" => "error", "message" => "Invalid input"]);
+        exit;
+    }
 
-// Fetch rider by email
-$stmt = $conn->prepare("SELECT id, password_hash FROM riders WHERE email = ?");
-$stmt->bind_param("s", $email);
-$stmt->execute();
-$result = $stmt->get_result();
+    $email = $data['email'];
+    $password = $data['password'];
 
-if ($result->num_rows === 0) {
-    echo json_encode(["status" => "email_not_found"]);
-    exit;
-}
+    // Fetch rider by email
+    $stmt = $conn->prepare("SELECT id, password_hash FROM riders WHERE email = :email");
+    $stmt->execute([':email' => $email]);
 
-$rider = $result->fetch_assoc();
+    $rider = $stmt->fetch(PDO::FETCH_ASSOC);
 
-// Verify password
-if (password_verify($password, $rider['password_hash'])) {
+    if (!$rider) {
+        echo json_encode(["status" => "email_not_found"]);
+        exit;
+    }
 
-    // ✅ Update rider status to ONLINE
-    $updateStmt = $conn->prepare("UPDATE riders SET status = 'online' WHERE id = ?");
-    $updateStmt->bind_param("i", $rider['id']);
-    $updateStmt->execute();
-    $updateStmt->close();
+    // Verify password
+    if (password_verify($password, $rider['password_hash'])) {
 
-    // ✅ Return rider_id
+        // ✅ Update rider status to ONLINE
+        $updateStmt = $conn->prepare("UPDATE riders SET status = 'online' WHERE id = :id");
+        $updateStmt->execute([':id' => $rider['id']]);
+
+        // ✅ Return rider_id
+        echo json_encode([
+            "status" => "success",
+            "rider_id" => (int)$rider['id']
+        ]);
+
+    } else {
+        echo json_encode(["status" => "wrong_password"]);
+    }
+
+} catch (PDOException $e) {
     echo json_encode([
-        "status" => "success",
-        "rider_id" => (int)$rider['id']
+        "status" => "error",
+        "message" => "Database error: " . $e->getMessage()
     ]);
-
-} else {
-    echo json_encode(["status" => "wrong_password"]);
+} catch (Exception $e) {
+    echo json_encode([
+        "status" => "error",
+        "message" => $e->getMessage()
+    ]);
 }
 
-$stmt->close();
-$conn->close();
+$conn = null; // Close PDO connection
 ?>
