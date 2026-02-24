@@ -10,7 +10,7 @@ header("Access-Control-Allow-Headers: Content-Type");
 header('Content-Type: application/json');
 
 // Load Composer's autoloader
-require __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
 
 use Cloudinary\Configuration\Configuration;
 use Cloudinary\Api\Upload\UploadApi;
@@ -100,7 +100,7 @@ try {
     $uploadApi = new UploadApi();
     
     // Prepare upload options
-    $folder = 'capstone_app_images/seller_profile';  // Clean, simple path
+    $folder = 'capstone_app_images/seller_avatar';  // Clean, simple path
     $publicId = uniqid('seller_', true); // Unique ID for each image
 
     // Upload to Cloudinary with additional options
@@ -111,7 +111,7 @@ try {
         'resource_type' => 'image',
         'quality' => 'auto',
         'fetch_format' => 'auto',
-        'tags' => ['seller_profile', 'capstone_app_images'] // Removed date from tags
+        'tags' => ['seller_avatar', 'capstone_app_images'] // Removed date from tags
     ];
     
     // Attempt upload with timing
