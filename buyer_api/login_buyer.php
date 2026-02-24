@@ -2,7 +2,7 @@
 header("Content-Type: application/json");
 
 // Database connection
-require_once '../db_connection.php';
+require_once '/var/www/html/db_connection.php';
 
 // Read POST values (can be JSON or form data)
 $input = json_decode(file_get_contents('php://input'), true);
