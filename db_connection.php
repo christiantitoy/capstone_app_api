@@ -26,7 +26,7 @@ try {
     // Optional: you can remove this echo in production
     echo json_encode([
         "status" => true,
-        "message" => "DB connected successfully"
+        "message" => "yesher"
     ]);
     
 } catch (PDOException $e) {
