@@ -3,7 +3,7 @@
 header("Content-Type: application/json");
 
 
-require_once '/var/www/html/db_connection.php';
+require_once '/var/www/html/connection/db_connection.php';
 
 // Check inputs
 if (!isset($_FILES['avatar']) || !isset($_POST['user_id'])) {

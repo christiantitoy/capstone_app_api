@@ -1,6 +1,7 @@
 <?php
 header("Content-Type: application/json; charset=UTF-8");
-require_once '/var/www/html/db_connection.php';
+
+require_once '/var/www/html/connection/db_connection.php';
 
 $username = $_POST['username'] ?? '';
 $email = $_POST['email'] ?? '';

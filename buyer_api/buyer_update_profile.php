@@ -2,7 +2,7 @@
 header("Content-Type: application/json; charset=UTF-8");
 
 // Database connection
-require_once '/var/www/html/db_connection.php';
+require_once '/var/www/html/connection/db_connection.php';
 
 // Check if request is JSON or form data
 $input = json_decode(file_get_contents('php://input'), true);

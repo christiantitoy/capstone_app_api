@@ -27,10 +27,10 @@ try {
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
     ]);
 
-    // echo json_encode([
-    //     "status" => true,
-    //     "message" => "Database connected successfully, finally"
-    // ]);
+    echo json_encode([
+        "status" => true,
+        "message" => "Database connected successfully, finally"
+    ]);
 
 } catch (PDOException $e) {
     echo json_encode([
