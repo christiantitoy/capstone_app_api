@@ -1,66 +1,71 @@
 <?php
 header("Content-Type: application/json; charset=UTF-8");
-
-// Database connection
 require_once 'db_connection.php';
 
-// Get POST fields
 $username = $_POST['username'] ?? '';
 $email = $_POST['email'] ?? '';
 $password = $_POST['password'] ?? '';
-$confirmPassword = $_POST['confirmPassword'] ?? '';
 
-// Check if username exists
-$stmt = $conn->prepare("SELECT id FROM buyers WHERE username = ?");
-$stmt->bind_param("s", $username);
-$stmt->execute();
-$stmt->store_result();
-if ($stmt->num_rows > 0) {
-    echo json_encode(["status" => "error", "message" => "Username already used"]);
+/* Check username */
+$stmt = $conn->prepare(
+    "SELECT id FROM buyers WHERE username = :username"
+);
+$stmt->execute(['username' => $username]);
+
+if ($stmt->rowCount() > 0) {
+    echo json_encode([
+        "status"=>"error",
+        "message"=>"Username already used"
+    ]);
     exit;
 }
-$stmt->close();
 
-// Check if email exists
-$stmt = $conn->prepare("SELECT id FROM buyers WHERE email = ?");
-$stmt->bind_param("s", $email);
-$stmt->execute();
-$stmt->store_result();
-if ($stmt->num_rows > 0) {
-    echo json_encode(["status" => "error", "message" => "Email already used"]);
+/* Check email */
+$stmt = $conn->prepare(
+    "SELECT id FROM buyers WHERE email = :email"
+);
+$stmt->execute(['email'=>$email]);
+
+if ($stmt->rowCount() > 0) {
+    echo json_encode([
+        "status"=>"error",
+        "message"=>"Email already used"
+    ]);
     exit;
 }
-$stmt->close();
 
-// Hash password for security
 $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
-// Insert new user
-$stmt = $conn->prepare("INSERT INTO buyers (username, email, password) VALUES (?, ?, ?)");
-$stmt->bind_param("sss", $username, $email, $hashedPassword);
+/* Insert */
+$stmt = $conn->prepare(
+"INSERT INTO buyers(username,email,password)
+ VALUES(:username,:email,:password)
+ RETURNING id"
+);
 
-if ($stmt->execute()) {
-    $user_id = $stmt->insert_id;
+$stmt->execute([
+    'username'=>$username,
+    'email'=>$email,
+    'password'=>$hashedPassword
+]);
 
-    // Fetch inserted user
-    $fetch = $conn->prepare("SELECT id, username, email, avatar_url FROM buyers WHERE id = ?");
-    $fetch->bind_param("i", $user_id);
-    $fetch->execute();
-    $res = $fetch->get_result();
-    $user = $res->fetch_assoc();
+$user_id = $stmt->fetchColumn();
 
-    echo json_encode([
-        "status" => "success",
-        "message" => "Account created successfully",
-        "id" => $user["id"],
-        "username" => $user["username"],
-        "email" => $user["email"],
-        "avatar_url" => $user["avatar_url"]
-    ]);
-} else {
-    echo json_encode(["status" => "error", "message" => "Account creation failed"]);
-}
+/* Fetch user */
+$stmt = $conn->prepare(
+"SELECT id, username, email, avatar_url
+ FROM buyers WHERE id = :id"
+);
 
-$stmt->close();
-$conn->close();
+$stmt->execute(['id'=>$user_id]);
+$user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+echo json_encode([
+    "status"=>"success",
+    "message"=>"Account created successfully",
+    "id"=>$user["id"],
+    "username"=>$user["username"],
+    "email"=>$user["email"],
+    "avatar_url"=>$user["avatar_url"]
+]);
 ?>
