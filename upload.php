@@ -100,18 +100,18 @@ try {
     $uploadApi = new UploadApi();
     
     // Prepare upload options
-    $folder = 'uploads/' . date('Y-m-d');
-    $publicId = uniqid('img_', true);
-    
+    $folder = 'capstone_app_images/buyer_profiles';  // Clean, simple path
+    $publicId = uniqid('buyer_', true); // Unique ID for each image
+
     // Upload to Cloudinary with additional options
     $uploadOptions = [
         'folder' => $folder,
         'public_id' => $publicId,
         'overwrite' => true,
         'resource_type' => 'image',
-        'quality' => 'auto', // Auto-optimize quality
-        'fetch_format' => 'auto', // Auto-convert to best format
-        'tags' => ['web_upload', date('Y-m-d')] // Add tags for easy searching
+        'quality' => 'auto',
+        'fetch_format' => 'auto',
+        'tags' => ['buyer_profile', 'capstone_app'] // Removed date from tags
     ];
     
     // Attempt upload with timing
