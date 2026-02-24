@@ -1,26 +1,26 @@
 <?php
 header('Content-Type: application/json');
-require 'db_connection.php'; // your existing DB connection
+
+require_once '/var/www/html/connection/db_connection.php'; // your existing DB connection (should be PDO now)
 
 try {
-    //  If an ID is passed in the query (e.g. get_all_products.php?id=5)
+    // If an ID is passed in the query (e.g. get_all_products.php?id=5)
     if (isset($_GET['id'])) {
         $id = intval($_GET['id']);
 
         $sql = "SELECT p.id, p.product_name, p.product_description, p.price, p.stock, p.main_image_url, p.has_variations, s.shop_name 
             FROM products p 
             JOIN seller_profiles s ON p.seller_id = s.id
-            WHERE p.id = ? AND p.status = 'approved'";
+            WHERE p.id = :id AND p.status = 'approved'";
 
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("i", $id);
-        $stmt->execute();
-        $result = $stmt->get_result();
+        $stmt->execute([':id' => $id]);
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $products = [];
 
-        if ($result->num_rows > 0) {
-            while ($row = $result->fetch_assoc()) {
+        if (count($result) > 0) {
+            foreach ($result as $row) {
                 $products[] = [
                     'id' => (int)$row['id'],
                     'title' => $row['product_name'],
@@ -40,20 +40,20 @@ try {
         exit;
     }
 
-
-    //  Original list-all-products code remains here:
+    // Original list-all-products code remains here:
     $sql = "SELECT p.id, p.product_name, p.price, p.main_image_url, p.seller_id, s.shop_name 
             FROM products p 
             JOIN seller_profiles s ON p.seller_id = s.id
             WHERE p.status = 'approved' 
             ORDER BY p.id DESC";
 
-    $result = $conn->query($sql);
+    $stmt = $conn->query($sql);
+    $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     $products = [];
 
-    if ($result->num_rows > 0) {
-        while($row = $result->fetch_assoc()) {
+    if (count($result) > 0) {
+        foreach ($result as $row) {
             $products[] = [
                 'id' => (int)$row['id'],
                 'title' => $row['product_name'],
@@ -65,12 +65,10 @@ try {
         }
         echo json_encode(['status' => 'success', 'products' => $products]);
     } else {
-        echo json_encode(['status' => 'success', 'No Products Found Boss']);
+        echo json_encode(['status' => 'success', 'message' => 'No Products Found Boss']);
     }
 
-    
-
-} catch (Exception $e) {
+} catch (PDOException $e) {
     echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
 ?>
