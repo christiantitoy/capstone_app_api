@@ -1,6 +1,7 @@
 <?php
 header('Content-Type: application/json');
-require 'db_connection.php';
+
+require_once '/var/www/html/connection/db_connection.php';
 
 try {
     if (!isset($_GET['rider_id'])) {
@@ -13,15 +14,15 @@ try {
 
     $rider_id = intval($_GET['rider_id']);
 
-    // 1️⃣ First, revert expired locked orders to shipped
-    $updateSql = "UPDATE orders 
+    // 1️⃣ First, revert expired locked orders to shipped using PDO
+    $updateSql = "UPDATE orders
                   SET status = 'shipped'
-                  WHERE status = 'locked' 
+                  WHERE status = 'locked'
                   AND locked_at < (NOW() - INTERVAL 30 SECOND)";
-    $conn->query($updateSql);
+    $conn->exec($updateSql);
 
     // 2️⃣ Fetch all orders with status = 'shipped' (now includes previously locked but expired)
-    $sql = "SELECT 
+    $sql = "SELECT
                 o.id,
                 o.buyer_id,
                 o.address_id,
@@ -44,11 +45,12 @@ try {
     $stmt = $conn->prepare($sql);
     $stmt->execute();
 
-    $result = $stmt->get_result();
-    $orders = [];
+    $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    while ($row = $result->fetch_assoc()) {
-        $orders[] = [
+    // Format the orders array
+    $formattedOrders = [];
+    foreach ($orders as $row) {
+        $formattedOrders[] = [
             'id' => (int)$row['id'],
             'buyerId' => (int)$row['buyer_id'],
             'addressId' => (int)$row['address_id'],
@@ -68,10 +70,15 @@ try {
 
     echo json_encode([
         'status' => 'success',
-        'orders' => $orders,
-        'count' => count($orders)
+        'orders' => $formattedOrders,
+        'count' => count($formattedOrders)
     ]);
 
+} catch (PDOException $e) {
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Database error: ' . $e->getMessage()
+    ]);
 } catch (Exception $e) {
     echo json_encode([
         'status' => 'error',
