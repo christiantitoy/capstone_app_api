@@ -14,7 +14,6 @@ try {
         exit;
     }
 
-    // Validate required fields
     $required = [
         'buyer_id',
         'address_id',
@@ -46,7 +45,7 @@ try {
 
     $conn->beginTransaction();
 
-    // 1️⃣ Insert order
+    // ✅ Insert Order
     $orderSql = "
         INSERT INTO orders (
             buyer_id, address_id, payment_method,
@@ -70,7 +69,7 @@ try {
 
     $orderId = $conn->lastInsertId();
 
-    // 2️⃣ Insert order items
+    // ✅ Insert Order Items
     $itemSql = "
         INSERT INTO order_items (
             order_id,
@@ -94,6 +93,7 @@ try {
     $itemStmt = $conn->prepare($itemSql);
 
     foreach ($data['items'] as $item) {
+
         $totalPrice = $item['unit_price'] * $item['quantity'];
 
         $itemStmt->execute([
@@ -106,22 +106,22 @@ try {
             ':total_price' => $totalPrice
         ]);
 
-        // 3️⃣ Mark cart items as purchased
-        // Find cart items for this buyer + product + variation that are not yet purchased
+        // ✅ SIMPLE POSTGRES FIX HERE
         $updateSql = "
             UPDATE cart_items
             SET is_purchased = 1
             WHERE buyer_id = :buyer_id
               AND product_id = :product_id
-              AND (variation_id = :variation_id OR (variation_id IS NULL AND :variation_id2 IS NULL))
+              AND variation_id IS NOT DISTINCT FROM :variation_id
               AND is_purchased = 0
         ";
+
         $updateStmt = $conn->prepare($updateSql);
+
         $updateStmt->execute([
             ':buyer_id' => $data['buyer_id'],
             ':product_id' => $item['product_id'],
-            ':variation_id' => $item['variation_id'],
-            ':variation_id2' => $item['variation_id'] // Duplicate for the NULL check
+            ':variation_id' => $item['variation_id']
         ]);
     }
 
@@ -134,17 +134,22 @@ try {
     ]);
 
 } catch (PDOException $e) {
+
     if ($conn->inTransaction()) {
         $conn->rollBack();
     }
+
     echo json_encode([
         "status" => "error",
         "message" => "Database error: " . $e->getMessage()
     ]);
+
 } catch (Exception $e) {
+
     if ($conn->inTransaction()) {
         $conn->rollBack();
     }
+
     echo json_encode([
         "status" => "error",
         "message" => "Failed to place order",
@@ -152,5 +157,5 @@ try {
     ]);
 }
 
-$conn = null; // Close PDO connection
+$conn = null;
 ?>
