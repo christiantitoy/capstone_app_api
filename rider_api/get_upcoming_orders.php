@@ -16,9 +16,9 @@ try {
 
     // 1️⃣ First, revert expired locked orders to shipped using PDO
     $updateSql = "UPDATE orders
-                  SET status = 'shipped'
-                  WHERE status = 'locked'
-                  AND locked_at < (NOW() - INTERVAL 30 SECOND)";
+              SET status = 'shipped'
+              WHERE status = 'locked'
+              AND locked_at < NOW() - INTERVAL '30 seconds'";
     $conn->exec($updateSql);
 
     // 2️⃣ Fetch all orders with status = 'shipped' (now includes previously locked but expired)
