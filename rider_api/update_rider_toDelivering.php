@@ -28,7 +28,7 @@ try {
     }
 
     // Optional: Validate status values if needed
-    $allowed_statuses = ['online', 'offline', 'active', 'inactive']; // Adjust as needed
+    $allowed_statuses = ['online', 'offline', 'delivering']; // Adjust as needed
     if (!in_array($status, $allowed_statuses)) {
         echo json_encode([
             "status" => "error",
