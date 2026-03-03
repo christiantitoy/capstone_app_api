@@ -4,6 +4,7 @@ header('Content-Type: application/json');
 require_once '/var/www/html/connection/db_connection.php';
 
 try {
+    // Check if rider_id is provided
     if (!isset($_GET['rider_id'])) {
         echo json_encode([
             'status' => 'error',
@@ -14,14 +15,14 @@ try {
 
     $rider_id = intval($_GET['rider_id']);
 
-    // 1️⃣ First, revert expired locked orders to shipped using PDO
+    // 1️⃣ Revert expired locked orders to shipped
     $updateSql = "UPDATE orders
-              SET status = 'shipped'
-              WHERE status = 'locked'
-              AND locked_at < NOW() - INTERVAL '30 seconds'";
+                  SET status = 'shipped'
+                  WHERE status = 'locked'
+                  AND locked_at < NOW() - INTERVAL '30 seconds'";
     $conn->exec($updateSql);
 
-    // 2️⃣ Fetch all orders with status = 'shipped' (now includes previously locked but expired)
+    // 2️⃣ Fetch all shipped orders, excluding ones cancelled by this rider
     $sql = "SELECT
                 o.id,
                 o.buyer_id,
@@ -40,9 +41,17 @@ try {
             FROM orders o
             LEFT JOIN buyer_addresses ba ON o.address_id = ba.id
             WHERE o.status = 'shipped'
+            AND NOT EXISTS (
+                SELECT 1
+                FROM order_deliveries od
+                WHERE od.order_id = o.id
+                AND od.rider_id = :rider_id
+                AND od.status = 'cancelled'
+            )
             ORDER BY o.created_at ASC";
 
     $stmt = $conn->prepare($sql);
+    $stmt->bindParam(':rider_id', $rider_id, PDO::PARAM_INT);
     $stmt->execute();
 
     $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
