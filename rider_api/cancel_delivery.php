@@ -1,70 +1,82 @@
 <?php
 header("Content-Type: application/json");
 
-require_once "/var/www/html/connection/db_connection.php"; // Updated to match your path
+require_once "/var/www/html/connection/db_connection.php";
 
 try {
-    // Handle both JSON and form-data input
+
     $delivery_id = null;
     $rider_id = null;
+    $order_id = null;
 
-    // Check if it's JSON content type
+    // Handle JSON or form-data
     if (isset($_SERVER['CONTENT_TYPE']) && $_SERVER['CONTENT_TYPE'] === 'application/json') {
         $data = json_decode(file_get_contents("php://input"), true);
         $delivery_id = $data['delivery_id'] ?? null;
         $rider_id = $data['rider_id'] ?? null;
+        $order_id = $data['order_id'] ?? null;
     } else {
-        // Regular form POST
         $delivery_id = $_POST['delivery_id'] ?? null;
         $rider_id = $_POST['rider_id'] ?? null;
+        $order_id = $_POST['order_id'] ?? null;
     }
 
-    if (!$delivery_id || !$rider_id) {
+    if (!$delivery_id || !$rider_id || !$order_id) {
         echo json_encode([
             "success" => false,
-            "message" => "Missing delivery_id or rider_id"
+            "message" => "Missing delivery_id, rider_id, or order_id"
         ]);
         exit;
     }
 
-    // Start transaction to ensure both queries succeed
     $conn->beginTransaction();
 
     try {
-        // 1️⃣ Cancel the delivery
-        $sqlOrder = "UPDATE order_deliveries
-                     SET status = 'cancelled', cancelled_at = NOW()
-                     WHERE id = ?";
-        $stmtOrder = $conn->prepare($sqlOrder);
-        $stmtOrder->execute([$delivery_id]);
 
-        // Check if delivery was found and updated
-        if ($stmtOrder->rowCount() === 0) {
+        // 1️⃣ Cancel delivery
+        $sqlDelivery = "UPDATE order_deliveries
+                        SET status = 'cancelled',
+                            cancelled_at = NOW()
+                        WHERE id = ?";
+        $stmtDelivery = $conn->prepare($sqlDelivery);
+        $stmtDelivery->execute([$delivery_id]);
+
+        if ($stmtDelivery->rowCount() === 0) {
             throw new Exception("Delivery not found or already cancelled");
         }
 
         // 2️⃣ Update rider status to online
-        $sqlRider = "UPDATE riders SET status = 'online' WHERE id = ?";
+        $sqlRider = "UPDATE riders
+                     SET status = 'online'
+                     WHERE id = ?";
         $stmtRider = $conn->prepare($sqlRider);
         $stmtRider->execute([$rider_id]);
 
-        // Check if rider was found and updated
         if ($stmtRider->rowCount() === 0) {
             throw new Exception("Rider not found");
         }
 
-        // Commit both updates
+        // 3️⃣ Update order status to shipped
+        $sqlOrder = "UPDATE orders
+                     SET status = 'shipped'
+                     WHERE id = ?";
+        $stmtOrder = $conn->prepare($sqlOrder);
+        $stmtOrder->execute([$order_id]);
+
+        if ($stmtOrder->rowCount() === 0) {
+            throw new Exception("Order not found");
+        }
+
         $conn->commit();
 
         echo json_encode([
             "success" => true,
-            "message" => "Order cancelled and rider status updated to online"
+            "message" => "Delivery cancelled, rider set to online, and order marked as shipped"
         ]);
 
     } catch (Exception $e) {
-        // Rollback on error
         $conn->rollBack();
-        throw $e; // Re-throw to be caught by outer catch
+        throw $e;
     }
 
 } catch (PDOException $e) {
@@ -78,6 +90,4 @@ try {
         "message" => $e->getMessage()
     ]);
 }
-
-// No need to explicitly close the connection with PDO
 ?>

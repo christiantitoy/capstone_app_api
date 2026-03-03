@@ -1,45 +1,39 @@
 <?php
 header("Content-Type: application/json");
 
-require_once "/var/www/html/connection/db_connection.php"; // Updated to match your path
+require_once "/var/www/html/connection/db_connection.php";
 
 try {
-    // Handle both JSON and form-data input
+
     $delivery_id = null;
     $rider_id = null;
+    $order_id = null;
 
-    // Check if it's JSON content type
+    // Handle JSON or form-data
     if (isset($_SERVER['CONTENT_TYPE']) && $_SERVER['CONTENT_TYPE'] === 'application/json') {
         $data = json_decode(file_get_contents("php://input"), true);
         $delivery_id = $data['delivery_id'] ?? null;
         $rider_id = $data['rider_id'] ?? null;
+        $order_id = $data['order_id'] ?? null;
     } else {
-        // Regular form POST
         $delivery_id = $_POST['delivery_id'] ?? null;
         $rider_id = $_POST['rider_id'] ?? null;
+        $order_id = $_POST['order_id'] ?? null;
     }
 
-    if (!$delivery_id) {
+    if (!$delivery_id || !$rider_id || !$order_id) {
         echo json_encode([
             "success" => false,
-            "message" => "Missing delivery_id"
+            "message" => "Missing delivery_id, rider_id, or order_id"
         ]);
         exit;
     }
 
-    if (!$rider_id) {
-        echo json_encode([
-            "success" => false,
-            "message" => "Missing rider_id"
-        ]);
-        exit;
-    }
-
-    // Start transaction
     $conn->beginTransaction();
 
     try {
-        // First, update the order delivery status
+
+        // 1️⃣ Update order_deliveries to completed
         $sql1 = "
             UPDATE order_deliveries
             SET status = 'completed',
@@ -48,18 +42,13 @@ try {
         ";
 
         $stmt1 = $conn->prepare($sql1);
-        $success1 = $stmt1->execute([$delivery_id]);
+        $stmt1->execute([$delivery_id]);
 
-        if (!$success1) {
-            throw new Exception("Failed to update order delivery status");
-        }
-
-        // Check if delivery was found and updated
         if ($stmt1->rowCount() === 0) {
             throw new Exception("Delivery not found or already completed");
         }
 
-        // Second, update the rider status to online
+        // 2️⃣ Update rider status to online
         $sql2 = "
             UPDATE riders
             SET status = 'online'
@@ -67,18 +56,26 @@ try {
         ";
 
         $stmt2 = $conn->prepare($sql2);
-        $success2 = $stmt2->execute([$rider_id]);
+        $stmt2->execute([$rider_id]);
 
-        if (!$success2) {
-            throw new Exception("Failed to update rider status");
-        }
-
-        // Check if rider was found and updated
         if ($stmt2->rowCount() === 0) {
             throw new Exception("Rider not found");
         }
 
-        // Commit transaction
+        // 3️⃣ Update orders table to delivered
+        $sql3 = "
+            UPDATE orders
+            SET status = 'delivered'
+            WHERE id = ?
+        ";
+
+        $stmt3 = $conn->prepare($sql3);
+        $stmt3->execute([$order_id]);
+
+        if ($stmt3->rowCount() === 0) {
+            throw new Exception("Order not found");
+        }
+
         $conn->commit();
 
         echo json_encode([
@@ -87,9 +84,8 @@ try {
         ]);
 
     } catch (Exception $e) {
-        // Rollback transaction on error
         $conn->rollBack();
-        throw $e; // Re-throw to be caught by outer catch
+        throw $e;
     }
 
 } catch (PDOException $e) {
@@ -103,6 +99,4 @@ try {
         "message" => $e->getMessage()
     ]);
 }
-
-// No need to explicitly close the connection with PDO
 ?>
