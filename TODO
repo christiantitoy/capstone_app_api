@@ -1,0 +1,46 @@
+var showButDialog by remember { mutableStateOf(false) }
+
+ButtonInDevelopmentDialog(
+        show = showButDialog,
+        onDismiss = {
+            showButDialog = false
+        }
+    )
+
+
+val showLoading = isLoading || !isContentReady
+
+    Loading(
+        errorViewModel,
+        showLoading,  // Changed from isLoading to showLoading
+        networkDialog
+    )
+
+    --------------
+
+    var showDevDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        showDevDialog = true
+    }
+
+    InDevelopmentDialog(
+        show = showDevDialog,
+        onDismiss = {
+            showDevDialog = false
+            // For popping back to a specific destination inclusive
+            navController.popBackStack("home",
+                inclusive = false)
+        }
+    )
+
+
+    
+TODO TOMS: 
+add errorviewmodel to the loginviewmodel to use the isloading to the funs in the loding viewmodel,
+
+ also add a isloding in every funs that requires it,
+
+ fix the rides accepted orders its not showing in the ui, the orders is good it is functioning well
+
+ the error is in the order_deliveries, it is empty even the rider accepts the delivery

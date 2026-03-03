@@ -1,40 +1,53 @@
 <?php
 header("Content-Type: application/json");
-require_once 'db_connection.php';
 
-$order_id = $_POST['order_id'] ?? null;
-$rider_id = $_POST['rider_id'] ?? null;
+require_once '/var/www/html/connection/db_connection.php';
 
-if (!$order_id || !$rider_id) {
-    echo json_encode([
-        "success" => false,
-        "message" => "Missing parameters"
-    ]);
-    exit;
-}
+try {
 
-$stmt = $conn->prepare("
-    INSERT INTO order_deliveries (
-        order_id,
-        rider_id,
-        status,
-        assigned_at
-    ) VALUES (?, ?, 'assigned', NOW())
-");
+    $order_id = $_POST['order_id'] ?? null;
+    $rider_id = $_POST['rider_id'] ?? null;
 
-$stmt->bind_param("ii", $order_id, $rider_id);
+    if (!$order_id || !$rider_id) {
+        echo json_encode([
+            "success" => false,
+            "message" => "Missing parameters"
+        ]);
+        exit;
+    }
 
-if ($stmt->execute()) {
+    $stmt = $conn->prepare("
+        INSERT INTO order_deliveries (
+            order_id,
+            rider_id,
+            status,
+            assigned_at
+        ) VALUES (
+            :order_id,
+            :rider_id,
+            'assigned',
+            NOW()
+        )
+    ");
+
+    $stmt->bindParam(':order_id', $order_id, PDO::PARAM_INT);
+    $stmt->bindParam(':rider_id', $rider_id, PDO::PARAM_INT);
+
+    $stmt->execute();
+
     echo json_encode([
         "success" => true,
         "message" => "Order delivery record created"
     ]);
-} else {
+
+} catch (PDOException $e) {
+
     echo json_encode([
         "success" => false,
-        "message" => "Failed to create order delivery"
+        "message" => "Failed to create order delivery",
+        "error" => $e->getMessage() // remove in production
     ]);
+
 }
 
-$stmt->close();
-$conn->close();
+$conn = null; // Close connection
