@@ -1,10 +1,15 @@
 <?php
-// send-verification-email.php (2026 version using Brevo API)
+// send-verification-email.php (2026-ready with debug)
+
+// Enable error logging
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
 // Get email from URL
 $email = $_GET['email'] ?? '';
 if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    header("Location: /seller/ui/signup.php");
+    echo "Invalid email. Please provide a valid email address.";
     exit;
 }
 
@@ -13,8 +18,12 @@ $verificationPage = "https://capstone-app-api-r1ux.onrender.com/seller/ui/verify
 
 // Get Brevo API key from environment
 $apiKey = getenv('BREVO_API_KEY');
+if (!$apiKey) {
+    echo "BREVO_API_KEY not set in environment!";
+    exit;
+}
 
-// Prepare HTML email (same style as your original)
+// Prepare HTML email
 $htmlContent = "
 <html>
 <head>
@@ -39,7 +48,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; background: #f4f4f4; pa
 
 // Prepare JSON payload for Brevo API
 $data = [
-    "sender" => ["name" => "PalitOra", "email" => "a46687001@smtp-brevo.com"],
+    "sender" => ["name" => "PalitOra", "email" => "a46687001@smtp-brevo.com"], // must be verified
     "to" => [["email" => $email]],
     "subject" => "Verify Your PalitOra Account",
     "htmlContent" => $htmlContent
@@ -62,11 +71,27 @@ curl_close($ch);
 
 // Handle response
 if ($error) {
-    error_log("Email send failed for {$email}. Error: $error");
-    echo "Error sending email: $error";
+    // cURL error
+    error_log("Email send failed for {$email}. cURL error: $error");
+    echo "<h3>Error sending email:</h3><p>$error</p>";
 } else {
-    error_log("Verification email successfully sent to: {$email}");
-    header("Location: /seller/ui/emailVerification.php?email=" . urlencode($email));
-    exit;
+    // Decode Brevo API response
+    $json = json_decode($response, true);
+    echo "<pre>Brevo API response:\n";
+    print_r($json);
+    echo "</pre>";
+
+    if (isset($json['messageId'])) {
+        // Success
+        error_log("Verification email successfully queued for: {$email}. Message ID: " . $json['messageId']);
+        echo "<h3>Email queued successfully!</h3>";
+        echo "<p>Check your inbox (or spam) for the verification email.</p>";
+        echo "<p><a href='/seller/ui/emailVerification.php?email=" . urlencode($email) . "'>Continue</a></p>";
+    } else {
+        // Failed
+        error_log("Email not sent for {$email}. API Response: " . $response);
+        echo "<h3>Email not sent!</h3>";
+        echo "<p>Check API response above for details.</p>";
+    }
 }
 ?>
