@@ -8,7 +8,7 @@ if (!isset($conn)) {
     die("Database connection failed");
 }
 
-$redirect = '/seller/backend/auth/signup.php';  
+$redirect = '/seller/ui/signup.php';  
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header("Location: $redirect");
