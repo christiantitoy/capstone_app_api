@@ -144,7 +144,7 @@ unset($_SESSION['old_input']);
     const phpSuccess = <?= json_encode($success) ?>;
     </script>
 
-   <script src="../js/showDialog.js?v=<?= time() ?>"></script>
+   <script src="../js/reusables/showDialog.js?v=<?= time() ?>"></script>
 
 </body>
 </html>
