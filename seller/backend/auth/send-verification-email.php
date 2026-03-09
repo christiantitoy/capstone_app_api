@@ -1,15 +1,10 @@
 <?php
-// send-verification-email.php (2026-ready with debug)
-
-// Enable error logging
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+// send-verification-email.php (production version)
 
 // Get email from URL
 $email = $_GET['email'] ?? '';
 if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    echo "Invalid email. Please provide a valid email address.";
+    header("Location: /seller/ui/signup.php");
     exit;
 }
 
@@ -19,7 +14,8 @@ $verificationPage = "https://capstone-app-api-r1ux.onrender.com/seller/ui/verify
 // Get Brevo API key from environment
 $apiKey = getenv('BREVO_API_KEY');
 if (!$apiKey) {
-    echo "BREVO_API_KEY not set in environment!";
+    error_log("BREVO_API_KEY not set.");
+    header("Location: /seller/ui/signup.php");
     exit;
 }
 
@@ -46,52 +42,54 @@ body { font-family: Arial, sans-serif; line-height: 1.6; background: #f4f4f4; pa
 </html>
 ";
 
-// Prepare JSON payload for Brevo API
+// Prepare JSON payload
 $data = [
-    "sender" => ["name" => "PalitOra", "email" => "christiantitoy@gmail.com"], // must be verified
-    "to" => [["email" => $email]],
+    "sender" => [
+        "name" => "PalitOra",
+        "email" => "christiantitoy@gmail.com"
+    ],
+    "to" => [
+        ["email" => $email]
+    ],
     "subject" => "Verify Your PalitOra Account",
-    "htmlContent" => $htmlContent
+    "htmlContent" => $htmlContent,
+    "textContent" => "Verify your account: $verificationPage"
 ];
 
 // Send email using cURL
 $ch = curl_init("https://api.brevo.com/v3/smtp/email");
+
 curl_setopt($ch, CURLOPT_HTTPHEADER, [
     "accept: application/json",
     "content-type: application/json",
     "api-key: $apiKey"
 ]);
+
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_POST, true);
 curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
 
 $response = curl_exec($ch);
 $error = curl_error($ch);
+
 curl_close($ch);
 
-// Handle response
+// Handle result
 if ($error) {
-    // cURL error
-    error_log("Email send failed for {$email}. cURL error: $error");
-    echo "<h3>Error sending email:</h3><p>$error</p>";
-} else {
-    // Decode Brevo API response
-    $json = json_decode($response, true);
-    echo "<pre>Brevo API response:\n";
-    print_r($json);
-    echo "</pre>";
+    error_log("Email send failed for {$email}: $error");
+    header("Location: /seller/ui/signup.php");
+    exit;
+}
 
-    if (isset($json['messageId'])) {
-        // Success
-        error_log("Verification email successfully queued for: {$email}. Message ID: " . $json['messageId']);
-        echo "<h3>Email queued successfully!</h3>";
-        echo "<p>Check your inbox (or spam) for the verification email.</p>";
-        echo "<p><a href='/seller/ui/emailVerification.php?email=" . urlencode($email) . "'>Continue</a></p>";
-    } else {
-        // Failed
-        error_log("Email not sent for {$email}. API Response: " . $response);
-        echo "<h3>Email not sent!</h3>";
-        echo "<p>Check API response above for details.</p>";
-    }
+$json = json_decode($response, true);
+
+if (isset($json['messageId'])) {
+    // Success → redirect to verification page
+    header("Location: /seller/ui/emailVerification.php?email=" . urlencode($email));
+    exit;
+} else {
+    error_log("Brevo API error: " . $response);
+    header("Location: /seller/ui/signup.php");
+    exit;
 }
 ?>
