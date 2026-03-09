@@ -90,7 +90,7 @@ try {
     // Success - clear stored input
     unset($_SESSION['old_input']);
 
-    header("Location: ../ui/login.php");
+    header("Location: /seller/ui/login.php");
     exit;
 
 } catch (PDOException $e) {
