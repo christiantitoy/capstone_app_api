@@ -48,7 +48,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; background: #f4f4f4; pa
 
 // Prepare JSON payload for Brevo API
 $data = [
-    "sender" => ["name" => "PalitOra", "email" => "a46687001@smtp-brevo.com"], // must be verified
+    "sender" => ["name" => "PalitOra", "email" => "christiantitoy@gmail.com"], // must be verified
     "to" => [["email" => $email]],
     "subject" => "Verify Your PalitOra Account",
     "htmlContent" => $htmlContent
