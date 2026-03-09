@@ -8,7 +8,7 @@ if (!isset($conn)) {
     die("Database connection failed");
 }
 
-$redirect = '/seller/backend/auth/sellerSignup.php';  // Changed to absolute path from root
+$redirect = '/seller/backend/auth/signup.php';  
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header("Location: $redirect");
