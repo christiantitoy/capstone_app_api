@@ -52,8 +52,8 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 }
 
 try {
-    // Check if email exists - using $conn instead of $pdo
-    $stmt = $conn->prepare("SELECT 1 FROM sellers WHERE email = ?");  // Changed from $pdo to $conn
+    // Check if email exists
+    $stmt = $conn->prepare("SELECT 1 FROM sellers WHERE email = ?");
     $stmt->execute([$email]);
     if ($stmt->fetch()) {
         $_SESSION['form_data'] = $_POST;
@@ -64,7 +64,8 @@ try {
     // Create account
     $hashed = password_hash($password, PASSWORD_DEFAULT);
 
-    $stmt = $conn->prepare("  // Changed from $pdo to $conn
+    // Fixed: Removed the comment from inside the string
+    $stmt = $conn->prepare("
         INSERT INTO sellers (full_name, email, password)
         VALUES (?, ?, ?)
     ");
