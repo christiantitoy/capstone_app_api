@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PalitOra - Local Marketplace for Dumaguete City</title>
+    <link rel="stylesheet" href="../css/index.css?v=<?php echo filemtime('index.css'); ?>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="landing-nav">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="index.html"><img src="../image/app_icon.png" alt="PalitOra Logo"></a>
+                <h1>Palit<span>Ora</span></h1>
+            </div>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#pricing">Pricing</a>
+                <a href="login.html" class="nav-btn">Sign In</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container">
+            <h1>Empower Your Local Business in Dumaguete</h1>
+            <p>Join the city's fastest-growing marketplace. Sell smarter, manage your team, and grow your orders — all in one simple place.</p>
+            <div class="hero-buttons">
+                <a href="signup.html" class="hero-btn btn-primary">Start Selling Today</a>
+                <a href="login.html" class="hero-btn btn-outline">Sign In</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="stats">
+        <div class="container">
+            <div class="stats-container">
+                <div class="stat-item"><h3>500+</h3><p>Local Sellers</p></div>
+                <div class="stat-item"><h3>10,000+</h3><p>Monthly Orders</p></div>
+                <div class="stat-item"><h3>50+</h3><p>Barangays Served</p></div>
+                <div class="stat-item"><h3>4.8/5</h3><p>Seller Rating</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section id="features" class="features-section">
+        <div class="container">
+            <div class="section-title">
+                <h2>Why Choose PalitOra?</h2>
+                <p>The complete e-commerce solution built for local Dumaguete businesses</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-tachometer-alt"></i></div>
+                    <h3>Smart Dashboard</h3>
+                    <p>Real-time insights, sales analytics, and inventory at your fingertips.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-users"></i></div>
+                    <h3>Team Management</h3>
+                    <p>Role-based access for employees — perfect for growing stores.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-truck"></i></div>
+                    <h3>Local Delivery</h3>
+                    <p>Fast same-day/next-day delivery within Dumaguete and nearby.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
+                    <h3>Mobile Ready</h3>
+                    <p>Manage everything from your phone — anytime, anywhere.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+                    <h3>Advanced Analytics</h3>
+                    <p>Understand your customers and sales performance deeply.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-headset"></i></div>
+                    <h3>Priority Support</h3>
+                    <p>24/7 help for premium members — we're here when you need us.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section id="pricing" class="pricing-section">
+        <div class="container">
+            <div class="section-title">
+                <h2>Choose Your Perfect Plan</h2>
+                <p>Start free — upgrade when you're ready to grow</p>
+            </div>
+
+            <!-- Segmented Radio Toggle -->
+            <div class="pricing-toggle">
+                <div class="toggle-group">
+                    <label class="toggle-label">
+                        <input type="radio" name="billing" value="monthly" id="monthlyRadio" checked />
+                        <span class="toggle-option">Monthly</span>
+                    </label>
+
+                    <label class="toggle-label">
+                        <input type="radio" name="billing" value="yearly" id="yearlyRadio" />
+                        <span class="toggle-option">
+                            Yearly <span class="save-pill">Save 16%</span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Monthly Plans -->
+            <div id="monthlyPlans" class="billing-period active">
+                <div class="pricing-grid">
+                    <!-- Bronze -->
+                    <div class="pricing-card bronze">
+                        <div class="free-badge">FREE</div>
+                        <div class="pricing-header">
+                            <h3>Bronze</h3>
+                            <div class="price-free">₱0</div>
+                            <div class="price-period">forever</div>
+                        </div>
+                        <div class="pricing-body">
+                            <div class="employee-count">
+                                <i class="fas fa-users"></i> 0 employees
+                            </div>
+                            <ul class="feature-list">
+                                <li><i class="fas fa-check"></i> Up to 50 products</li>
+                                <li><i class="fas fa-check"></i> Standard product visibility</li>
+                                <li><i class="fas fa-check"></i> Basic promo tools</li>
+                                <li class="disabled"><i class="fas fa-times"></i> App coupons</li>
+                                <li class="disabled"><i class="fas fa-times"></i> Featured products</li>
+                                <li class="disabled"><i class="fas fa-times"></i> Priority in search</li>
+                            </ul>
+                            <a href="signup.html?plan=bronze&billing=monthly" class="pricing-btn">Start Free</a>
+                        </div>
+                    </div>
+
+                    <!-- Silver -->
+                    <div class="pricing-card popular silver">
+                        <div class="popular-badge">MOST POPULAR</div>
+                        <div class="pricing-header">
+                            <h3>Silver</h3>
+                            <div class="price">₱300</div>
+                            <div class="price-period">per month</div>
+                        </div>
+                        <div class="pricing-body">
+                            <div class="employee-count">
+                                <i class="fas fa-users"></i> Up to 10 employees
+                            </div>
+                            <ul class="feature-list">
+                                <li><i class="fas fa-check"></i> Up to 500 products</li>
+                                <li><i class="fas fa-check"></i> Products can be featured</li>
+                                <li><i class="fas fa-check"></i> App coupons</li>
+                                <li><i class="fas fa-check"></i> Basic promo tools</li>
+                                <li><i class="fas fa-check"></i> Top 10 best-selling products can be featured</li>
+                                <li><i class="fas fa-check"></i> Standard + improved visibility</li>
+                            </ul>
+                            <a href="signup.html?plan=silver&billing=monthly" class="pricing-btn">Get Silver</a>
+                        </div>
+                    </div>
+
+                    <!-- Gold -->
+                    <div class="pricing-card gold">
+                        <div class="pricing-header">
+                            <h3>Gold</h3>
+                            <div class="price">₱800</div>
+                            <div class="price-period">per month</div>
+                        </div>
+                        <div class="pricing-body">
+                            <div class="employee-count">
+                                <i class="fas fa-users"></i> Unlimited employees
+                            </div>
+                            <ul class="feature-list">
+                                <li><i class="fas fa-check"></i> Unlimited products</li>
+                                <li><i class="fas fa-check"></i> Product priority in search</li>
+                                <li><i class="fas fa-check"></i> Advanced coupons & promo tools</li>
+                                <li><i class="fas fa-check"></i> Top 100 best-selling products can be featured</li>
+                                <li><i class="fas fa-check"></i> Maximum visibility & exposure</li>
+                            </ul>
+                            <a href="signup.html?plan=gold&billing=monthly" class="pricing-btn">Get Gold</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Yearly Plans -->
+            <div id="yearlyPlans" class="billing-period">
+                <div class="pricing-grid">
+                    <div class="pricing-card bronze">
+                        <div class="free-badge">FREE</div>
+                        <div class="pricing-header">
+                            <h3>Bronze</h3>
+                            <div class="price-free">₱0</div>
+                            <div class="price-period">forever</div>
+                        </div>
+                        <div class="pricing-body">
+                            <div class="employee-count">
+                                <i class="fas fa-users"></i> 0 employees
+                            </div>
+                            <ul class="feature-list">
+                                <li><i class="fas fa-check"></i> Up to 50 products</li>
+                                <li><i class="fas fa-check"></i> Standard visibility</li>
+                                <li><i class="fas fa-check"></i> Basic promo tools</li>
+                                <li class="disabled"><i class="fas fa-times"></i> App coupons</li>
+                                <li class="disabled"><i class="fas fa-times"></i> Featured products</li>
+                            </ul>
+                            <a href="signup.html?plan=bronze&billing=yearly" class="pricing-btn">Start Free</a>
+                        </div>
+                    </div>
+
+                    <div class="pricing-card popular silver">
+                        <div class="popular-badge">BEST VALUE</div>
+                        <div class="pricing-header">
+                            <h3>Silver</h3>
+                            <div class="price">₱3,000</div>
+                            <div class="price-period">per year <small>(₱250 / mo)</small></div>
+                        </div>
+                        <div class="pricing-body">
+                            <div class="employee-count">
+                                <i class="fas fa-users"></i> Up to 10 employees
+                            </div>
+                            <ul class="feature-list">
+                                <li><i class="fas fa-check"></i> Up to 500 products</li>
+                                <li><i class="fas fa-check"></i> Products can be featured</li>
+                                <li><i class="fas fa-check"></i> App coupons</li>
+                                <li><i class="fas fa-check"></i> Basic promo tools</li>
+                                <li><i class="fas fa-check"></i> Top 10 best sellers featured</li>
+                            </ul>
+                            <a href="signup.html?plan=silver&billing=yearly" class="pricing-btn">Get Silver Yearly</a>
+                        </div>
+                    </div>
+
+                    <div class="pricing-card gold">
+                        <div class="pricing-header">
+                            <h3>Gold</h3>
+                            <div class="price">₱8,000</div>
+                            <div class="price-period">per year <small>(₱667 / mo)</small></div>
+                        </div>
+                        <div class="pricing-body">
+                            <div class="employee-count">
+                                <i class="fas fa-users"></i> Unlimited employees
+                            </div>
+                            <ul class="feature-list">
+                                <li><i class="fas fa-check"></i> Unlimited products</li>
+                                <li><i class="fas fa-check"></i> Priority in search</li>
+                                <li><i class="fas fa-check"></i> Advanced coupons & promo tools</li>
+                                <li><i class="fas fa-check"></i> Top 100 best sellers featured</li>
+                            </ul>
+                            <a href="signup.html?plan=gold&billing=yearly" class="pricing-btn">Get Gold Yearly</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const monthlyRadio = document.getElementById('monthlyRadio');
+        const yearlyRadio  = document.getElementById('yearlyRadio');
+        const monthlyPlans = document.getElementById('monthlyPlans');
+        const yearlyPlans  = document.getElementById('yearlyPlans');
+
+        function updateView() {
+            const isYearly = yearlyRadio.checked;
+            monthlyPlans.classList.toggle('active', !isYearly);
+            yearlyPlans.classList.toggle('active', isYearly);
+        }
+
+        if (monthlyRadio && yearlyRadio && monthlyPlans && yearlyPlans) {
+            monthlyRadio.addEventListener('change', updateView);
+            yearlyRadio.addEventListener('change', updateView);
+            // Initial state
+            updateView();
+        }
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', e => {
+                e.preventDefault();
+                document.querySelector(anchor.getAttribute('href'))?.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+    });
+    </script>
+
+</body>
+</html>
