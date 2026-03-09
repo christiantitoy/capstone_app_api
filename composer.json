@@ -2,7 +2,8 @@
   "name": "capstone/app",
   "description": "Capstone API",
   "require": {
-    "cloudinary/cloudinary_php": "^2.0"
+    "cloudinary/cloudinary_php": "^2.0",
+    "phpmailer/phpmailer": "^6.9"
   },
   "autoload": {
     "psr-4": {
