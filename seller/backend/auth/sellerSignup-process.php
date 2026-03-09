@@ -3,6 +3,11 @@ session_start();
 
 require_once '/var/www/html/connection/db_connection.php';
 
+// Check if connection was successful
+if (!isset($conn)) {
+    die("Database connection failed");
+}
+
 $redirect = 'sellerSignup.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -47,8 +52,8 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 }
 
 try {
-    // Check if email exists
-    $stmt = $pdo->prepare("SELECT 1 FROM sellers WHERE email = ?");
+    // Check if email exists - using $conn instead of $pdo
+    $stmt = $conn->prepare("SELECT 1 FROM sellers WHERE email = ?");  // Changed from $pdo to $conn
     $stmt->execute([$email]);
     if ($stmt->fetch()) {
         $_SESSION['form_data'] = $_POST;
@@ -59,7 +64,7 @@ try {
     // Create account
     $hashed = password_hash($password, PASSWORD_DEFAULT);
 
-    $stmt = $pdo->prepare("
+    $stmt = $conn->prepare("  // Changed from $pdo to $conn
         INSERT INTO sellers (full_name, email, password)
         VALUES (?, ?, ?)
     ");
@@ -72,7 +77,9 @@ try {
 } catch (PDOException $e) {
     $_SESSION['form_data'] = $_POST;
     $msg = "Database error. Please try again later.";
-    // In production: log $e->getMessage() instead of showing to user
+    // Log the actual error for debugging
+    error_log("Signup error: " . $e->getMessage());
     header("Location: $redirect?error=" . urlencode($msg));
     exit;
 }
+?>
