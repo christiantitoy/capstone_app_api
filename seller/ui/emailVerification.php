@@ -17,7 +17,7 @@ if (empty($email)) {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Email Confirmation Sent - PalitOra</title>
-  <link rel="stylesheet" href="../css/verification.css?v=<?= time() ?>">
+  <link rel="stylesheet" href="../css/emailVerification.css?v=<?= time() ?>">
 </head>
 <body class="confirmation-page">
 

@@ -1,8 +1,10 @@
 <?php
+// /seller/backend/auth/sellerSignup-process.php
+
 session_start();
 require_once '/var/www/html/connection/db_connection.php';
 
-// Check if connection was successful
+// Check DB connection
 if (!isset($conn)) {
     die("Database connection failed");
 }
@@ -15,6 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+// Get inputs
 $full_name = trim($_POST['name'] ?? '');
 $email = trim($_POST['email'] ?? '');
 $password = $_POST['password'] ?? '';
@@ -23,18 +26,18 @@ $terms = $_POST['terms'] ?? '';
 
 $errors = [];
 
-// Required fields validation
+// Required fields
 if (empty($full_name)) $errors[] = "Full name is required.";
 if (empty($email)) $errors[] = "Email is required.";
 if (empty($password)) $errors[] = "Password is required.";
 if (empty($confirm_password)) $errors[] = "Please confirm your password.";
 
-// Terms agreement validation
+// Terms check
 if (!$terms) {
     $errors[] = "You must agree to the Terms of Service and Privacy Policy.";
 }
 
-// If any required fields are missing
+// Show errors if any
 if (!empty($errors)) {
     $_SESSION['old_input'] = $_POST;
     $error_string = implode(' ', $errors);
@@ -42,21 +45,21 @@ if (!empty($errors)) {
     exit;
 }
 
-// Password match validation
+// Password match
 if ($password !== $confirm_password) {
     $_SESSION['old_input'] = $_POST;
     header("Location: $redirect?error=" . urlencode("Passwords do not match"));
     exit;
 }
 
-// Password length validation
+// Password length
 if (strlen($password) < 8) {
     $_SESSION['old_input'] = $_POST;
     header("Location: $redirect?error=" . urlencode("Password must be at least 8 characters long"));
     exit;
 }
 
-// Email format validation
+// Email format
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     $_SESSION['old_input'] = $_POST;
     header("Location: $redirect?error=" . urlencode("Invalid email format"));
@@ -64,9 +67,11 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 }
 
 try {
+
     // Check if email already exists
     $stmt = $conn->prepare("SELECT id FROM sellers WHERE email = ? LIMIT 1");
     $stmt->execute([$email]);
+
     if ($stmt->fetch()) {
         $_SESSION['old_input'] = $_POST;
         header("Location: $redirect?error=" . urlencode("This email is already registered"));
@@ -74,27 +79,35 @@ try {
     }
 
     // Hash password
-    $hashed = password_hash($password, PASSWORD_DEFAULT);
+    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
-    // Insert new seller
+    // Insert seller
     $stmt = $conn->prepare("
         INSERT INTO sellers (full_name, email, password)
         VALUES (?, ?, ?)
     ");
-    $stmt->execute([$full_name, $email, $hashed]);
 
-    // Clear signup form data
+    $stmt->execute([
+        $full_name,
+        $email,
+        $hashedPassword
+    ]);
+
+    // Clear form session
     unset($_SESSION['old_input']);
 
-    // Redirect to email verification page with email parameter
-    header("Location: /seller/ui/emailVerification.php?email=" . urlencode($email));
+    // Redirect to email sender
+    header("Location: /seller/backend/auth/send-verification-email.php?email=" . urlencode($email));
     exit;
 
 } catch (PDOException $e) {
+
     $_SESSION['old_input'] = $_POST;
+
     $msg = "Database error. Please try again later.";
-    // Log real error for debugging
+
     error_log("Signup error: " . $e->getMessage());
+
     header("Location: $redirect?error=" . urlencode($msg));
     exit;
 }
