@@ -20,6 +20,7 @@ unset($_SESSION['old_input']);
     <title>Create Seller Account - PalitOra</title>
     
     <link rel="stylesheet" href="../css/signup.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../css/error.css?v=<?= time() ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="signup-page">

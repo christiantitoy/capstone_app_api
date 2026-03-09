@@ -90,7 +90,7 @@ try {
     // Success - clear stored input
     unset($_SESSION['old_input']);
 
-    header("Location: $redirect?success=" . urlencode("Account created successfully! You can now log in."));
+    header("Location: ../ui/login.php");
     exit;
 
 } catch (PDOException $e) {

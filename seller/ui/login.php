@@ -1,3 +1,14 @@
+<?php
+session_start();
+$errors = $_SESSION['login_errors'] ?? [];
+$old_email = $_SESSION['login_email'] ?? '';
+$success = $_GET['success'] ?? '';
+
+// Clear session data after retrieving
+unset($_SESSION['login_errors']);
+unset($_SESSION['login_email']);
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,20 +16,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PalitOra Seller Login</title>
     <link rel="stylesheet" href="../css/login.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../css/error.css?v=<?= time() ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="login-page">
-
-    <?php
-    session_start();
-    $errors = $_SESSION['login_errors'] ?? [];
-    $old_email = $_SESSION['login_email'] ?? '';
-    $success = $_GET['success'] ?? '';
-    
-    // Clear session data after retrieving
-    unset($_SESSION['login_errors']);
-    unset($_SESSION['login_email']);
-    ?>
 
     <div class="login-wrapper">
         <div class="login-inner">
@@ -93,15 +94,28 @@
                 </form>
 
                 <div class="signup-link">
-                    Don't have an account? <a href="signup.php">Create one now</a>
+                    Don't have an account? <a href="../ui/signup.php">Create one now</a>
                 </div>
             </div>
 
         </div>
     </div>
 
-    <!-- Optional: Add JavaScript validation -->
-    <script src="../backend/auth/js/sellerLogin-process.js?v=<?= time() ?>"></script>
+    <!-- GLOBAL MODAL -->
+    <div id="appModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h3 id="modalTitle"></h3>
+            <p id="modalMessage"></p>
+        </div>
+    </div>
+
+    <script>
+    const phpError = <?= json_encode($error) ?>;
+    const phpSuccess = <?= json_encode($success) ?>;
+    </script>
+
+    <script src="../js/reusables/showDialog.js?v=<?= time() ?>"></script>
 
 </body>
 </html>
