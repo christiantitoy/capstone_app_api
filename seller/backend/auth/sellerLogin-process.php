@@ -10,7 +10,7 @@ if (!isset($conn)) {
 }
 
 // Redirect back to login page
-$redirect = '../seller/ui/login.php';
+$redirect = '/seller/ui/login.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header("Location: $redirect");
