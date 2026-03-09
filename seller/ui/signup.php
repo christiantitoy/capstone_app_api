@@ -138,5 +138,7 @@ unset($_SESSION['old_input']);
 
     </div>
 
+   <script src="../backend/auth/js/signup.js?v=<?= time() ?>"></script>
+
 </body>
 </html>

@@ -8,7 +8,7 @@ if (!isset($conn)) {
     die("Database connection failed");
 }
 
-$redirect = 'sellerSignup.php';
+$redirect = '/seller/backend/auth/sellerSignup.php';  // Changed to absolute path from root
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header("Location: $redirect");
@@ -28,26 +28,27 @@ if (empty($password))         $errors[] = "Password is required.";
 if (empty($confirm_password)) $errors[] = "Please confirm your password.";
 
 if (!empty($errors)) {
-    $_SESSION['form_data'] = $_POST;
-    header("Location: $redirect?" . http_build_query(['error' => implode(' ', $errors)]));
+    $_SESSION['old_input'] = $_POST;  // Store old input in session
+    $error_string = implode(' ', $errors);
+    header("Location: $redirect?error=" . urlencode($error_string));
     exit;
 }
 
 if ($password !== $confirm_password) {
-    $_SESSION['form_data'] = $_POST;
-    header("Location: $redirect?error=Passwords+do+not+match");
+    $_SESSION['old_input'] = $_POST;
+    header("Location: $redirect?error=" . urlencode("Passwords do not match"));
     exit;
 }
 
 if (strlen($password) < 8) {
-    $_SESSION['form_data'] = $_POST;
-    header("Location: $redirect?error=Password+must+be+at+least+8+characters+long");
+    $_SESSION['old_input'] = $_POST;
+    header("Location: $redirect?error=" . urlencode("Password must be at least 8 characters long"));
     exit;
 }
 
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    $_SESSION['form_data'] = $_POST;
-    header("Location: $redirect?error=Invalid+email+format");
+    $_SESSION['old_input'] = $_POST;
+    header("Location: $redirect?error=" . urlencode("Invalid email format"));
     exit;
 }
 
@@ -56,29 +57,28 @@ try {
     $stmt = $conn->prepare("SELECT 1 FROM sellers WHERE email = ?");
     $stmt->execute([$email]);
     if ($stmt->fetch()) {
-        $_SESSION['form_data'] = $_POST;
-        header("Location: $redirect?error=This+email+is+already+registered");
+        $_SESSION['old_input'] = $_POST;
+        header("Location: $redirect?error=" . urlencode("This email is already registered"));
         exit;
     }
 
     // Create account
     $hashed = password_hash($password, PASSWORD_DEFAULT);
 
-    // Fixed: Removed the comment from inside the string
     $stmt = $conn->prepare("
         INSERT INTO sellers (full_name, email, password)
         VALUES (?, ?, ?)
     ");
     $stmt->execute([$full_name, $email, $hashed]);
 
-    // Success
-    header("Location: $redirect?success=Account+created+successfully!+You+can+now+log+in.");
+    // Success - clear old input
+    unset($_SESSION['old_input']);
+    header("Location: $redirect?success=" . urlencode("Account created successfully! You can now log in."));
     exit;
 
 } catch (PDOException $e) {
-    $_SESSION['form_data'] = $_POST;
+    $_SESSION['old_input'] = $_POST;
     $msg = "Database error. Please try again later.";
-    // Log the actual error for debugging
     error_log("Signup error: " . $e->getMessage());
     header("Location: $redirect?error=" . urlencode($msg));
     exit;
