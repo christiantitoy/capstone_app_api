@@ -69,7 +69,7 @@ try {
         unset($_SESSION['login_email']);
         
         // Redirect to dashboard
-        header("Location: ../dashboard.php");
+        header("Location: ../ui/dashboard.php");
         exit;
         
     } else {

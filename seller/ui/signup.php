@@ -1,5 +1,5 @@
 <?php
-// sellerSignup.php
+// signup.php
 
 // Start session only if needed for flash messages / old input
 session_start();
@@ -54,14 +54,6 @@ unset($_SESSION['old_input']);
                 <h2>Create Seller Account</h2>
                 <p>Just a few details to get started</p>
             </div>
-
-            <?php if ($success): ?>
-                <div class="alert alert-success"><?= htmlspecialchars($success) ?></div>
-            <?php endif; ?>
-
-            <?php if ($error): ?>
-                <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
-            <?php endif; ?>
 
             <form method="POST" action="../backend/auth/sellerSignup-process.php" novalidate>
                 <div class="form-grid">
@@ -138,7 +130,21 @@ unset($_SESSION['old_input']);
 
     </div>
 
-   <script src="../backend/auth/js/signup.js?v=<?= time() ?>"></script>
+    <!-- GLOBAL MODAL -->
+    <div id="appModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h3 id="modalTitle"></h3>
+            <p id="modalMessage"></p>
+        </div>
+    </div>
+
+    <script>
+    const phpError = <?= json_encode($error) ?>;
+    const phpSuccess = <?= json_encode($success) ?>;
+    </script>
+
+   <script src="../js/showDialog.js?v=<?= time() ?>"></script>
 
 </body>
 </html>
