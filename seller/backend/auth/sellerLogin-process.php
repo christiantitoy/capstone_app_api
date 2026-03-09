@@ -39,41 +39,47 @@ if (!empty($errors)) {
 }
 
 try {
-    // Get seller by email
-    $stmt = $conn->prepare("SELECT id, full_name, email, password FROM sellers WHERE email = ?");
+    // Get seller by email - include is_confirmed field
+    $stmt = $conn->prepare("SELECT id, full_name, email, password, is_confirmed FROM sellers WHERE email = ?");
     $stmt->execute([$email]);
     $seller = $stmt->fetch();
     
     if ($seller && password_verify($password, $seller['password'])) {
-        // Login successful
-        $_SESSION['seller_id'] = $seller['id'];
-        $_SESSION['seller_name'] = $seller['full_name'];
-        $_SESSION['seller_email'] = $seller['email'];
-        $_SESSION['logged_in'] = true;
-        
-        // Set remember me cookie if requested (30 days)
-        if ($remember) {
-            $token = bin2hex(random_bytes(32));
-            $expiry = time() + (86400 * 30); // 30 days
+        // Check if email is confirmed
+        if ($seller['is_confirmed'] == 1) {
+            // Email is confirmed - login successful
+            $_SESSION['seller_id'] = $seller['id'];
+            $_SESSION['seller_name'] = $seller['full_name'];
+            $_SESSION['seller_email'] = $seller['email'];
+            $_SESSION['logged_in'] = true;
             
-            // Store token in database (you'll need to add a remember_tokens table)
-            // For now, we'll just set a cookie
-            setcookie('remember_token', $token, $expiry, '/', '', false, true);
+            // Set remember me cookie if requested (30 days)
+            if ($remember) {
+                $token = bin2hex(random_bytes(32));
+                $expiry = time() + (86400 * 30); // 30 days
+                
+                setcookie('remember_token', $token, $expiry, '/', '', false, true);
+                $_SESSION['remember_token'] = $token;
+            }
             
-            // Optional: Store in session for now
-            $_SESSION['remember_token'] = $token;
+            // Clear any old error messages
+            unset($_SESSION['login_errors']);
+            unset($_SESSION['login_email']);
+            
+            // Redirect to dashboard
+            header("Location: /seller/ui/dashboard.php");
+            exit;
+        } else {
+            // Email not confirmed - redirect to email verification page
+            $_SESSION['login_errors'] = ["Please verify your email address first. A verification email has been sent to your inbox."];
+            $_SESSION['login_email'] = $email;
+            
+            // Optional: Resend verification email here or provide link
+            header("Location: /seller/ui/emailVerification.php?email=" . urlencode($email) . "&resend=true");
+            exit;
         }
-        
-        // Clear any old error messages
-        unset($_SESSION['login_errors']);
-        unset($_SESSION['login_email']);
-        
-        // Redirect to dashboard
-        header("Location: /seller/ui/dashboard.php");
-        exit;
-        
     } else {
-        // Login failed
+        // Login failed - invalid credentials
         $_SESSION['login_errors'] = ["Invalid email or password."];
         $_SESSION['login_email'] = $email;
         header("Location: $redirect");
