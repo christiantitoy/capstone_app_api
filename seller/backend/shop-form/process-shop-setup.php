@@ -11,8 +11,14 @@ $seller_id = (int)$_SESSION['seller_id'];
 
 require_once '/var/www/html/connection/db_connection.php';
 
+// Safety check: make sure connection was created
+if (!isset($conn) || !($conn instanceof PDO)) {
+    error_log("Database connection not initialized in process-shop-setup.php");
+    die("Database connection failed. Please contact support.");
+}
+
 try {
-    $pdo->beginTransaction();
+    $conn->beginTransaction();
 
     // ── Collect text fields ───────────────────────────────────────
     $store_name     = trim($_POST['store_name'] ?? '');
@@ -75,7 +81,7 @@ try {
             updated_at       = NOW()
     ";
 
-    $stmt = $pdo->prepare($sql);
+    $stmt = $conn->prepare($sql);
     $stmt->execute([
         ':sid'     => $seller_id,
         ':sname'   => $store_name,
@@ -96,16 +102,18 @@ try {
     ]);
 
     // Mark seller as setup
-    $pdo->prepare("UPDATE public.sellers SET setup_shop = true, updated_at = NOW() WHERE id = :id")
-        ->execute([':id' => $seller_id]);
+    $conn->prepare("UPDATE public.sellers SET setup_shop = true, updated_at = NOW() WHERE id = :id")
+         ->execute([':id' => $seller_id]);
 
-    $pdo->commit();
+    $conn->commit();
 
     header("Location: /seller/ui/dashboard.php?msg=Shop+setup+completed");
     exit;
 
 } catch (Exception $e) {
-    $pdo->rollBack();
+    if ($conn->inTransaction()) {
+        $conn->rollBack();
+    }
     error_log("Shop setup error: " . $e->getMessage());
     header("Location: /seller/ui/shop-form.php?error=" . urlencode($e->getMessage()));
     exit;
