@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seller Dashboard</title>
+    <link rel="icon" type="image/png" href="/seller/image/app_icon.png">
     <link rel="stylesheet" href="../css/dashboard.css?v=<?= time() ?>">
     <link rel="stylesheet" href="../css/error.css?v=<?= time() ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -14,7 +15,6 @@
 
     <aside class="sidebar">
         <div class="sidebar-header">
-            <div class="logo"><i class="fas fa-store"></i></div>
             <h2>Seller<span>Dashboard</span></h2>
         </div>
         <nav class="sidebar-nav">
@@ -44,10 +44,6 @@
                 <p>Welcome back, Titoy!</p>
             </div>
             <div class="header-right">
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" placeholder="Search...">
-                </div>
                 <div class="notifications">
                     <i class="fas fa-bell"></i>
                     <span class="notification-badge">3</span>

@@ -19,6 +19,7 @@ unset($_SESSION['old_input']);
     <meta name="description" content="Join PalitOra as a seller in Dumaguete">
     <title>Create Seller Account - PalitOra</title>
     
+    <link rel="icon" type="image/png" href="/seller/image/app_icon.png">
     <link rel="stylesheet" href="../css/signup.css?v=<?= time() ?>">
     <link rel="stylesheet" href="../css/error.css?v=<?= time() ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">

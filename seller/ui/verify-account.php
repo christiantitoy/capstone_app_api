@@ -22,6 +22,7 @@ $token = htmlspecialchars($token);
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Verify Your Account - PalitOra</title>
 
+<link rel="icon" type="image/png" href="/seller/image/app_icon.png">
 <link rel="stylesheet" href="../css/emailVerification.css?v=<?= time() ?>">
 
 <style>
