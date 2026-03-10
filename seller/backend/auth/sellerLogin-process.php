@@ -92,7 +92,7 @@ try {
                 unset($_SESSION['login_email']);
                 
                 // Redirect to shop setup page
-                header("Location: /seller/ui/shop-info.php");
+                header("Location: /seller/ui/shop-form.php");
                 exit;
             }
         } else {
