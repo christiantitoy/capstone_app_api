@@ -44,3 +44,17 @@ if(phpError){
 if(phpSuccess){
     showModal("success", phpSuccess);
 }
+
+
+// <!-- GLOBAL MODAL -->
+//     <div id="appModal" class="modal">
+//         <div class="modal-content">
+//             <span class="close-btn">&times;</span>
+//             <h3 id="modalTitle"></h3>
+//             <p id="modalMessage"></p>
+//         </div>
+//     </div>
+
+// <link rel="stylesheet" href="../css/error.css?v=<?= time() ?>">
+
+// <script src="../js/reusables/showDialog.js?v=<?= time() ?>"></script>

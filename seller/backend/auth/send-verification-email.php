@@ -1,15 +1,19 @@
 <?php
 // send-verification-email.php (production version)
 
-// Get email from URL
+session_start();
+
+// Get email and token from URL
 $email = $_GET['email'] ?? '';
-if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+$token = $_GET['token'] ?? '';
+
+if (empty($email) || empty($token) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
     header("Location: /seller/ui/signup.php");
     exit;
 }
 
-// Verification link
-$verificationPage = "https://capstone-app-api-r1ux.onrender.com/seller/ui/verify-account.php?email=" . urlencode($email);
+// Verification link with token instead of just email
+$verificationPage = "https://capstone-app-api-r1ux.onrender.com/seller/ui/verify-account.php?email=" . urlencode($email) . "&token=" . urlencode($token);
 
 // Get Brevo API key from environment
 $apiKey = getenv('BREVO_API_KEY');
@@ -84,8 +88,20 @@ if ($error) {
 $json = json_decode($response, true);
 
 if (isset($json['messageId'])) {
-    // Success → redirect to verification page
-    header("Location: /seller/ui/emailVerification.php?email=" . urlencode($email));
+    // Update resend_at timestamp in database
+    try {
+        require_once '/var/www/html/connection/db_connection.php';
+        
+        $stmt = $conn->prepare("UPDATE sellers SET resend_at = NOW() WHERE email = ? AND token = ?");
+        $stmt->execute([$email, $token]);
+        
+    } catch (PDOException $e) {
+        error_log("Failed to update resend_at: " . $e->getMessage());
+        // Continue even if update fails - email was still sent
+    }
+    
+    // Success → redirect to verification page with token
+    header("Location: /seller/ui/emailVerification.php?email=" . urlencode($email) . "&token=" . urlencode($token));
     exit;
 } else {
     error_log("Brevo API error: " . $response);

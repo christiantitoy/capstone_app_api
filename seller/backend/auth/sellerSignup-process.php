@@ -78,26 +78,34 @@ try {
         exit;
     }
 
+    // Generate token
+    $token = bin2hex(random_bytes(32));
+
     // Hash password
     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
-    // Insert seller
+    // Insert seller with token
     $stmt = $conn->prepare("
-        INSERT INTO sellers (full_name, email, password)
-        VALUES (?, ?, ?)
+        INSERT INTO sellers (full_name, email, password, token, resend_at)
+        VALUES (?, ?, ?, ?, NOW())
     ");
 
     $stmt->execute([
         $full_name,
         $email,
-        $hashedPassword
+        $hashedPassword,
+        $token
     ]);
 
     // Clear form session
     unset($_SESSION['old_input']);
 
-    // Redirect to email sender
-    header("Location: /seller/backend/auth/send-verification-email.php?email=" . urlencode($email));
+    // Store token in session for verification
+    $_SESSION['verification_token'] = $token;
+    $_SESSION['verification_email'] = $email;
+
+    // Redirect to email sender with token instead of just email
+    header("Location: /seller/backend/auth/send-verification-email.php?email=" . urlencode($email) . "&token=" . urlencode($token));
     exit;
 
 } catch (PDOException $e) {

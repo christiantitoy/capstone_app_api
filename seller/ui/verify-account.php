@@ -1,14 +1,18 @@
 <?php
 // /seller/ui/verify-account.php
 
+// Get email and token from URL
 $email = $_GET['email'] ?? '';
+$token = $_GET['token'] ?? '';
 
-if (empty($email)) {
+if (empty($email) || empty($token)) {
     header("Location: /seller/ui/signup.php");
     exit;
 }
 
+// Sanitize for display
 $email = htmlspecialchars($email);
+$token = htmlspecialchars($token);
 ?>
 
 <!DOCTYPE html>
@@ -46,10 +50,16 @@ $email = htmlspecialchars($email);
     font-size:16px;
     font-weight:bold;
     margin:20px 0;
+    border: none;
+    cursor: pointer;
 }
 
 .verify-btn:hover{
     background:#357abd;
+}
+
+.verify-form {
+    margin-top: 20px;
 }
 </style>
 
@@ -67,9 +77,11 @@ Click the button below to confirm your email address:<br>
 <strong style="color:#333;font-size:18px;"><?= $email ?></strong>
 </p>
 
-<a href="/seller/backend/auth/confirm-email.php?email=<?= urlencode($email) ?>" class="verify-btn">
-Confirm Email
-</a>
+<form action="/seller/backend/auth/confirm-email.php" method="POST" class="verify-form">
+    <input type="hidden" name="email" value="<?= htmlspecialchars($_GET['email'] ?? '') ?>">
+    <input type="hidden" name="token" value="<?= htmlspecialchars($_GET['token'] ?? '') ?>">
+    <button type="submit" class="verify-btn">Confirm Email</button>
+</form>
 
 <p style="color:#999;font-size:14px;margin-top:30px;">
 This link will expire in 24 hours
