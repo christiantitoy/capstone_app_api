@@ -31,7 +31,7 @@
             <p>Join the city's fastest-growing marketplace. Sell smarter, manage your team, and grow your orders — all in one simple place.</p>
             <div class="hero-buttons">
                 <a href="/seller/ui/signup.php" class="hero-btn btn-primary">Start Selling Today</a>
-                <a href="seller/ui/login.php" class="hero-btn btn-outline">Sign In</a>
+                <a href="/seller/ui/login.php" class="hero-btn btn-outline">Sign In</a>
             </div>
         </div>
     </section>
