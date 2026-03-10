@@ -33,6 +33,7 @@
                             <div class="form-group">
                                 <label for="category">Store Category *</label>
                                 <select id="category" name="category" required>
+                                    <option>Select Category</option>
                                     <option>Electronics</option>
                                     <option>Fashion & Clothing</option>
                                     <option>Home & Garden</option>

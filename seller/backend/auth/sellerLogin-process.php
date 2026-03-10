@@ -39,43 +39,89 @@ if (!empty($errors)) {
 }
 
 try {
-    // Get seller by email - include is_confirmed field
-    $stmt = $conn->prepare("SELECT id, full_name, email, password, is_confirmed FROM sellers WHERE email = ?");
+    // Get seller by email - include is_confirmed and setup_shop fields
+    $stmt = $conn->prepare("SELECT id, full_name, email, password, is_confirmed, setup_shop, token FROM sellers WHERE email = ?");
     $stmt->execute([$email]);
-    $seller = $stmt->fetch();
+    $seller = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if ($seller && password_verify($password, $seller['password'])) {
         // Check if email is confirmed
         if ($seller['is_confirmed'] == 1) {
-            // Email is confirmed - login successful
-            $_SESSION['seller_id'] = $seller['id'];
-            $_SESSION['seller_name'] = $seller['full_name'];
-            $_SESSION['seller_email'] = $seller['email'];
-            $_SESSION['logged_in'] = true;
-            
-            // Set remember me cookie if requested (30 days)
-            if ($remember) {
-                $token = bin2hex(random_bytes(32));
-                $expiry = time() + (86400 * 30); // 30 days
+            // Email is confirmed - check shop setup status
+            if ($seller['setup_shop'] == 1) {
+                // Shop is set up - login successful and redirect to dashboard
+                $_SESSION['seller_id'] = $seller['id'];
+                $_SESSION['seller_name'] = $seller['full_name'];
+                $_SESSION['seller_email'] = $seller['email'];
+                $_SESSION['logged_in'] = true;
                 
-                setcookie('remember_token', $token, $expiry, '/', '', false, true);
-                $_SESSION['remember_token'] = $token;
+                // Set remember me cookie if requested (30 days)
+                if ($remember) {
+                    $token = bin2hex(random_bytes(32));
+                    $expiry = time() + (86400 * 30); // 30 days
+                    
+                    setcookie('remember_token', $token, $expiry, '/', '', false, true);
+                    $_SESSION['remember_token'] = $token;
+                }
+                
+                // Clear any old error messages
+                unset($_SESSION['login_errors']);
+                unset($_SESSION['login_email']);
+                
+                // Redirect to dashboard
+                header("Location: /seller/ui/dashboard.php");
+                exit;
+            } else {
+                // Email confirmed but shop not set up - redirect to shop info page
+                $_SESSION['seller_id'] = $seller['id'];
+                $_SESSION['seller_name'] = $seller['full_name'];
+                $_SESSION['seller_email'] = $seller['email'];
+                $_SESSION['logged_in'] = true;
+                
+                // Set remember me cookie if requested (30 days)
+                if ($remember) {
+                    $token = bin2hex(random_bytes(32));
+                    $expiry = time() + (86400 * 30); // 30 days
+                    
+                    setcookie('remember_token', $token, $expiry, '/', '', false, true);
+                    $_SESSION['remember_token'] = $token;
+                }
+                
+                // Clear any old error messages
+                unset($_SESSION['login_errors']);
+                unset($_SESSION['login_email']);
+                
+                // Redirect to shop setup page
+                header("Location: /seller/ui/shop-info.php");
+                exit;
             }
+        } else {
+            // Email not confirmed - check if token exists or generate new one
+            $token = $seller['token'];
+            
+            // If no token exists, generate a new one and update the database
+            if (empty($token)) {
+                $token = bin2hex(random_bytes(32));
+                
+                // Update seller with new token and resend_at timestamp
+                $updateStmt = $conn->prepare("UPDATE sellers SET token = ?, resend_at = NOW() WHERE id = ?");
+                $updateStmt->execute([$token, $seller['id']]);
+            } else {
+                // Update resend_at timestamp for existing token
+                $updateStmt = $conn->prepare("UPDATE sellers SET resend_at = NOW() WHERE id = ?");
+                $updateStmt->execute([$seller['id']]);
+            }
+            
+            // Store token in session for verification
+            $_SESSION['verification_token'] = $token;
+            $_SESSION['verification_email'] = $email;
             
             // Clear any old error messages
             unset($_SESSION['login_errors']);
             unset($_SESSION['login_email']);
             
-            // Redirect to dashboard
-            header("Location: /seller/ui/dashboard.php");
-            exit;
-        } else {
-            // Email not confirmed - redirect to email verification page
-            $_SESSION['login_errors'] = ["Please verify your email address first. A verification email has been sent to your inbox."];
-            $_SESSION['login_email'] = $email;
-            
-            // Optional: Resend verification email here or provide link
-            header("Location: /seller/ui/emailVerification.php?email=" . urlencode($email) . "&resend=true");
+            // Redirect to email sender with token (matches send-verification-email.php expectations)
+            header("Location: /seller/backend/auth/send-verification-email.php?email=" . urlencode($email) . "&token=" . urlencode($token));
             exit;
         }
     } else {
