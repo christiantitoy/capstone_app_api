@@ -1,17 +1,41 @@
+<?php
+// /seller/ui/shop-form.php
+session_start();
+if (!isset($_SESSION['seller_id'])) {
+    header("Location: ../login.php");
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shop Setup</title>
-    <!-- Reliable CDN from official recommendation (jsDelivr latest) -->
     <link rel="stylesheet" href="../css/shop-form.css?v=<?= time() ?>">
     <link rel="stylesheet" href="../css/error.css?v=<?= time() ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/openlocationcode/latest/openlocationcode.min.js"></script>
-    
+    <style>
+        .upload-preview {
+            max-width: 160px;
+            margin-top: 8px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            display: block;
+        }
+        .multi-preview {
+            margin-top: 8px;
+            font-size: 0.9rem;
+            color: #555;
+        }
+        .multi-preview li {
+            margin-bottom: 4px;
+        }
+    </style>
 </head>
 <body>
+
     <section class="shop-setup">
         <div class="container">
             <div class="shop-card">
@@ -19,7 +43,9 @@
                     <h2>Set Up Your Shop</h2>
                     <p>Complete your shop profile to start selling on the platform.</p>
                 </div>
-                <form method="POST" enctype="multipart/form-data">
+
+                <!-- Form now submits text + URLs to the processing script -->
+                <form id="shopSetupForm" method="POST" action="/seller/backend/shop-form/process-shop-setup.php">
 
                     <!-- Shop Information -->
                     <div class="form-section">
@@ -84,7 +110,6 @@
                                 <input type="hidden" id="latitude" name="latitude" required>
                                 <input type="hidden" id="longitude" name="longitude" required>
                             </div>
-
                             <div class="form-group full">
                                 <label for="plus_code">Google Plus Code *</label>
                                 <div class="plus-code-wrapper">
@@ -99,19 +124,25 @@
                         </div>
                     </div>
 
-                    <!-- Shop Media -->
+                    <!-- Shop Media – now with Cloudinary upload -->
                     <div class="form-section">
                         <h3>Shop Media</h3>
                         <div class="form-grid">
                             <div class="form-group">
                                 <label for="logo">Store Logo</label>
-                                <input type="file" id="logo" name="logo" accept="image/*">
+                                <input type="file" id="logo" accept="image/*">
                                 <div class="help-text">Recommended: 500×500 px, PNG or JPG</div>
+                                <img id="logo_preview" class="upload-preview" style="display:none;" alt="Logo preview">
+                                <!-- Hidden field for Cloudinary URL -->
+                                <input type="hidden" name="logo_url" id="logo_url">
                             </div>
+
                             <div class="form-group">
                                 <label for="banner">Store Banner</label>
-                                <input type="file" id="banner" name="banner" accept="image/*">
+                                <input type="file" id="banner" accept="image/*">
                                 <div class="help-text">Best size: 1200×400 px or wider</div>
+                                <img id="banner_preview" class="upload-preview" style="display:none;" alt="Banner preview">
+                                <input type="hidden" name="banner_url" id="banner_url">
                             </div>
                         </div>
                     </div>
@@ -140,16 +171,20 @@
                             </div>
                             <div class="form-group">
                                 <label for="valid_id">Upload Valid ID (Front & Back) *</label>
-                                <input type="file" id="valid_id" name="valid_id[]" accept="image/*,.pdf" multiple required>
+                                <input type="file" id="valid_id" accept="image/*,.pdf" multiple>
                                 <div class="help-text">
                                     <strong>Required:</strong> Upload clear photos/scans of both <strong>front</strong> and <strong>back</strong> sides.<br>
                                     You can select multiple files at once (max 4 recommended).
                                 </div>
+                                <ul id="valid_id_list" class="multi-preview"></ul>
+                                <input type="hidden" name="valid_id_urls" id="valid_id_urls">
                             </div>
                             <div class="form-group">
                                 <label for="store_photos">Upload Store Photos *</label>
-                                <input type="file" id="store_photos" name="store_photos[]" accept="image/*" multiple required>
+                                <input type="file" id="store_photos" accept="image/*" multiple>
                                 <div class="help-text">Upload 2–6 clear photos of your shop (inside, outside, products, etc.)</div>
+                                <ul id="store_photos_list" class="multi-preview"></ul>
+                                <input type="hidden" name="store_photo_urls" id="store_photo_urls">
                             </div>
                         </div>
                     </div>
@@ -163,13 +198,117 @@
     </section>
 
     <script>
-        const gpsInput      = document.getElementById('gps_display');
-        const latInput      = document.getElementById('latitude');
-        const lngInput      = document.getElementById('longitude');
-        const plusCodeInput = document.getElementById('plus_code');
-        const copyBtn       = document.getElementById('copy_plus_code');
+        const UPLOAD_ENDPOINT = '/connection/upload_apis/upload-seller-media.php';  // ← your Cloudinary endpoint
 
-        // Check if library loaded
+        // ────────────────────────────────────────────────
+        // Single file upload helper (logo, banner)
+        // ────────────────────────────────────────────────
+        async function uploadSingleFile(file, type, previewId, hiddenInputId) {
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('type', type);
+
+            try {
+                const res = await fetch(UPLOAD_ENDPOINT, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await res.json();
+
+                if (!data.success) {
+                    alert(`Upload failed (${type}): ${data.error || 'Unknown error'}`);
+                    return;
+                }
+
+                const url = data.files[0]?.url;
+                if (url) {
+                    document.getElementById(hiddenInputId).value = url;
+
+                    const preview = document.getElementById(previewId);
+                    preview.src = url;
+                    preview.style.display = 'block';
+                }
+            } catch (err) {
+                console.error(err);
+                alert(`Network error uploading ${type}`);
+            }
+        }
+
+        // ────────────────────────────────────────────────
+        // Multiple files upload helper (valid_id, store_photos)
+        // ────────────────────────────────────────────────
+        async function uploadMultipleFiles(files, type, listId, hiddenInputId) {
+            if (files.length === 0) return;
+
+            const formData = new FormData();
+            for (let file of files) {
+                formData.append('files[]', file);
+            }
+            formData.append('type', type);
+
+            try {
+                const res = await fetch(UPLOAD_ENDPOINT, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await res.json();
+
+                if (!data.success) {
+                    alert(`Upload failed (${type}): ${data.error || 'Unknown error'}`);
+                    return;
+                }
+
+                const urls = data.files.map(f => f.url);
+                document.getElementById(hiddenInputId).value = JSON.stringify(urls);
+
+                // Show list of uploaded filenames
+                const list = document.getElementById(listId);
+                list.innerHTML = '';
+                urls.forEach((url, i) => {
+                    const li = document.createElement('li');
+                    li.textContent = `File ${i+1} uploaded`;
+                    list.appendChild(li);
+                });
+
+            } catch (err) {
+                console.error(err);
+                alert(`Network error uploading ${type} files`);
+            }
+        }
+
+        // ────────────────────────────────────────────────
+        // Event listeners for file inputs
+        // ────────────────────────────────────────────────
+
+        document.getElementById('logo').addEventListener('change', (e) => {
+            uploadSingleFile(e.target.files[0], 'logo', 'logo_preview', 'logo_url');
+        });
+
+        document.getElementById('banner').addEventListener('change', (e) => {
+            uploadSingleFile(e.target.files[0], 'banner', 'banner_preview', 'banner_url');
+        });
+
+        document.getElementById('valid_id').addEventListener('change', (e) => {
+            uploadMultipleFiles(e.target.files, 'valid_id', 'valid_id_list', 'valid_id_urls');
+        });
+
+        document.getElementById('store_photos').addEventListener('change', (e) => {
+            uploadMultipleFiles(e.target.files, 'store_photos', 'store_photos_list', 'store_photo_urls');
+        });
+
+        // ────────────────────────────────────────────────
+        // Your original GPS + Plus Code logic (unchanged)
+        // ────────────────────────────────────────────────
+        const gpsInput = document.getElementById('gps_display');
+        const latInput = document.getElementById('latitude');
+        const lngInput = document.getElementById('longitude');
+        const plusCodeInput = document.getElementById('plus_code');
+        const copyBtn = document.getElementById('copy_plus_code');
+
         if (typeof OpenLocationCode === 'undefined') {
             console.error("OpenLocationCode library failed to load.");
             plusCodeInput.value = "Library issue – paste short code from Google Maps";
@@ -177,7 +316,6 @@
             console.log("OpenLocationCode loaded OK.");
         }
 
-        // Approximate Dumaguete city center for shortening (adjust if your shops are far outside)
         const dumagueteRef = { lat: 9.3064, lng: 123.3054 };
 
         gpsInput.addEventListener('click', function() {
@@ -185,39 +323,30 @@
                 alert("Geolocation not supported.");
                 return;
             }
-
             gpsInput.value = "Detecting... allow permission";
-
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
-
                     gpsInput.value = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
                     latInput.value = lat;
                     lngInput.value = lng;
 
                     if (typeof OpenLocationCode !== 'undefined') {
                         try {
-                            // Step 1: Generate full Plus Code (high precision)
                             const fullCode = OpenLocationCode.encode(lat, lng, 11);
                             console.log("Full Plus Code:", fullCode);
 
-                            // Step 2: Shorten it using Dumaguete reference
                             let shortCode = fullCode;
                             try {
                                 shortCode = OpenLocationCode.shorten(fullCode, dumagueteRef.lat, dumagueteRef.lng);
                                 console.log("Shortened Plus Code:", shortCode);
                             } catch (shortenErr) {
                                 console.warn("Shortening failed (possibly out of area):", shortenErr);
-                                // Fallback to full if shortening not possible
                             }
 
-                            // Display the short version (add city name for user-friendliness)
                             plusCodeInput.value = `${shortCode} Dumaguete City`;
-                            // If you prefer just the short code without city: plusCodeInput.value = shortCode;
 
-                            // Optional: open in Maps to confirm (uses short format)
                             const mapsUrl = `https://plus.codes/${shortCode},Dumaguete City`;
                             window.open(mapsUrl, '_blank');
                         } catch (err) {
@@ -238,7 +367,6 @@
             );
         });
 
-        // Copy button (now copies whatever is in the field)
         copyBtn.addEventListener('click', () => {
             if (!plusCodeInput.value.trim() || plusCodeInput.value.includes('failed')) {
                 alert("No valid code to copy.");

@@ -1,5 +1,5 @@
 <?php
-// upload.php - Enhanced Cloudinary upload endpoint with detailed feedback
+// upload_buyer_avatar.php
 
 // Enable CORS for testing
 header("Access-Control-Allow-Origin: *");
