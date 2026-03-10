@@ -1,3 +1,21 @@
+<?php
+// /seller/ui/dashboard.php
+session_start();
+
+// Check if user is logged in
+if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+    header("Location: /seller/ui/login.php");
+    exit;
+}
+
+// Get seller info from session
+$seller_name = $_SESSION['seller_name'] ?? 'Seller';
+$seller_email = $_SESSION['seller_email'] ?? '';
+$seller_id = $_SESSION['seller_id'] ?? '';
+
+// You would typically fetch real data from database here
+// For now, we'll keep the static data but use the session name
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,13 +44,13 @@
         </nav>
         <div class="sidebar-footer">
             <div class="user-profile">
-                <div class="avatar">T</div>
+                <div class="avatar"><?= strtoupper(substr($seller_name, 0, 1)) ?></div>
                 <div>
-                    <h4>Titoy</h4>
+                    <h4><?= htmlspecialchars($seller_name) ?></h4>
                     <p>Seller Account</p>
                 </div>
             </div>
-            <a href="#" class="logout-btn"><i class="fas fa-sign-out-alt"></i></a>
+            <a href="/seller/backend/auth/logout.php" class="logout-btn"><i class="fas fa-sign-out-alt"></i></a>
         </div>
     </aside>
 
@@ -41,14 +59,14 @@
         <header class="main-header">
             <div class="header-left">
                 <h1>Dashboard Overview</h1>
-                <p>Welcome back, Titoy!</p>
+                <p>Welcome back, <?= htmlspecialchars(explode(' ', $seller_name)[0]) ?>!</p>
             </div>
             <div class="header-right">
                 <div class="notifications">
                     <i class="fas fa-bell"></i>
                     <span class="notification-badge">3</span>
                 </div>
-                <div class="date-display">March 9, 2026</div>
+                <div class="date-display"><?= date('F j, Y') ?></div>
             </div>
         </header>
 
@@ -74,7 +92,7 @@
         <div class="full-width-section recent-orders">
             <div class="section-header">
                 <h2>Recent Orders</h2>
-                <a href="#" class="view-all">View All</a>
+                <a href="/seller/ui/orders.php" class="view-all">View All</a>
             </div>
             <div class="table-container">
                 <table>
@@ -103,12 +121,12 @@
             <div class="quick-actions">
                 <div class="section-header"><h2>Quick Actions</h2></div>
                 <div class="actions-grid">
-                    <a href="#" class="action-card">
+                    <a href="/seller/ui/products.php?action=add" class="action-card">
                         <div class="action-icon" style="background:#3498db20;color:#3498db"><i class="fas fa-plus"></i></div>
                         <h3>Add New Product</h3>
                         <p>Create a new product listing</p>
                     </a>
-                    <a href="#" class="action-card">
+                    <a href="/seller/ui/analytics.php" class="action-card">
                         <div class="action-icon" style="background:#e67e2220;color:#e67e22"><i class="fas fa-chart-pie"></i></div>
                         <h3>View Reports</h3>
                         <p>Detailed sales analytics</p>
@@ -117,11 +135,6 @@
                         <div class="action-icon" style="background:#3498db20;color:#3498db"><i class="fas fa-bullhorn"></i></div>
                         <h3>Run Promotion</h3>
                         <p>Create marketing campaigns</p>
-                    </a>
-                    <a href="#" class="action-card">
-                        <div class="action-icon" style="background:#e67e2220;color:#e67e22"><i class="fas fa-warehouse"></i></div>
-                        <h3>Inventory</h3>
-                        <p>Manage stock levels</p>
                     </a>
                 </div>
             </div>
@@ -169,7 +182,7 @@
         </div>
 
         <footer class="main-footer">
-            <p>© 2026 Seller Dashboard. All rights reserved.</p>
+            <p>© <?= date('Y') ?> Seller Dashboard. All rights reserved.</p>
             <div class="footer-links">
                 <a href="#">Privacy Policy</a> •
                 <a href="#">Terms of Service</a> •
