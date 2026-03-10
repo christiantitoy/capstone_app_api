@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PalitOra - Local Marketplace for Dumaguete City</title>
-    <link rel="stylesheet" href="../css/index.css?v=<?php echo filemtime('index.css'); ?>">
+    <link rel="stylesheet" href="../css/index.css?v=<?= time() ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -19,7 +19,7 @@
             <div class="nav-links">
                 <a href="#features">Features</a>
                 <a href="#pricing">Pricing</a>
-                <a href="login.html" class="nav-btn">Sign In</a>
+                <a href="/seller/ui/login.php" class="nav-btn">Sign In</a>
             </div>
         </div>
     </nav>
@@ -30,8 +30,8 @@
             <h1>Empower Your Local Business in Dumaguete</h1>
             <p>Join the city's fastest-growing marketplace. Sell smarter, manage your team, and grow your orders — all in one simple place.</p>
             <div class="hero-buttons">
-                <a href="signup.html" class="hero-btn btn-primary">Start Selling Today</a>
-                <a href="login.html" class="hero-btn btn-outline">Sign In</a>
+                <a href="/seller/ui/signup.php" class="hero-btn btn-primary">Start Selling Today</a>
+                <a href="seller/ui/login.php" class="hero-btn btn-outline">Sign In</a>
             </div>
         </div>
     </section>
