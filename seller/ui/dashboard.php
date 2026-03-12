@@ -1,20 +1,16 @@
 <?php
 // /seller/ui/dashboard.php
 session_start();
-
 // Check if user is logged in
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     header("Location: /seller/ui/login.php");
     exit;
 }
-
 // Get seller info from session
 $seller_name = $_SESSION['seller_name'] ?? 'Seller';
 $seller_email = $_SESSION['seller_email'] ?? '';
 $seller_id = $_SESSION['seller_id'] ?? '';
-
 // You would typically fetch real data from database here
-// For now, we'll keep the static data but use the session name
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -30,7 +26,6 @@ $seller_id = $_SESSION['seller_id'] ?? '';
 <body>
 
 <div class="dashboard-container">
-
     <aside class="sidebar">
         <div class="sidebar-header">
             <h2>Seller<span>Dashboard</span></h2>
@@ -50,12 +45,15 @@ $seller_id = $_SESSION['seller_id'] ?? '';
                     <p>Seller Account</p>
                 </div>
             </div>
-            <a href="/seller/backend/auth/logout.php" class="logout-btn"><i class="fas fa-sign-out-alt"></i></a>
+            <!-- Changed to button that opens modal -->
+            <button class="logout-btn logout-trigger" title="Sign out">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
         </div>
     </aside>
 
     <main class="main-content">
-
+        
         <header class="main-header">
             <div class="header-left">
                 <h1>Dashboard Overview</h1>
@@ -192,6 +190,59 @@ $seller_id = $_SESSION['seller_id'] ?? '';
 
     </main>
 </div>
+
+<!-- ── LOGOUT CONFIRMATION MODAL ── -->
+<div class="modal-overlay" id="logoutModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Sign Out</h3>
+            <button class="modal-close" id="closeModal">×</button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to sign out?</p>
+            <p class="text-secondary">You will need to log in again to access your dashboard.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="cancelLogout">Cancel</button>
+            <a href="/seller/backend/auth/logout.php" class="btn btn-danger">Sign Out</a>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('logoutModal');
+    const trigger = document.querySelector('.logout-trigger');
+    const closeBtn = document.getElementById('closeModal');
+    const cancelBtn = document.getElementById('cancelLogout');
+
+    function openModal() {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    if (trigger) trigger.addEventListener('click', openModal);
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+    // Click outside to close
+    modal.addEventListener('click', e => {
+        if (e.target === modal) closeModal();
+    });
+
+    // Escape key to close
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeModal();
+        }
+    });
+});
+</script>
 
 </body>
 </html>

@@ -244,6 +244,132 @@ input[type="radio"]:checked + .toggle-option {
 .billing-period { display:none; }
 .billing-period.active { display:block; }
 
+/* ── Modern Logout Modal ── */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display: grid;
+    place-items: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: all;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 420px;
+    margin: 1.5rem;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    overflow: hidden;
+    transform: scale(0.92);
+    transition: all 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-overlay.active .modal-content {
+    transform: scale(1);
+}
+
+.modal-header {
+    padding: 1.5rem 1.8rem;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8fafc;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.38rem;
+    font-weight: 600;
+    color: var(--dark);
+}
+
+.modal-close-btn {
+    background: none;
+    border: none;
+    font-size: 2.1rem;
+    line-height: 1;
+    cursor: pointer;
+    color: #94a3b8;
+    transition: color 0.2s;
+}
+
+.modal-close-btn:hover {
+    color: #ef4444;
+}
+
+.modal-body {
+    padding: 1.8rem;
+    text-align: center;
+}
+
+.modal-body p {
+    margin: 0.6rem 0;
+    font-size: 1.05rem;
+}
+
+.modal-body .text-muted {
+    color: #64748b;
+    font-size: 0.98rem;
+}
+
+.modal-footer {
+    padding: 1.3rem 1.8rem;
+    border-top: 1px solid #eee;
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    background: #f8fafc;
+}
+
+.btn {
+    padding: 0.9rem 1.6rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 1.02rem;
+    cursor: pointer;
+    transition: all 0.25s;
+    border: none;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 110px;
+}
+
+.btn-cancel {
+    background: #e2e8f0;
+    color: #334155;
+}
+
+.btn-cancel:hover {
+    background: #cbd5e1;
+}
+
+.btn-logout {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-logout:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+}
+
 @media (max-width: 1024px) {
     .pricing-grid { grid-template-columns:repeat(2, 1fr); }
 }
