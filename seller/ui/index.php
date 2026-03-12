@@ -129,7 +129,7 @@
                         </div>
                         <div class="pricing-body">
                             <div class="employee-count">
-                                <i class="fas fa-users"></i> 0 employees
+                                <i class="fas fa-users"></i> 3 employees
                             </div>
                             <ul class="feature-list">
                                 <li><i class="fas fa-check"></i> Up to 50 products</li>
