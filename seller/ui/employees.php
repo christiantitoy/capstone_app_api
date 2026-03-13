@@ -442,6 +442,11 @@
             background: #eef2f6;
         }
 
+        .nav-item:hover, .nav-item.active {
+            background: #e8f4fd;
+            color: var(--primary);
+        }
+
         @media (max-width: 900px) {
             .dashboard-container { grid-template-columns: 1fr; }
             .sidebar { display: none; }
@@ -467,6 +472,7 @@
             <a href="/seller/ui/dashboard.php" class="nav-item"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
             <a href="/seller/ui/products.php" class="nav-item"><i class="fas fa-box"></i><span>Products</span></a>
             <a href="/seller/ui/orders.php" class="nav-item"><i class="fas fa-shopping-cart"></i><span>Orders</span></a>
+            <a href="/seller/ui/employees.php" class="nav-item"><i class="fas fa-chart-bar"></i><span>Employees</span></a>
             <a href="/seller/ui/analytics.php" class="nav-item"><i class="fas fa-chart-bar"></i><span>Analytics</span></a>
             <a href="#" class="nav-item active"><i class="fas fa-users"></i><span>Employees</span></a>
             <a href="#" class="nav-item"><i class="fas fa-cog"></i><span>Settings</span></a>
