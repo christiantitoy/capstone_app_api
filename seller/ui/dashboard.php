@@ -59,6 +59,7 @@ $seller_id = $_SESSION['seller_id'] ?? '';
             <div class="header-left">
                 <h1>Dashboard Overview</h1>
                 <p>Welcome back, <?= htmlspecialchars(explode(' ', $seller_name)[0]) ?>!</p>
+                <a href="#">Bronze Seller</a>
             </div>
             <div class="header-right">
                 <div class="notifications">
