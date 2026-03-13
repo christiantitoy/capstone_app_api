@@ -117,26 +117,6 @@ $seller_id = $_SESSION['seller_id'] ?? '';
 
         <!-- Quick Actions + Top Products - same height, side by side -->
         <div class="side-by-side">
-            <div class="quick-actions">
-                <div class="section-header"><h2>Quick Actions</h2></div>
-                <div class="actions-grid">
-                    <a href="/seller/ui/products.php?action=add" class="action-card">
-                        <div class="action-icon" style="background:#3498db20;color:#3498db"><i class="fas fa-plus"></i></div>
-                        <h3>Add New Product</h3>
-                        <p>Create a new product listing</p>
-                    </a>
-                    <a href="/seller/ui/analytics.php" class="action-card">
-                        <div class="action-icon" style="background:#e67e2220;color:#e67e22"><i class="fas fa-chart-pie"></i></div>
-                        <h3>View Reports</h3>
-                        <p>Detailed sales analytics</p>
-                    </a>
-                    <a href="#" class="action-card">
-                        <div class="action-icon" style="background:#3498db20;color:#3498db"><i class="fas fa-bullhorn"></i></div>
-                        <h3>Run Promotion</h3>
-                        <p>Create marketing campaigns</p>
-                    </a>
-                </div>
-            </div>
 
             <div class="top-products">
                 <div class="section-header"><h2>Top Selling Products</h2></div>
