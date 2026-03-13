@@ -106,6 +106,7 @@ body {
 .header-left h1 { font-size: 1.8rem; font-weight: 600; }
 .header-left p { color: #7f8c8d; margin-top: 0.25rem; }
 .header-left a {
+    text-decoration: none;
     padding: 10px;
     border-radius: 50%;
     background: #b45309;
