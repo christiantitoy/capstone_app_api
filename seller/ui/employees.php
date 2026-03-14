@@ -1,8 +1,25 @@
 <?php
 // /seller/ui/employees.php
 require_once __DIR__ . '/../backend/session/auth.php';
+require_once __DIR__ . '/../backend/db.php';  // ← your PDO connection file
 
+// Fetch real employees for this seller
+$stmt = $pdo->prepare("
+    SELECT id, full_name, email, role, status
+    FROM employees
+    WHERE seller_id = ?
+    ORDER BY full_name ASC
+");
+$stmt->execute([$seller_id]);
+$employees = $stmt->fetchAll();
+
+// Display mapping for roles
+$role_display = [
+    'order_manager'    => 'Order Manager',
+    'product_manager'  => 'Product Manager'
+];
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,7 +36,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
 
 <div class="dashboard-container">
 
-    <!-- Sidebar ── identical to orders page -->
+    <!-- Sidebar -->
     <aside class="sidebar">
         <div class="sidebar-header">
             <h2>Seller<span>Dashboard</span></h2>
@@ -42,7 +59,6 @@ require_once __DIR__ . '/../backend/session/auth.php';
                     <p>Seller Account</p>
                 </div>
             </div>
-            <!-- Changed to button that opens modal -->
             <button class="logout-btn logout-trigger" title="Sign out">
                 <i class="fas fa-sign-out-alt"></i>
             </button>
@@ -63,125 +79,144 @@ require_once __DIR__ . '/../backend/session/auth.php';
             <div class="header-right">
                 <div class="search-box">
                     <i class="fas fa-search"></i>
-                    <input type="text" placeholder="Search employees...">
+                    <input type="text" placeholder="Search employees..." id="searchInput">
                 </div>
-                <div class="date-display">March 13, 2026</div>
+                <div class="date-display"><?= date('F j, Y') ?></div>
             </div>
         </header>
 
         <div class="employees-header">
-            <h2>Team Members (4)</h2>
+            <h2>Team Members (<?= count($employees) ?>)</h2>
             <div class="filter-group">
-                <select class="filter-select" onchange="filterRole(this.value)">
+                <select class="filter-select" id="filterRole">
                     <option value="">All Roles</option>
-                    <option value="order">Order Manager</option>
-                    <option value="product">Product Manager</option>
+                    <option value="order_manager">Order Manager</option>
+                    <option value="product_manager">Product Manager</option>
                 </select>
-                <select class="filter-select" onchange="filterStatus(this.value)">
+                <select class="filter-select" id="filterStatus">
                     <option value="">All Status</option>
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
                 </select>
                 <button class="add-employee-btn" onclick="openAddModal()">
-                    <i class="fas fa-user-plus"></i>
-                    Add Employee
+                    <i class="fas fa-user-plus"></i> Add Employee
                 </button>
             </div>
         </div>
 
         <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Employee</th>
-                        <th>Role</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
+            <?php if (empty($employees)): ?>
+                <div style="
+                    text-align: center;
+                    padding: 4rem 1rem;
+                    color: #7f8c8d;
+                    background: #f8f9fa;
+                    border-radius: 12px;
+                    margin: 2rem 0;
+                ">
+                    <i class="fas fa-users-slash" style="font-size: 3.5rem; margin-bottom: 1rem; opacity: 0.6;"></i>
+                    <h3 style="margin: 0.5rem 0; font-size: 1.4rem;">You have no employees yet</h3>
+                    <p style="margin: 0;">Click "Add Employee" to invite your first team member.</p>
+                </div>
+            <?php else: ?>
+                <table id="employeesTable">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($employees as $emp): ?>
+                            <tr>
+                                <td>
+                                    <div class="employee-info">
+                                        <div class="employee-avatar">
+                                            <?= strtoupper(substr($emp['full_name'] ?? 'E', 0, 1)) ?>
+                                        </div>
+                                        <div class="employee-details">
+                                            <span class="employee-name"><?= htmlspecialchars($emp['full_name'] ?? 'Unknown') ?></span>
+                                            <span class="employee-email"><?= htmlspecialchars($emp['email'] ?? '—') ?></span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="role-badge role-<?= htmlspecialchars($emp['role'] ?? '') ?>">
+                                        <?= htmlspecialchars($role_display[$emp['role']] ?? ucfirst($emp['role'] ?? 'Unknown')) ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="status-badge status-<?= htmlspecialchars($emp['status'] ?? 'unknown') ?>">
+                                        <?= ucfirst($emp['status'] ?? 'Unknown') ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="action-btn edit-btn" onclick="openEditModal(<?= (int)$emp['id'] ?>)" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="action-btn reset-btn" onclick="resetPassword(<?= (int)$emp['id'] ?>)" title="Reset Password">
+                                            <i class="fas fa-key"></i>
+                                        </button>
+                                        <button class="action-btn delete-btn" onclick="deleteEmployee(<?= (int)$emp['id'] ?>)" title="Remove">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </div>
 
-                    <!-- Order Manager Employees -->
-                    <tr>
-                        <td>
-                            <div class="employee-info">
-                                <div class="employee-avatar">J</div>
-                                <div class="employee-details">
-                                    <span class="employee-name">Juan Dela Cruz</span>
-                                    <span class="employee-email">juan@mybusiness.com</span>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="role-badge role-order-tracker">Order Manager</span>
-                            <div style="font-size: 0.75rem; color: #7f8c8d; margin-top: 4px;">
-                                <i class="fas fa-eye"></i> Can view & update orders
-                            </div>
-                        </td>
-                        <td><span class="status-badge status-active">Active</span></td>
-                        <td>
-                            <div class="action-buttons">
-                                <button class="action-btn edit-btn" onclick="openEditModal(2)" title="Edit"><i class="fas fa-edit"></i></button>
-                                <button class="action-btn reset-btn" onclick="resetPassword(2)" title="Reset Password"><i class="fas fa-key"></i></button>
-                                <button class="action-btn delete-btn" onclick="deleteEmployee(2)" title="Remove"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
+        <!-- Add/Edit Employee Modal -->
+        <div class="modal" id="employeeModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><span id="modalTitle">Add New Employee</span></h2>
+                    <button class="close-modal" onclick="closeModal()">×</button>
+                </div>
 
-                    <tr>
-                        <td>
-                            <div class="employee-info">
-                                <div class="employee-avatar">P</div>
-                                <div class="employee-details">
-                                    <span class="employee-name">Pedro Reyes</span>
-                                    <span class="employee-email">pedro@mybusiness.com</span>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="role-badge role-order-tracker">Order Manager</span>
-                            <div style="font-size: 0.75rem; color: #7f8c8d; margin-top: 4px;">
-                                <i class="fas fa-eye"></i> Can view & update orders
-                            </div>
-                        </td>
-                        <td><span class="status-badge status-inactive">Inactive</span></td>
-                        <td>
-                            <div class="action-buttons">
-                                <button class="action-btn edit-btn" onclick="openEditModal(4)"><i class="fas fa-edit"></i></button>
-                                <button class="action-btn reset-btn" onclick="resetPassword(4)"><i class="fas fa-key"></i></button>
-                                <button class="action-btn delete-btn" onclick="deleteEmployee(4)"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
+                <form id="employeeForm" method="POST" action="/seller/backend/employees/add.php">
+                    <!-- Important: hidden field for edit mode -->
+                    <input type="hidden" name="employee_id" id="editEmployeeId" value="">
 
-                    <!-- Product Manager Employees -->
-                    <tr>
-                        <td>
-                            <div class="employee-info">
-                                <div class="employee-avatar">M</div>
-                                <div class="employee-details">
-                                    <span class="employee-name">Maria Santos</span>
-                                    <span class="employee-email">maria@mybusiness.com</span>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="role-badge role-product-adder">Product Manager</span>
-                            <div style="font-size: 0.75rem; color: #7f8c8d; margin-top: 4px;">
-                                <i class="fas fa-plus-circle"></i> Can add & edit products
-                            </div>
-                        </td>
-                        <td><span class="status-badge status-active">Active</span></td>
-                        <td>
-                            <div class="action-buttons">
-                                <button class="action-btn edit-btn" onclick="openEditModal(3)"><i class="fas fa-edit"></i></button>
-                                <button class="action-btn reset-btn" onclick="resetPassword(3)"><i class="fas fa-key"></i></button>
-                                <button class="action-btn delete-btn" onclick="deleteEmployee(3)"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+                    <div class="form-group">
+                        <label for="fullName">Full Name</label>
+                        <input type="text" id="fullName" name="full_name" placeholder="e.g., Juan Dela Cruz" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" placeholder="employee@business.com" required>
+                    </div>
+
+                    <div class="form-group" id="passwordGroup">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" placeholder="Enter password" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="role">Employee Role</label>
+                        <select id="role" name="role" required onchange="updateRoleDescription()">
+                            <option value="">Select a role...</option>
+                            <option value="order_manager">Order Manager</option>
+                            <option value="product_manager">Product Manager</option>
+                        </select>
+                        <div class="role-description" id="roleDescription">
+                            <i class="fas fa-info-circle"></i> Select a role to see permissions
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+                        <button type="submit" class="btn-primary" id="modalSubmit">Add Employee</button>
+                    </div>
+                </form>
+            </div>
         </div>
 
         <!-- Add/Edit Employee Modal -->
@@ -314,184 +349,55 @@ require_once __DIR__ . '/../backend/session/auth.php';
 
 <script src="/seller/js/logout.js"></script>
 <script>
-// ────────────────────────────────────────────────
-// Constants & Data
-// ────────────────────────────────────────────────
+// Role descriptions
 const roleDescriptions = {
-    order_manager: {
-        icon: 'fa-eye',
-        text: 'Can view all orders, update order status (pending → shipped → delivered), and view customer information. Cannot add or edit products.'
-    },
-    product_manager: {
-        icon: 'fa-plus-circle',
-        text: 'Can add new products, edit product details (name, price, stock), and upload product images. Cannot view orders.'
-    }
+    order_manager: 'Can view all orders, update order status (pending → shipped → delivered), and view customer information. Cannot add or edit products.',
+    product_manager: 'Can add new products, edit product details (name, price, stock), and upload product images. Cannot view orders.'
 };
 
-// ────────────────────────────────────────────────
-// Helper Functions
-// ────────────────────────────────────────────────
 function updateRoleDescription() {
     const role = document.getElementById('role')?.value;
-    const descDiv = document.getElementById('roleDescription');
-
-    if (!descDiv) return;
+    const desc = document.getElementById('roleDescription');
+    if (!desc) return;
 
     if (role && roleDescriptions[role]) {
-        const { icon, text } = roleDescriptions[role];
-        descDiv.innerHTML = `<i class="fas ${icon}"></i> ${text}`;
+        const icon = role === 'order_manager' ? 'fa-eye' : 'fa-plus-circle';
+        desc.innerHTML = `<i class="fas ${icon}"></i> ${roleDescriptions[role]}`;
     } else {
-        descDiv.innerHTML = '<i class="fas fa-info-circle"></i> Select a role to see permissions';
+        desc.innerHTML = '<i class="fas fa-info-circle"></i> Select a role to see permissions';
     }
 }
 
-function closeAllModals() {
-    const modals = [
-        document.getElementById('employeeModal'),
-        document.getElementById('resetModal'),
-        document.getElementById('deleteModal')
-    ];
-
-    modals.forEach(modal => {
-        if (modal) modal.classList.remove('active');
-    });
-
-    // Clear sensitive fields
-    const passwordFields = document.querySelectorAll('#password, #newPassword, #confirmPassword');
-    passwordFields.forEach(field => field.value = '');
-}
-
-// ────────────────────────────────────────────────
-// Add / Edit Modal Logic
-// ────────────────────────────────────────────────
 function openAddModal() {
-    const modal = document.getElementById('employeeModal');
-    if (!modal) return;
-
     document.getElementById('modalTitle').innerHTML = '<i class="fas fa-user-plus"></i> Add New Employee';
     document.getElementById('passwordGroup').style.display = 'block';
     document.getElementById('modalSubmit').textContent = 'Add Employee';
     document.getElementById('employeeForm').reset();
-    document.getElementById('editEmployeeId').value = '';           // important for add vs edit
-    document.getElementById('employeeForm').action = '/seller/backend/employees/add.php';
-
+    document.getElementById('editEmployeeId').value = '';
+    document.getElementById('employeeModal').classList.add('active');
     updateRoleDescription();
-    modal.classList.add('active');
 }
 
-function openEditModal(id) {
-    // For now: placeholder (you can later fetch via AJAX)
-    alert(`Edit employee #${id} → this feature is coming soon.\n\nIn next step we can load real data into the form.`);
-
-    // Example of future real implementation (commented):
-    /*
-    fetch(`/seller/backend/employees/get.php?id=${id}`)
-        .then(res => res.json())
-        .then(data => {
-            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-user-edit"></i> Edit Employee';
-            document.getElementById('fullName').value = data.full_name;
-            document.getElementById('email').value = data.email;
-            document.getElementById('role').value = data.role;
-            document.getElementById('passwordGroup').style.display = 'none';
-            document.getElementById('modalSubmit').textContent = 'Save Changes';
-            document.getElementById('editEmployeeId').value = id;
-            document.getElementById('employeeForm').action = '/seller/backend/employees/update.php';
-            updateRoleDescription();
-            document.getElementById('employeeModal').classList.add('active');
-        });
-    */
+function closeModal() {
+    document.getElementById('employeeModal').classList.remove('active');
 }
 
-// ────────────────────────────────────────────────
-// Reset Password
-// ────────────────────────────────────────────────
-function resetPassword(id) {
-    alert(`Reset password for employee #${id} → coming soon.\n\nWe'll add a secure reset flow next.`);
-    // Future: open reset modal + send POST to backend
-}
+// Placeholder for other actions
+function openEditModal(id)    { alert('Edit employee #' + id + ' → coming soon'); }
+function resetPassword(id)    { alert('Reset password for #' + id + ' → coming soon'); }
+function deleteEmployee(id)   { alert('Delete employee #' + id + ' → coming soon'); }
 
-// ────────────────────────────────────────────────
-// Delete Employee
-// ────────────────────────────────────────────────
-function deleteEmployee(id) {
-    if (!confirm(`Are you sure you want to remove employee #${id}?\nThis action cannot be undone.`)) {
-        return;
+// Close modal on outside click / Esc
+document.addEventListener('click', e => {
+    if (e.target.classList.contains('modal') || e.target.classList.contains('modal-overlay')) {
+        e.target.classList.remove('active');
     }
+});
 
-    alert(`Employee #${id} would be deleted now (demo mode).\n\nNext step: real DELETE request to backend.`);
-    // Future:
-    // fetch(`/seller/backend/employees/delete.php?id=${id}`, { method: 'POST' })
-    //   .then(() => location.reload());
-}
-
-// ────────────────────────────────────────────────
-// Client-side Search (real-time filter)
-// ────────────────────────────────────────────────
-const searchInput = document.getElementById('searchInput');
-if (searchInput && document.getElementById('employeesTable')) {
-    searchInput.addEventListener('input', function(e) {
-        const term = e.target.value.toLowerCase().trim();
-        const rows = document.querySelectorAll('#employeesTable tbody tr');
-
-        rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(term) ? '' : 'none';
-        });
-    });
-}
-
-// ────────────────────────────────────────────────
-// Form Submit (only for demo/prevention – real submit goes to backend)
-// ────────────────────────────────────────────────
-const employeeForm = document.getElementById('employeeForm');
-if (employeeForm) {
-    employeeForm.addEventListener('submit', function(e) {
-        // Remove this block when backend is fully working
-        // e.preventDefault();   ← comment out when using real POST
-
-        const role = document.getElementById('role')?.value;
-        if (!role) {
-            e.preventDefault();
-            alert('Please select a role.');
-            return;
-        }
-
-        // Optional: extra client-side validation
-        const password = document.getElementById('password')?.value;
-        if (document.getElementById('passwordGroup').style.display !== 'none' && password?.length < 6) {
-            e.preventDefault();
-            alert('Password must be at least 6 characters long.');
-            return;
-        }
-
-        // If you keep e.preventDefault() → show success message
-        // alert('Form would be submitted now (demo mode).');
-    });
-}
-
-// ────────────────────────────────────────────────
-// Global Event Listeners
-// ────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-    // Close modals when clicking outside
-    document.addEventListener('click', function(event) {
-        const modals = document.querySelectorAll('.modal.active');
-        modals.forEach(modal => {
-            if (event.target === modal) {
-                closeAllModals();
-            }
-        });
-    });
-
-    // Close on Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeAllModals();
-        }
-    });
-
-    // Role change listener
-    document.getElementById('role')?.addEventListener('change', updateRoleDescription);
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.modal.active, .modal-overlay.active').forEach(m => m.classList.remove('active'));
+    }
 });
 </script>
 
