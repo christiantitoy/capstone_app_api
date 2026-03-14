@@ -1,3 +1,9 @@
+<?php
+// /seller/ui/dashboard.php
+require_once __DIR__ . '/../backend/session/auth.php';
+
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>

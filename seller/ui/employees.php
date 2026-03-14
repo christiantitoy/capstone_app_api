@@ -1,6 +1,5 @@
-<!-- /seller/ui/employees.php -->
 <?php
-// /seller/ui/dashboard.php
+// /seller/ui/employees.php
 require_once __DIR__ . '/../backend/session/auth.php';
 
 ?>
