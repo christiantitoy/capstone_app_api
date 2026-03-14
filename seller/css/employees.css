@@ -457,7 +457,6 @@ tr:hover { background: #f8fafc; }
         z-index: 1200;
         background: white;
         border-right: 1px solid #ebedf0;
-        box-shadow: 4px 0 20px rgba(0,0,0,0.25);
         
         /* Start hidden off-screen */
         transform: translateX(-100%);
