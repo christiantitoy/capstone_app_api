@@ -277,7 +277,7 @@ $role_display = [
 
                 <div class="modal-actions">
                     <button class="btn-secondary" onclick="closeDeleteModal()">Cancel</button>
-                    <button class="btn-primary" onclick="c()" style="background: var(--danger);">Remove</button>
+                    <button class="btn-primary" onclick="confirmDelete()" style="background: var(--danger);">Remove</button>
                 </div>
             </div>
         </div>
