@@ -1,10 +1,10 @@
 <?php
 // /seller/ui/employees.php
-require_once __DIR__ . '/../backend/session/auth.php';
-require_once __DIR__ . '/../backend/db.php';  // ← your PDO connection file
+require_once __DIR__ . '/seller/backend/session/auth.php';
+require_once __DIR__ . '/connection/db_connection.php';
 
 // Fetch real employees for this seller
-$stmt = $pdo->prepare("
+$stmt = $conn->prepare("
     SELECT id, full_name, email, role, status
     FROM employees
     WHERE seller_id = ?
