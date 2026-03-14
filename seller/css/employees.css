@@ -308,7 +308,7 @@ tr:hover { background: #f8fafc; }
     align-items: center;
     justify-content: center;
     z-index: 1000;
-    overflow: hidden;           /* prevent double scrollbar */
+    overflow-y: auto;
 }
 
 .modal.active {
@@ -321,7 +321,6 @@ tr:hover { background: #f8fafc; }
     width: 100%;
     max-width: 520px;           /* slightly wider is ok for forms */
     max-height: 92vh;           /* ← key: limit height to viewport */
-    overflow-y: auto;           /* ← enables vertical scroll when content is tall */
     padding: 2rem;
     box-shadow: 0 20px 60px rgba(0,0,0,0.25);
     position: relative;
