@@ -5,13 +5,51 @@ require_once __DIR__ . '/../../connection/db_connection.php';
 
 // Fetch real employees for this seller
 $stmt = $conn->prepare("
-    SELECT id, full_name, email, role, status
+    SELECT id, full_name, email, role, status, last_login
     FROM employees
     WHERE seller_id = ?
     ORDER BY full_name ASC
 ");
 $stmt->execute([$seller_id]);
 $employees = $stmt->fetchAll();
+
+// Process each employee to check last_login and update status if needed
+foreach ($employees as &$employee) {
+    $needs_update = false;
+    $new_status = $employee['status'];
+    
+    // Check if last_login is null or 7 days or more old
+    if ($employee['last_login'] === null) {
+        if ($employee['status'] !== 'inactive') {
+            $needs_update = true;
+            $new_status = 'inactive';
+        }
+        $employee['status'] = 'inactive'; // Update for display
+    } else {
+        $last_login = new DateTime($employee['last_login']);
+        $now = new DateTime();
+        $interval = $last_login->diff($now);
+        
+        // If 7 days or more have passed
+        if ($interval->days >= 7) {
+            if ($employee['status'] !== 'inactive') {
+                $needs_update = true;
+                $new_status = 'inactive';
+            }
+            $employee['status'] = 'inactive'; // Update for display
+        }
+    }
+    
+    // Update database if status needs to change
+    if ($needs_update) {
+        $update_stmt = $conn->prepare("
+            UPDATE employees 
+            SET status = ? 
+            WHERE id = ? AND seller_id = ?
+        ");
+        $update_stmt->execute([$new_status, $employee['id'], $seller_id]);
+    }
+}
 
 // Display mapping for roles
 $role_display = [
