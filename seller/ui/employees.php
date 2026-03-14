@@ -128,9 +128,12 @@ $role_display = [
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="employeesBody">
                         <?php foreach ($employees as $emp): ?>
-                            <tr>
+                            <tr 
+                                data-role="<?= htmlspecialchars($emp['role'] ?? '') ?>" 
+                                data-status="<?= htmlspecialchars($emp['status'] ?? '') ?>"
+                            >
                                 <td>
                                     <div class="employee-info">
                                         <div class="employee-avatar">
@@ -181,7 +184,6 @@ $role_display = [
                 </div>
 
                 <form id="employeeForm" method="POST" action="/seller/backend/employees/add.php">
-                    <!-- Important: hidden field for edit mode -->
                     <input type="hidden" name="employee_id" id="editEmployeeId" value="">
 
                     <div class="form-group">
@@ -208,53 +210,6 @@ $role_display = [
                         </select>
                         <div class="role-description" id="roleDescription">
                             <i class="fas fa-info-circle"></i> Select a role to see permissions
-                        </div>
-                    </div>
-
-                    <div class="modal-actions">
-                        <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
-                        <button type="submit" class="btn-primary" id="modalSubmit">Add Employee</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Add/Edit Employee Modal -->
-        <div class="modal" id="employeeModal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>
-                        <span id="modalTitle">Add New Employee</span>
-                    </h2>
-                    <button class="close-modal" onclick="closeModal()">&times;</button>
-                </div>
-
-                <form id="employeeForm">
-                    <div class="form-group">
-                        <label for="fullName">Full Name</label>
-                        <input type="text" id="fullName" placeholder="e.g., Juan Dela Cruz" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="email">Email Address</label>
-                        <input type="email" id="email" placeholder="employee@business.com" required>
-                    </div>
-
-                    <div class="form-group" id="passwordGroup">
-                        <label for="password">Password</label>
-                        <input type="password" id="password" placeholder="Enter password" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="role">Employee Role</label>
-                        <select id="role" required onchange="updateRoleDescription()">
-                            <option value="">Select a role...</option>
-                            <option value="order_tracker">Order Manager</option>
-                            <option value="product_adder">Product Manager</option>
-                        </select>
-                        <div class="role-description" id="roleDescription">
-                            <i class="fas fa-info-circle"></i>
-                            Select a role to see permissions
                         </div>
                     </div>
 
@@ -329,7 +284,7 @@ $role_display = [
     </main>
 </div>
 
-<!-- ── LOGOUT CONFIRMATION MODAL ── -->
+<!-- Logout Confirmation Modal -->
 <div class="modal-overlay" id="logoutModal">
     <div class="modal-content">
         <div class="modal-header">
@@ -399,6 +354,33 @@ document.addEventListener('keydown', e => {
         document.querySelectorAll('.modal.active, .modal-overlay.active').forEach(m => m.classList.remove('active'));
     }
 });
+
+// ────────────────────────────────────────────────
+// Role & Status Filter - Client-side only
+// ────────────────────────────────────────────────
+function applyFilters() {
+    const roleFilter = document.getElementById('filterRole')?.value || '';
+    const statusFilter = document.getElementById('filterStatus')?.value || '';
+
+    const rows = document.querySelectorAll('#employeesTable tbody tr');
+
+    rows.forEach(row => {
+        const rowRole   = row.getAttribute('data-role') || '';
+        const rowStatus = row.getAttribute('data-status') || '';
+
+        const matchRole   = !roleFilter   || rowRole === roleFilter;
+        const matchStatus = !statusFilter || rowStatus === statusFilter;
+
+        row.style.display = (matchRole && matchStatus) ? '' : 'none';
+    });
+}
+
+// Attach listeners
+document.getElementById('filterRole')?.addEventListener('change', applyFilters);
+document.getElementById('filterStatus')?.addEventListener('change', applyFilters);
+
+// Run once on load (in case of pre-selected values, though unlikely)
+document.addEventListener('DOMContentLoaded', applyFilters);
 </script>
 
 </body>
