@@ -39,8 +39,8 @@ if (!empty($errors)) {
 }
 
 try {
-    // Get seller by email - include is_confirmed and setup_shop fields
-    $stmt = $conn->prepare("SELECT id, full_name, email, password, is_confirmed, setup_shop, token FROM sellers WHERE email = ?");
+    // Get seller by email - include is_confirmed, setup_shop, AND seller_plan fields
+    $stmt = $conn->prepare("SELECT id, full_name, email, password, is_confirmed, setup_shop, token, seller_plan FROM sellers WHERE email = ?");
     $stmt->execute([$email]);
     $seller = $stmt->fetch(PDO::FETCH_ASSOC);
     
@@ -53,6 +53,7 @@ try {
                 $_SESSION['seller_id'] = $seller['id'];
                 $_SESSION['seller_name'] = $seller['full_name'];
                 $_SESSION['seller_email'] = $seller['email'];
+                $_SESSION['seller_plan'] = $seller['seller_plan'] ?? 'free'; // Store plan with default
                 $_SESSION['logged_in'] = true;
                 
                 // Set remember me cookie if requested (30 days)
@@ -76,6 +77,7 @@ try {
                 $_SESSION['seller_id'] = $seller['id'];
                 $_SESSION['seller_name'] = $seller['full_name'];
                 $_SESSION['seller_email'] = $seller['email'];
+                $_SESSION['seller_plan'] = $seller['seller_plan'] ?? 'free'; // Store plan with default
                 $_SESSION['logged_in'] = true;
                 
                 // Set remember me cookie if requested (30 days)

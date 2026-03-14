@@ -31,6 +31,7 @@ if (!isset($_SESSION['initiated'])) {
 $seller_id    = $_SESSION['seller_id']   ?? null;
 $seller_name  = $_SESSION['seller_name'] ?? 'Guest';
 $seller_email = $_SESSION['seller_email'] ?? '';
+$seller_plan  = $_SESSION['seller_plan'] ?? 'free'; // Default to 'free' if not set
 
 // ── 5. Paranoid check: critical data must exist ──────────────
 if ($seller_id === null || $seller_id <= 0) {

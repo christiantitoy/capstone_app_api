@@ -105,27 +105,49 @@ body {
 
 .header-left h1 { font-size: 1.8rem; font-weight: 600; }
 .header-left p { color: #7f8c8d; margin-top: 0.25rem; }
-.header-left a {
-  margin-top: 0.25rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 14px;
-  border-radius: 50px;           /* or 9999px */
-  background: #b45309;
-  color: white;
-  text-decoration: none;
-  font-weight: 500;
-  font-size: 12px;
-  transition: 
-    background 0.2s ease,
-    transform 0.15s ease,
-    box-shadow 0.2s ease;
+/* Plan badge styles */
+.header-left a.plan-badge {
+    margin-top: 0.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 14px;
+    border-radius: 50px;           
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 12px;
+    transition: 
+        background 0.2s ease,
+        transform 0.15s ease,
+        box-shadow 0.2s ease;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.header-left a:hover {
-  background: #d97706;
-  transform: translateY(-1px);
+.header-left a.plan-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* Bronze specific hover */
+.header-left a.plan-badge[style*="background: #b45309"]:hover {
+    background: #d97706 !important;
+}
+
+/* Silver specific hover */
+.header-left a.plan-badge[style*="background: #6b7280"]:hover {
+    background: #9ca3af !important;
+}
+
+/* Gold specific hover */
+.header-left a.plan-badge[style*="background: #fbbf24"]:hover {
+    background: #fcd34d !important;
+}
+
+/* Optional: Add a subtle glow effect for gold */
+.header-left a.plan-badge[style*="background: #fbbf24"] {
+    box-shadow: 0 2px 8px rgba(251, 191, 36, 0.3);
 }
 .header-right {
     display: flex;

@@ -52,7 +52,36 @@ require_once __DIR__ . '/../backend/session/auth.php';
             <div class="header-left">
                 <h1>Dashboard Overview</h1>
                 <p>Welcome back, <?= htmlspecialchars(explode(' ', $seller_name)[0]) ?>!</p>
-                <a href="#">Bronze Seller</a>
+
+                <?php
+                // Define plan styles
+                $plan_styles = [
+                    'bronze' => [
+                        'background' => '#b45309', // Brown/orange
+                        'hover' => '#d97706',
+                        'icon' => 'fa-medal'
+                    ],
+                    'silver' => [
+                        'background' => '#6b7280', // Gray
+                        'hover' => '#9ca3af',
+                        'icon' => 'fa-star'
+                    ],
+                    'gold' => [
+                        'background' => '#fbbf24', // Gold
+                        'hover' => '#fcd34d',
+                        'icon' => 'fa-crown'
+                    ]
+                ];
+                
+                // Get current plan (default to bronze if not set)
+                $current_plan = strtolower($seller_plan ?? 'bronze');
+                $plan_style = $plan_styles[$current_plan] ?? $plan_styles['bronze'];
+                ?>
+                
+                <a href="#" class="plan-badge" style="background: <?= $plan_style['background']; ?>;">
+                    <i class="fas <?= $plan_style['icon']; ?>" style="margin-right: 6px;"></i>
+                    <?= ucfirst($current_plan); ?> Seller
+                </a>
             </div>
             <div class="header-right">
                 <div class="notifications">
