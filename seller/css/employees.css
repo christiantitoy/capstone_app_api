@@ -466,6 +466,11 @@ tr:hover { background: #f8fafc; }
     }
 }
 
+/* Hide hamburger on desktop */
+.mobile-menu-btn {
+    display: none;
+}
+
 /* Hamburger menu button - add this in header on mobile */
 @media (max-width: 900px) {
     .mobile-menu-btn {
@@ -483,6 +488,25 @@ tr:hover { background: #f8fafc; }
     
     .mobile-menu-btn:hover {
         color: var(--primary);
+    }
+}
+
+@media (max-width: 900px) {
+    .sidebar-header {
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+    }
+    
+    .sidebar-header::after {
+        content: "×";
+        font-size: 2rem;
+        color: #95a5a6;
+        cursor: pointer;
+        padding: 0.5rem;
+    }
+    
+    .sidebar-header::after:hover {
+        color: var(--danger);
     }
 }
 

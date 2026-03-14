@@ -359,9 +359,36 @@ document.addEventListener('keydown', e => {
     }
 });
 
+// Replace your existing toggleSidebar() with this improved version
 function toggleSidebar() {
-    document.querySelector('.sidebar').classList.toggle('active');
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+    
+    sidebar.classList.toggle('active');
+    
+    // Optional: close sidebar when clicking a nav link on mobile
+    const navLinks = sidebar.querySelectorAll('.nav-item');
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            if (window.innerWidth <= 900) {
+                sidebar.classList.remove('active');
+            }
+        }, { once: true }); // only once per open
+    });
 }
+
+// Close sidebar when clicking overlay (outside)
+document.addEventListener('click', function(e) {
+    const sidebar = document.querySelector('.sidebar');
+    const menuBtn = document.querySelector('.mobile-menu-btn');
+    
+    if (!sidebar || !sidebar.classList.contains('active')) return;
+    
+    // Clicked outside sidebar and not on hamburger
+    if (!sidebar.contains(e.target) && !menuBtn.contains(e.target)) {
+        sidebar.classList.remove('active');
+    }
+});
 
 // ────────────────────────────────────────────────
 // Role & Status Filter - Client-side only
