@@ -1,17 +1,10 @@
 <?php
 // /seller/ui/dashboard.php
-session_start();
-// Check if user is logged in
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header("Location: /seller/ui/login.php");
-    exit;
-}
-// Get seller info from session
-$seller_name = $_SESSION['seller_name'] ?? 'Seller';
-$seller_email = $_SESSION['seller_email'] ?? '';
-$seller_id = $_SESSION['seller_id'] ?? '';
-// You would typically fetch real data from database here
+
+require_once __DIR__ . '/../backend/session/auth.php';
+
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
