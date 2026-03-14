@@ -1,6 +1,7 @@
 <?php
-require_once __DIR__ . '/var/www/html/seller/backends/session/auth.php';
-require_once __DIR__ . '/var/www/html/connection/db_connection.php';
+// add.php
+require_once $_SERVER['DOCUMENT_ROOT'] . '/seller/backends/session/auth.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/connection/db_connection.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header("Location: /seller/ui/employees.php");
