@@ -363,7 +363,7 @@ document.addEventListener('keydown', e => {
 function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar');
     if (!sidebar) return;
-    fmain-content
+    
     sidebar.classList.toggle('active');
     
     // Optional: close sidebar when clicking a nav link on mobile
