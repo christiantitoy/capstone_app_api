@@ -74,8 +74,8 @@ require_once __DIR__ . '/../backend/session/auth.php';
             <div class="filter-group">
                 <select class="filter-select" onchange="filterRole(this.value)">
                     <option value="">All Roles</option>
-                    <option value="order">Order Trackers</option>
-                    <option value="product">Product Adders</option>
+                    <option value="order">Order Manager</option>
+                    <option value="product">Product Manager</option>
                 </select>
                 <select class="filter-select" onchange="filterStatus(this.value)">
                     <option value="">All Status</option>
@@ -101,7 +101,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
                 </thead>
                 <tbody>
 
-                    <!-- Order Tracker Employees -->
+                    <!-- Order Manager Employees -->
                     <tr>
                         <td>
                             <div class="employee-info">
@@ -113,7 +113,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
                             </div>
                         </td>
                         <td>
-                            <span class="role-badge role-order-tracker">Order Tracker</span>
+                            <span class="role-badge role-order-tracker">Order Manager</span>
                             <div style="font-size: 0.75rem; color: #7f8c8d; margin-top: 4px;">
                                 <i class="fas fa-eye"></i> Can view & update orders
                             </div>
@@ -139,7 +139,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
                             </div>
                         </td>
                         <td>
-                            <span class="role-badge role-order-tracker">Order Tracker</span>
+                            <span class="role-badge role-order-tracker">Order Manager</span>
                             <div style="font-size: 0.75rem; color: #7f8c8d; margin-top: 4px;">
                                 <i class="fas fa-eye"></i> Can view & update orders
                             </div>
@@ -154,7 +154,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
                         </td>
                     </tr>
 
-                    <!-- Product Adder Employees -->
+                    <!-- Product Manager Employees -->
                     <tr>
                         <td>
                             <div class="employee-info">
@@ -166,7 +166,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
                             </div>
                         </td>
                         <td>
-                            <span class="role-badge role-product-adder">Product Adder</span>
+                            <span class="role-badge role-product-adder">Product Manager</span>
                             <div style="font-size: 0.75rem; color: #7f8c8d; margin-top: 4px;">
                                 <i class="fas fa-plus-circle"></i> Can add & edit products
                             </div>
@@ -214,8 +214,8 @@ require_once __DIR__ . '/../backend/session/auth.php';
                         <label for="role">Employee Role</label>
                         <select id="role" required onchange="updateRoleDescription()">
                             <option value="">Select a role...</option>
-                            <option value="order_tracker">Order Tracker</option>
-                            <option value="product_adder">Product Adder</option>
+                            <option value="order_tracker">Order Manager</option>
+                            <option value="product_adder">Product Manager</option>
                         </select>
                         <div class="role-description" id="roleDescription">
                             <i class="fas fa-info-circle"></i>
@@ -314,178 +314,185 @@ require_once __DIR__ . '/../backend/session/auth.php';
 
 <script src="/seller/js/logout.js"></script>
 <script>
-    // Role descriptions
-    const roleDescriptions = {
-        order_tracker: 'Can view all orders, update order status (pending → shipped → delivered), and view customer information. Cannot add or edit products.',
-        product_adder: 'Can add new products, edit product details (name, price, stock), and upload product images. Cannot view orders.'
-    };
-
-    // Update role description when selection changes
-    function updateRoleDescription() {
-        const role = document.getElementById('role').value;
-        const descDiv = document.getElementById('roleDescription');
-        
-        if (role && roleDescriptions[role]) {
-            let icon = role === 'order_tracker' ? 'fa-eye' : 'fa-plus-circle';
-            descDiv.innerHTML = `<i class="fas ${icon}"></i> ${roleDescriptions[role]}`;
-        } else {
-            descDiv.innerHTML = '<i class="fas fa-info-circle"></i> Select a role to see permissions';
-        }
+// ────────────────────────────────────────────────
+// Constants & Data
+// ────────────────────────────────────────────────
+const roleDescriptions = {
+    order_manager: {
+        icon: 'fa-eye',
+        text: 'Can view all orders, update order status (pending → shipped → delivered), and view customer information. Cannot add or edit products.'
+    },
+    product_manager: {
+        icon: 'fa-plus-circle',
+        text: 'Can add new products, edit product details (name, price, stock), and upload product images. Cannot view orders.'
     }
+};
 
-    // Modal functions
-    function openAddModal() {
-        document.getElementById('modalTitle').innerHTML = '<i class="fas fa-user-plus"></i> Add New Employee';
-        document.getElementById('passwordGroup').style.display = 'block';
-        document.getElementById('modalSubmit').textContent = 'Add Employee';
-        document.getElementById('employeeForm').reset();
-        document.getElementById('roleDescription').innerHTML = '<i class="fas fa-info-circle"></i> Select a role to see permissions';
-        document.getElementById('employeeModal').classList.add('active');
+// ────────────────────────────────────────────────
+// Helper Functions
+// ────────────────────────────────────────────────
+function updateRoleDescription() {
+    const role = document.getElementById('role')?.value;
+    const descDiv = document.getElementById('roleDescription');
+
+    if (!descDiv) return;
+
+    if (role && roleDescriptions[role]) {
+        const { icon, text } = roleDescriptions[role];
+        descDiv.innerHTML = `<i class="fas ${icon}"></i> ${text}`;
+    } else {
+        descDiv.innerHTML = '<i class="fas fa-info-circle"></i> Select a role to see permissions';
     }
+}
 
-    function openEditModal(employeeId) {
-        document.getElementById('modalTitle').innerHTML = '<i class="fas fa-user-edit"></i> Edit Employee';
-        document.getElementById('passwordGroup').style.display = 'none';
-        document.getElementById('modalSubmit').textContent = 'Save Changes';
-        
-        // Simulate loading employee data
-        if (employeeId === 2) {
-            document.getElementById('fullName').value = 'Juan Dela Cruz';
-            document.getElementById('email').value = 'juan@mybusiness.com';
-            document.getElementById('role').value = 'order_tracker';
-            document.getElementById('status').value = 'active';
-        } else if (employeeId === 3) {
-            document.getElementById('fullName').value = 'Maria Santos';
-            document.getElementById('email').value = 'maria@mybusiness.com';
-            document.getElementById('role').value = 'product_adder';
-            document.getElementById('status').value = 'active';
-        } else if (employeeId === 4) {
-            document.getElementById('fullName').value = 'Pedro Reyes';
-            document.getElementById('email').value = 'pedro@mybusiness.com';
-            document.getElementById('role').value = 'order_tracker';
-            document.getElementById('status').value = 'inactive';
-        }
-        
-        updateRoleDescription();
-        document.getElementById('employeeModal').classList.add('active');
-    }
+function closeAllModals() {
+    const modals = [
+        document.getElementById('employeeModal'),
+        document.getElementById('resetModal'),
+        document.getElementById('deleteModal')
+    ];
 
-    function closeModal() {
-        document.getElementById('employeeModal').classList.remove('active');
-    }
-
-    // Owner functions
-    function showOwnerMessage() {
-        alert('This is your owner account. To reset your password, go to Profile Settings.');
-    }
-
-    // Reset password functions
-    function resetPassword(employeeId) {
-        const names = {
-            2: 'Juan Dela Cruz',
-            3: 'Maria Santos',
-            4: 'Pedro Reyes'
-        };
-        document.getElementById('resetEmployeeName').textContent = names[employeeId] || 'Employee';
-        document.getElementById('resetModal').classList.add('active');
-    }
-
-    function closeResetModal() {
-        document.getElementById('resetModal').classList.remove('active');
-        document.getElementById('newPassword').value = '';
-        document.getElementById('confirmPassword').value = '';
-    }
-
-    function confirmReset() {
-        const newPass = document.getElementById('newPassword').value;
-        const confirmPass = document.getElementById('confirmPassword').value;
-        
-        if (!newPass || !confirmPass) {
-            alert('Please fill in both password fields');
-            return;
-        }
-        
-        if (newPass !== confirmPass) {
-            alert('Passwords do not match');
-            return;
-        }
-        
-        if (newPass.length < 6) {
-            alert('Password must be at least 6 characters long');
-            return;
-        }
-        
-        alert('Password has been updated successfully!');
-        closeResetModal();
-    }
-
-    // Delete functions
-    function deleteEmployee(employeeId) {
-        const names = {
-            2: 'Juan Dela Cruz',
-            3: 'Maria Santos',
-            4: 'Pedro Reyes'
-        };
-        document.getElementById('deleteEmployeeName').textContent = names[employeeId] || 'Employee';
-        document.getElementById('deleteModal').classList.add('active');
-    }
-
-    function closeDeleteModal() {
-        document.getElementById('deleteModal').classList.remove('active');
-    }
-
-    function confirmDelete() {
-        alert('Employee has been removed from your team.');
-        closeDeleteModal();
-    }
-
-    // Form submission
-    document.getElementById('employeeForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const role = document.getElementById('role').value;
-        if (!role) {
-            alert('Please select a role for the employee');
-            return;
-        }
-        
-        const modalTitle = document.getElementById('modalTitle').innerText;
-        if (modalTitle.includes('Add')) {
-            alert('Employee added successfully! They can now log in with the provided password.');
-        } else {
-            alert('Employee information updated successfully!');
-        }
-        
-        closeModal();
+    modals.forEach(modal => {
+        if (modal) modal.classList.remove('active');
     });
 
-    // Filter functions
-    function filterRole(role) {
-        console.log('Filtering by role:', role);
-    }
+    // Clear sensitive fields
+    const passwordFields = document.querySelectorAll('#password, #newPassword, #confirmPassword');
+    passwordFields.forEach(field => field.value = '');
+}
 
-    function filterStatus(status) {
-        console.log('Filtering by status:', status);
-    }
+// ────────────────────────────────────────────────
+// Add / Edit Modal Logic
+// ────────────────────────────────────────────────
+function openAddModal() {
+    const modal = document.getElementById('employeeModal');
+    if (!modal) return;
 
-    // Search functionality
-    const searchInput = document.querySelector('.search-box input');
-    if (searchInput) {
-        searchInput.addEventListener('input', function(e) {
-            console.log('Searching for:', e.target.value);
+    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-user-plus"></i> Add New Employee';
+    document.getElementById('passwordGroup').style.display = 'block';
+    document.getElementById('modalSubmit').textContent = 'Add Employee';
+    document.getElementById('employeeForm').reset();
+    document.getElementById('editEmployeeId').value = '';           // important for add vs edit
+    document.getElementById('employeeForm').action = '/seller/backend/employees/add.php';
+
+    updateRoleDescription();
+    modal.classList.add('active');
+}
+
+function openEditModal(id) {
+    // For now: placeholder (you can later fetch via AJAX)
+    alert(`Edit employee #${id} → this feature is coming soon.\n\nIn next step we can load real data into the form.`);
+
+    // Example of future real implementation (commented):
+    /*
+    fetch(`/seller/backend/employees/get.php?id=${id}`)
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-user-edit"></i> Edit Employee';
+            document.getElementById('fullName').value = data.full_name;
+            document.getElementById('email').value = data.email;
+            document.getElementById('role').value = data.role;
+            document.getElementById('passwordGroup').style.display = 'none';
+            document.getElementById('modalSubmit').textContent = 'Save Changes';
+            document.getElementById('editEmployeeId').value = id;
+            document.getElementById('employeeForm').action = '/seller/backend/employees/update.php';
+            updateRoleDescription();
+            document.getElementById('employeeModal').classList.add('active');
         });
+    */
+}
+
+// ────────────────────────────────────────────────
+// Reset Password
+// ────────────────────────────────────────────────
+function resetPassword(id) {
+    alert(`Reset password for employee #${id} → coming soon.\n\nWe'll add a secure reset flow next.`);
+    // Future: open reset modal + send POST to backend
+}
+
+// ────────────────────────────────────────────────
+// Delete Employee
+// ────────────────────────────────────────────────
+function deleteEmployee(id) {
+    if (!confirm(`Are you sure you want to remove employee #${id}?\nThis action cannot be undone.`)) {
+        return;
     }
 
+    alert(`Employee #${id} would be deleted now (demo mode).\n\nNext step: real DELETE request to backend.`);
+    // Future:
+    // fetch(`/seller/backend/employees/delete.php?id=${id}`, { method: 'POST' })
+    //   .then(() => location.reload());
+}
+
+// ────────────────────────────────────────────────
+// Client-side Search (real-time filter)
+// ────────────────────────────────────────────────
+const searchInput = document.getElementById('searchInput');
+if (searchInput && document.getElementById('employeesTable')) {
+    searchInput.addEventListener('input', function(e) {
+        const term = e.target.value.toLowerCase().trim();
+        const rows = document.querySelectorAll('#employeesTable tbody tr');
+
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(term) ? '' : 'none';
+        });
+    });
+}
+
+// ────────────────────────────────────────────────
+// Form Submit (only for demo/prevention – real submit goes to backend)
+// ────────────────────────────────────────────────
+const employeeForm = document.getElementById('employeeForm');
+if (employeeForm) {
+    employeeForm.addEventListener('submit', function(e) {
+        // Remove this block when backend is fully working
+        // e.preventDefault();   ← comment out when using real POST
+
+        const role = document.getElementById('role')?.value;
+        if (!role) {
+            e.preventDefault();
+            alert('Please select a role.');
+            return;
+        }
+
+        // Optional: extra client-side validation
+        const password = document.getElementById('password')?.value;
+        if (document.getElementById('passwordGroup').style.display !== 'none' && password?.length < 6) {
+            e.preventDefault();
+            alert('Password must be at least 6 characters long.');
+            return;
+        }
+
+        // If you keep e.preventDefault() → show success message
+        // alert('Form would be submitted now (demo mode).');
+    });
+}
+
+// ────────────────────────────────────────────────
+// Global Event Listeners
+// ────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
     // Close modals when clicking outside
-    window.onclick = function(event) {
-        const modals = ['employeeModal', 'resetModal', 'deleteModal'];
-        modals.forEach(modalId => {
-            const modal = document.getElementById(modalId);
+    document.addEventListener('click', function(event) {
+        const modals = document.querySelectorAll('.modal.active');
+        modals.forEach(modal => {
             if (event.target === modal) {
-                modal.classList.remove('active');
+                closeAllModals();
             }
         });
-    }
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeAllModals();
+        }
+    });
+
+    // Role change listener
+    document.getElementById('role')?.addEventListener('change', updateRoleDescription);
+});
 </script>
 
 </body>
