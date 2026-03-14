@@ -315,6 +315,7 @@ tr:hover { background: #f8fafc; }
 
 .modal.active {
     display: flex;
+    overflow-y: scroll;
 }
 
 .modal-content {
