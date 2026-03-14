@@ -167,7 +167,7 @@ $role_display = [
                             <th>Employee</th>
                             <th>Role</th>
                             <th>Status</th>
-                            <th>Actions</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="employeesBody">
@@ -199,12 +199,6 @@ $role_display = [
                                 </td>
                                 <td>
                                     <div class="action-buttons">
-                                        <button class="action-btn edit-btn" onclick="openEditModal(<?= (int)$emp['id'] ?>)" title="Edit">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="action-btn reset-btn" onclick="resetPassword(<?= (int)$emp['id'] ?>)" title="Reset Password">
-                                            <i class="fas fa-key"></i>
-                                        </button>
                                         <button class="action-btn delete-btn" onclick="deleteEmployee(<?= (int)$emp['id'] ?>)" title="Remove">
                                             <i class="fas fa-trash"></i>
                                         </button>
