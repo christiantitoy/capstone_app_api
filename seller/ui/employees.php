@@ -3,11 +3,11 @@
 require_once __DIR__ . '/../backend/session/auth.php';
 require_once __DIR__ . '/../../connection/db_connection.php';
 
-// Fetch real employees for this seller
+// Fetch real employees for this seller (only those not removed)
 $stmt = $conn->prepare("
     SELECT id, full_name, email, role, status, last_login
     FROM employees
-    WHERE seller_id = ?
+    WHERE seller_id = ? AND (is_removed IS NULL OR is_removed = FALSE)
     ORDER BY full_name ASC
 ");
 $stmt->execute([$seller_id]);
@@ -199,7 +199,7 @@ $role_display = [
                                 </td>
                                 <td>
                                     <div class="action-buttons">
-                                        <button class="action-btn delete-btn" onclick="deleteEmployee(<?= (int)$emp['id'] ?>)" title="Remove">
+                                        <button class="action-btn delete-btn" onclick="openDeleteModal(<?= (int)$emp['id'] ?>, '<?= htmlspecialchars($emp['full_name'] ?? 'this employee') ?>')" title="Remove">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </div>
@@ -257,38 +257,6 @@ $role_display = [
             </div>
         </div>
 
-        <!-- Reset Password Modal -->
-        <div class="modal" id="resetModal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>
-                        <i class="fas fa-key" style="color: var(--warning);"></i>
-                        Reset Password
-                    </h2>
-                    <button class="close-modal" onclick="closeResetModal()">&times;</button>
-                </div>
-
-                <div style="padding: 1rem 0;">
-                    <p style="margin-bottom: 1.5rem;">Set a new password for <strong id="resetEmployeeName">Juan Dela Cruz</strong></p>
-                    
-                    <div class="form-group">
-                        <label for="newPassword">New Password</label>
-                        <input type="password" id="newPassword" placeholder="Enter new password" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="confirmPassword">Confirm Password</label>
-                        <input type="password" id="confirmPassword" placeholder="Confirm new password" required>
-                    </div>
-                </div>
-
-                <div class="modal-actions">
-                    <button class="btn-secondary" onclick="closeResetModal()">Cancel</button>
-                    <button class="btn-primary" onclick="confirmReset()" style="background: var(--warning);">Update Password</button>
-                </div>
-            </div>
-        </div>
-
         <!-- Delete Confirmation Modal -->
         <div class="modal" id="deleteModal">
             <div class="modal-content">
@@ -302,14 +270,23 @@ $role_display = [
 
                 <div style="text-align: center; padding: 1.5rem 0;">
                     <i class="fas fa-user-minus" style="font-size: 3rem; color: var(--danger); margin-bottom: 1rem;"></i>
-                    <p>Are you sure you want to remove <strong id="deleteEmployeeName">Juan Dela Cruz</strong>?</p>
+                    <p>Are you sure you want to remove <strong id="deleteEmployeeName">this employee</strong>?</p>
                     <p style="color: #7f8c8d; font-size: 0.9rem; margin-top: 0.5rem;">They will no longer be able to access the dashboard.</p>
+                    <input type="hidden" id="deleteEmployeeId" value="">
                 </div>
 
                 <div class="modal-actions">
                     <button class="btn-secondary" onclick="closeDeleteModal()">Cancel</button>
                     <button class="btn-primary" onclick="confirmDelete()" style="background: var(--danger);">Remove</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- Delete Success/Error Message Toast (hidden by default) -->
+        <div id="deleteToast" class="toast" style="display: none; position: fixed; bottom: 20px; right: 20px; background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 2000; border-left: 4px solid var(--success);">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-check-circle" style="color: var(--success); font-size: 1.2rem;"></i>
+                <span id="toastMessage">Employee removed successfully</span>
             </div>
         </div>
 
@@ -373,25 +350,92 @@ function closeModal() {
     document.getElementById('employeeModal').classList.remove('active');
 }
 
-// Placeholder for other actions
-function openEditModal(id)    { alert('Edit employee #' + id + ' → coming soon'); }
-function resetPassword(id)    { alert('Reset password for #' + id + ' → coming soon'); }
-function deleteEmployee(id)   { alert('Delete employee #' + id + ' → coming soon'); }
+// Delete modal functions
+function openDeleteModal(id, name) {
+    document.getElementById('deleteEmployeeId').value = id;
+    document.getElementById('deleteEmployeeName').textContent = name;
+    document.getElementById('deleteModal').classList.add('active');
+}
 
-// Close modal on outside click / Esc
-document.addEventListener('click', e => {
-    if (e.target.classList.contains('modal') || e.target.classList.contains('modal-overlay')) {
-        e.target.classList.remove('active');
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('active');
+}
+
+function confirmDelete() {
+    const employeeId = document.getElementById('deleteEmployeeId').value;
+    
+    if (!employeeId) {
+        showToast('Error: No employee selected', 'error');
+        closeDeleteModal();
+        return;
     }
-});
+    
+    // Show loading state on button
+    const deleteBtn = document.querySelector('#deleteModal .btn-primary');
+    const originalText = deleteBtn.textContent;
+    deleteBtn.textContent = 'Removing...';
+    deleteBtn.disabled = true;
+    
+    // Send AJAX request to delete employee
+    fetch('/seller/backend/employees/delete-employee.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'employee_id=' + encodeURIComponent(employeeId)
+    })
+    .then(response => response.json())
+    .then(data => {
+        deleteBtn.textContent = originalText;
+        deleteBtn.disabled = false;
+        
+        if (data.success) {
+            showToast('Employee removed successfully', 'success');
+            closeDeleteModal();
+            
+            // Remove the employee row from the table
+            setTimeout(() => {
+                location.reload(); // Simple reload to refresh the list
+            }, 1000);
+        } else {
+            showToast('Error: ' + (data.message || 'Failed to remove employee'), 'error');
+        }
+    })
+    .catch(error => {
+        deleteBtn.textContent = originalText;
+        deleteBtn.disabled = false;
+        showToast('Error: Network error - ' + error.message, 'error');
+        console.error('Error:', error);
+    });
+}
 
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-        document.querySelectorAll('.modal.active, .modal-overlay.active').forEach(m => m.classList.remove('active'));
+// Toast notification function
+function showToast(message, type = 'success') {
+    const toast = document.getElementById('deleteToast');
+    const toastMessage = document.getElementById('toastMessage');
+    const icon = toast.querySelector('i');
+    
+    toastMessage.textContent = message;
+    
+    if (type === 'error') {
+        toast.style.borderLeftColor = 'var(--danger)';
+        icon.style.color = 'var(--danger)';
+        icon.className = 'fas fa-exclamation-circle';
+    } else {
+        toast.style.borderLeftColor = 'var(--success)';
+        icon.style.color = 'var(--success)';
+        icon.className = 'fas fa-check-circle';
     }
-});
+    
+    toast.style.display = 'block';
+    
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+        toast.style.display = 'none';
+    }, 3000);
+}
 
-// Replace your existing toggleSidebar() with this improved version
+// Toggle sidebar function
 function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar');
     if (!sidebar) return;
@@ -405,11 +449,11 @@ function toggleSidebar() {
             if (window.innerWidth <= 900) {
                 sidebar.classList.remove('active');
             }
-        }, { once: true }); // only once per open
+        }, { once: true });
     });
 }
 
-// Close sidebar when clicking overlay (outside)
+// Close sidebar when clicking outside
 document.addEventListener('click', function(e) {
     const sidebar = document.querySelector('.sidebar');
     const menuBtn = document.querySelector('.mobile-menu-btn');
@@ -422,9 +466,20 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// ────────────────────────────────────────────────
-// Role & Status Filter - Client-side only
-// ────────────────────────────────────────────────
+// Close modals on outside click / Esc
+document.addEventListener('click', e => {
+    if (e.target.classList.contains('modal') || e.target.classList.contains('modal-overlay')) {
+        e.target.classList.remove('active');
+    }
+});
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.modal.active, .modal-overlay.active').forEach(m => m.classList.remove('active'));
+    }
+});
+
+// Role & Status Filter
 function applyFilters() {
     const roleFilter = document.getElementById('filterRole')?.value || '';
     const statusFilter = document.getElementById('filterStatus')?.value || '';
@@ -442,11 +497,29 @@ function applyFilters() {
     });
 }
 
-// Attach listeners
+// Search functionality
+document.getElementById('searchInput')?.addEventListener('keyup', function() {
+    const searchTerm = this.value.toLowerCase();
+    const rows = document.querySelectorAll('#employeesTable tbody tr');
+    
+    rows.forEach(row => {
+        const employeeName = row.querySelector('.employee-name')?.textContent.toLowerCase() || '';
+        const employeeEmail = row.querySelector('.employee-email')?.textContent.toLowerCase() || '';
+        const role = row.querySelector('.role-badge')?.textContent.toLowerCase() || '';
+        
+        if (employeeName.includes(searchTerm) || employeeEmail.includes(searchTerm) || role.includes(searchTerm)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+});
+
+// Attach filter listeners
 document.getElementById('filterRole')?.addEventListener('change', applyFilters);
 document.getElementById('filterStatus')?.addEventListener('change', applyFilters);
 
-// Run once on load (in case of pre-selected values, though unlikely)
+// Run on load
 document.addEventListener('DOMContentLoaded', applyFilters);
 </script>
 
