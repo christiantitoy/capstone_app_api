@@ -271,13 +271,13 @@ $role_display = [
                 <div style="text-align: center; padding: 1.5rem 0;">
                     <i class="fas fa-user-minus" style="font-size: 3rem; color: var(--danger); margin-bottom: 1rem;"></i>
                     <p>Are you sure you want to remove <strong id="deleteEmployeeName">this employee</strong>?</p>
-                    <p style="color: #7f8c8d; font-size: 0.9rem; margin-top: 0.5rem;">They will no longer be able to access the dashboard.</p>
+                    <p style="color: #7f8c8d; font-size: 0.9rem; margin-top: 0.5rem;">This action can't be undone.</p>
                     <input type="hidden" id="deleteEmployeeId" value="">
                 </div>
 
                 <div class="modal-actions">
                     <button class="btn-secondary" onclick="closeDeleteModal()">Cancel</button>
-                    <button class="btn-primary" onclick="confirmDelete()" style="background: var(--danger);">Remove</button>
+                    <button class="btn-primary" onclick="c()" style="background: var(--danger);">Remove</button>
                 </div>
             </div>
         </div>
