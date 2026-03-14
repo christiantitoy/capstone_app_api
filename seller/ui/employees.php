@@ -1,4 +1,9 @@
 <!-- /seller/ui/employees.php -->
+<?php
+// /seller/ui/dashboard.php
+require_once __DIR__ . '/../backend/session/auth.php';
+
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,6 +13,7 @@
     <link rel="icon" type="image/png" href="/seller/image/app_icon.png">
     <link rel="stylesheet" href="../css/employees.css?v=<?= time() ?>">
     <link rel="stylesheet" href="../css/error.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../css/logout.css?v=<?= time() ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -31,13 +37,16 @@
 
         <div class="sidebar-footer">
             <div class="user-profile">
-                <div class="avatar">T</div>
+                <div class="avatar"><?= strtoupper(substr($seller_name, 0, 1)) ?></div>
                 <div>
-                    <h4>Titoy</h4>
-                    <p>Owner</p>
+                    <h4><?= htmlspecialchars($seller_name) ?></h4>
+                    <p>Seller Account</p>
                 </div>
             </div>
-            <a href="#" class="logout-btn"><i class="fas fa-sign-out-alt"></i></a>
+            <!-- Changed to button that opens modal -->
+            <button class="logout-btn logout-trigger" title="Sign out">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
         </div>
     </aside>
 
@@ -286,6 +295,25 @@
     </main>
 </div>
 
+<!-- ── LOGOUT CONFIRMATION MODAL ── -->
+<div class="modal-overlay" id="logoutModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Sign Out</h3>
+            <button class="modal-close" id="closeModal">×</button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to sign out?</p>
+            <p class="text-secondary">You will need to log in again to access your dashboard.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="cancelLogout">Cancel</button>
+            <a href="/seller/backend/auth/logout.php" class="btn btn-danger">Sign Out</a>
+        </div>
+    </div>
+</div>
+
+<script src="/seller/js/logout.js"></script>
 <script>
     // Role descriptions
     const roleDescriptions = {
