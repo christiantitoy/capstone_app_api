@@ -1,7 +1,7 @@
 <?php
 // /seller/ui/employees.php
 require_once __DIR__ . '/../backend/session/auth.php';
-require_once __DIR__ . '/connection/db_connection.php';
+require_once __DIR__ . '/../../connection/db_connection.php';
 
 // Fetch real employees for this seller
 $stmt = $conn->prepare("
