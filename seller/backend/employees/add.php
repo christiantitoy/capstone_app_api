@@ -1,6 +1,6 @@
 <?php
 // add.php
-require_once $_SERVER['DOCUMENT_ROOT'] . '/seller/backends/session/auth.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/seller/backend/session/auth.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/connection/db_connection.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
