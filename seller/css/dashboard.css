@@ -109,14 +109,13 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 10px 20px;
+  padding: 7px 15px;
   border-radius: 50px;           /* or 9999px */
   background: #b45309;
   color: white;
   text-decoration: none;
   font-weight: 500;
-  font-size: 14–15px;
+  font-size: 10px;
   transition: 
     background 0.2s ease,
     transform 0.15s ease,
