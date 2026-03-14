@@ -122,34 +122,36 @@ unset($_SESSION['login_email']);
     </script>
 
     <script src="../js/reusables/showDialog.js?v=<?= time() ?>"></script>
-    <<script>
-            // Password visibility toggle
+    <script>
+    // Password visibility toggle
     const togglePassword = document.getElementById('togglePassword');
     const passwordInput = document.getElementById('password');
     const toggleIcon = document.getElementById('togglePasswordIcon');
 
-    togglePassword.addEventListener('click', function() {
-        // Toggle the type attribute
-        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-        passwordInput.setAttribute('type', type);
-        
-        // Toggle the icon
-        if (type === 'password') {
-            toggleIcon.classList.remove('fa-eye-slash');
-            toggleIcon.classList.add('fa-eye');
-        } else {
-            toggleIcon.classList.remove('fa-eye');
-            toggleIcon.classList.add('fa-eye-slash');
-        }
-        
-        // Optional: Add a little animation or focus
-        passwordInput.focus();
-    });
+    if (togglePassword && passwordInput && toggleIcon) {
+        togglePassword.addEventListener('click', function() {
+            // Toggle the type attribute
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            
+            // Toggle the icon
+            if (type === 'password') {
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
+            } else {
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
+            }
+            
+            // Keep focus on password field
+            passwordInput.focus();
+        });
 
-    // Optional: Hide toggle button when input is empty (if you want that behavior)
-    passwordInput.addEventListener('input', function() {
-        // You can add logic here if you want to hide/show the toggle based on input value
-    });
+        // Optional: Hide toggle button when input is empty
+        passwordInput.addEventListener('input', function() {
+            // You can add logic here if you want to hide/show the toggle based on input value
+        });
+    }
     </script>
 
 </body>
