@@ -76,6 +76,10 @@ $role_display = [
                 </h1>
                 <p>Add and manage your team members</p>
             </div>
+            <!-- Add this button – only visible on mobile -->
+            <button class="mobile-menu-btn" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
             <div class="header-right">
                 <div class="search-box">
                     <i class="fas fa-search"></i>
@@ -354,6 +358,10 @@ document.addEventListener('keydown', e => {
         document.querySelectorAll('.modal.active, .modal-overlay.active').forEach(m => m.classList.remove('active'));
     }
 });
+
+function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('active');
+}
 
 // ────────────────────────────────────────────────
 // Role & Status Filter - Client-side only
