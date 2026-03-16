@@ -1,7 +1,13 @@
 <?php
 header('Content-Type: application/json');
 
-require_once '/var/www/html/connection/db_connection.php'; // your existing DB connection (should be PDO now)
+require_once '/var/www/html/connection/db_connection.php';
+
+// Check if connection exists
+if (!isset($conn) || $conn === null) {
+    echo json_encode(['status' => 'error', 'message' => 'Database connection failed']);
+    exit;
+}
 
 try {
     // If an ID is passed in the query (e.g. get_all_products.php?id=5)
