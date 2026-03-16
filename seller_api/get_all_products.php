@@ -77,4 +77,7 @@ try {
 } catch (PDOException $e) {
     echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
+
+$conn = null;
+
 ?>

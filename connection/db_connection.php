@@ -1,41 +1,44 @@
 <?php
 // header("Content-Type: application/json; charset=UTF-8");
 
-$databaseUrl = getenv('DATABASE_URL');
+// Get database credentials from Render environment variables
+$host = getenv("DB_HOST");
+$port = getenv("DB_PORT");
+$dbname = getenv("DB_NAME");
+$user = getenv("DB_USER");
+$password = getenv("DB_PASS");
 
-if (!$databaseUrl) {
+// Check if environment variables exist
+if (!$host || !$port || !$dbname || !$user || !$password) {
     echo json_encode([
         "status" => false,
-        "message" => "DATABASE_URL not found"
+        "message" => "Database environment variables not set"
     ]);
     exit;
 }
 
 try {
-    $db = parse_url($databaseUrl);
-
-    $host = $db['host'];
-    $port = $db['port'];
-    $user = $db['user'];
-    $pass = $db['pass'];
-    $dbname = ltrim($db['path'], '/');
 
     $dsn = "pgsql:host=$host;port=$port;dbname=$dbname;sslmode=require";
 
-    $conn = new PDO($dsn, $user, $pass, [
+    $conn = new PDO($dsn, $user, $password, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_PERSISTENT => false
     ]);
 
+    // Optional success test
     // echo json_encode([
     //     "status" => true,
-    //     "message" => "Database connected successfully, finally"
+    //     "message" => "Database connected successfully"
     // ]);
 
 } catch (PDOException $e) {
+
     echo json_encode([
         "status" => false,
         "message" => "Database connection failed: " . $e->getMessage()
     ]);
+
 }
 ?>
