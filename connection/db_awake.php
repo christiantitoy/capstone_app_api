@@ -37,7 +37,6 @@ try {
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_TIMEOUT => 5,
         PDO::ATTR_PERSISTENT => false,
-        PDO::ATTR_CONNECTION_STATUS => true
     ];
     
     // Create connection using environment variable
@@ -48,18 +47,18 @@ try {
     $result = $stmt->fetch();
     
     if ($result) {
-        // Optional: Get connection info to verify pooler mode
-        $pooler_check = $conn->query("SHOW pooler_mode"); // Some Supabase setups support this
+        // You can verify it's session pooler by checking the port from the URL
+        $is_session_pooler = ($port == '5432');
         
         echo json_encode([
             'status' => 'success',
-            'message' => 'Session pooler keep-alive successful',
+            'message' => 'Keep-alive successful',
             'timestamp' => date('Y-m-d H:i:s'),
             'database_time' => $result['ping_time'],
             'connection_info' => [
                 'host' => $host,
                 'port' => $port,
-                'pooler_mode' => 'session (from DATABASE_URL)',
+                'pooler_mode' => $is_session_pooler ? 'session (port 5432)' : 'unknown',
                 'environment' => 'Render'
             ]
         ]);
@@ -84,6 +83,8 @@ try {
     ]);
 } finally {
     // Always close the connection
-    $conn = null;
+    if (isset($conn)) {
+        $conn = null;
+    }
 }
 ?>
