@@ -37,3 +37,5 @@ try {
     }
     die("Error: " . $e->getMessage());
 }
+
+$conn = null;
