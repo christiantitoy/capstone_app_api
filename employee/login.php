@@ -16,24 +16,24 @@ try {
         exit;
     }
 
-    // Get JSON input instead of POST (more secure for mobile apps)
+    // Get JSON input
     $input = json_decode(file_get_contents('php://input'), true);
     
-    // Check if email and password are provided (supports both JSON and form data)
+    // Check if email and password are provided
     $email = $input['email'] ?? $_POST['email'] ?? null;
     $password = $input['password'] ?? $_POST['password'] ?? null;
     
     if ($email && $password) {
-        // Prepare SQL with all requested fields
-        $sql = "SELECT id, full_name, email, seller_id, role, is_removed 
+        // Get user by email only (not password)
+        $sql = "SELECT id, full_name, email, seller_id, role, is_removed, password 
                 FROM employees 
-                WHERE email = :email AND password = :password AND status = 'active'";
+                WHERE email = :email AND status = 'active'";
         
         $stmt = $conn->prepare($sql);
-        $stmt->execute([':email' => $email, ':password' => $password]);
+        $stmt->execute([':email' => $email]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        if ($result) {
+        if ($result && password_verify($password, $result['password'])) {
             // Check if employee is removed
             if ($result['is_removed']) {
                 echo json_encode(['status' => 'error', 'message' => 'Account has been removed']);
@@ -45,7 +45,8 @@ try {
             $updateStmt = $conn->prepare($updateSql);
             $updateStmt->execute([':id' => $result['id']]);
             
-            // Remove is_removed from response (client doesn't need it after check)
+            // Remove sensitive data before sending
+            unset($result['password']);
             unset($result['is_removed']);
             
             // Successful login
@@ -55,17 +56,16 @@ try {
                 'message' => 'Login successful'
             ]);
         } else {
-            // Invalid credentials - use generic message for security
+            // Invalid credentials
             echo json_encode(['status' => 'error', 'message' => 'Invalid email or password']);
         }
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Email and password are required']);
     }
 } catch (PDOException $e) {
-    // Log error internally but don't expose details to client
     error_log('Login error: ' . $e->getMessage());
     echo json_encode(['status' => 'error', 'message' => 'An error occurred during login']);
-} finally {
-    $conn = null;
 }
+
+$conn = null;
 ?>
