@@ -1,20 +1,33 @@
 <?php
-// awake.php - Simple health check endpoint
-header("Content-Type: application/json");
+// keep_alive.php - Place in your /var/www/html/ directory
+header('Content-Type: application/json');
 
-// Simple database check
-try {
-    require_once 'db_connection.php';
-    $stmt = $conn->query("SELECT 1");
-    $dbStatus = "ok";
-} catch (Exception $e) {
-    $dbStatus = "error";
+require_once '/var/www/html/connection/db_connection.php';
+
+// Check connection
+if (!isset($conn) || $conn === null) {
+    http_response_code(500);
+    echo json_encode(['status' => 'error', 'message' => 'Connection failed']);
+    exit;
 }
 
-echo json_encode([
-    "status" => "ok",
-    "message" => "Server is awake",
-    "timestamp" => date('Y-m-d H:i:s'),
-    "database" => $dbStatus
-]);
+try {
+    // Simple query that does minimal work
+    $stmt = $conn->query("SELECT 1");
+    $result = $stmt->fetch();
+    
+    if ($result) {
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Keep-alive ping successful',
+            'timestamp' => date('Y-m-d H:i:s')
+        ]);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Query failed']);
+    }
+} catch (PDOException $e) {
+    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+}
+
+$conn = null;
 ?>
