@@ -82,8 +82,8 @@ try {
     }
 
     // ✅ Update last login
-    $conn->prepare("UPDATE employees SET last_login = NOW() WHERE id = :id")
-         ->execute(['id' => $user['id']]);
+    $conn->prepare("UPDATE employees SET last_login = NOW(), status = 'active' WHERE id = :id")
+     ->execute(['id' => $user['id']]);
 
     // Remove sensitive data
     unset($user['password'], $user['is_removed']);
