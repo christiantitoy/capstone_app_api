@@ -51,7 +51,7 @@ try {
 
     // ── UPSERT into seller_info ───────────────────────────────────
     $sql = "
-        INSERT INTO public.seller_info (
+        INSERT INTO public.stores (
             seller_id, store_name, category, description, contact_number,
             open_time, close_time, latitude, longitude, plus_code,
             logo_url, banner_url, owner_full_name, id_type,
