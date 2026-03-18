@@ -7,7 +7,7 @@ header("Access-Control-Allow-Headers: Content-Type");
 require_once '/var/www/html/connection/db_connection.php';
 
 try {
-    // Get employee_id from POST or GET (changed from seller_id)
+    // Get employee_id from POST or GET
     $employee_id = $_POST['employee_id'] ?? $_GET['employee_id'] ?? null;
 
     if (!$employee_id) {
@@ -17,20 +17,7 @@ try {
 
     $employee_id = intval($employee_id);
 
-    // First get the seller_id from the employee
-    $employee_sql = "SELECT seller_id FROM employees WHERE id = :employee_id";
-    $employee_stmt = $conn->prepare($employee_sql);
-    $employee_stmt->execute([':employee_id' => $employee_id]);
-    $employee = $employee_stmt->fetch(PDO::FETCH_ASSOC);
-
-    if (!$employee) {
-        echo json_encode(["status" => "error", "message" => "Employee not found"]);
-        exit;
-    }
-
-    $seller_id = $employee['seller_id'];
-
-    // Query to get seller's items with calculated fields (now using seller_id from employee lookup)
+    // Query to get employee's items with calculated fields - using employee_id directly
     $sql = "SELECT
                 i.id,
                 i.product_name,
@@ -65,11 +52,11 @@ try {
                 (SELECT COUNT(*) FROM item_variants iv WHERE iv.item_id = i.id) as variant_count
 
             FROM items i
-            WHERE i.seller_id = :seller_id
+            WHERE i.employee_id = :employee_id  -- Changed from seller_id to employee_id
             ORDER BY i.created_at DESC";
 
     $stmt = $conn->prepare($sql);
-    $stmt->execute([':seller_id' => $seller_id]);
+    $stmt->execute([':employee_id' => $employee_id]);
 
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
     $items = [];
@@ -87,17 +74,16 @@ try {
             "status" => $row['status'],
             "has_variations" => (bool)$row['has_variations'],
             "variant_count" => (int)$row['variant_count'],
-            "base_stock" => (int)$row['base_stock']  // For simple items
+            "base_stock" => (int)$row['base_stock']
         ];
     }
 
     echo json_encode([
         "status" => "success",
         "message" => "Items retrieved successfully",
-        "products" => $items, // Keeping "products" key for frontend compatibility
+        "products" => $items,
         "count" => count($items),
-        "employee_id" => $employee_id,
-        "seller_id" => $seller_id
+        "employee_id" => $employee_id
     ]);
 
 } catch (PDOException $e) {
