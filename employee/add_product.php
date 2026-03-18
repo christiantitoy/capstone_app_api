@@ -19,6 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         $seller_id = $input['seller_id'] ?? '';
+        $employee_id = $input['employee_id'] ?? ''; // New employee_id field
         $product_name = $input['product_name'] ?? '';
         $description = $input['description'] ?? '';
         $category = $input['category'] ?? '';
@@ -31,8 +32,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $variation_types = $input['variation_types'] ?? []; // Array of variation types
         $variants = $input['variants'] ?? []; // Array of variant objects
 
-        if (empty($seller_id) || empty($product_name) || empty($description) || empty($category) || empty($price) || empty($stock)) {
-            $response["message"] = "All fields are required";
+        // Validate required fields including employee_id
+        if (empty($seller_id) || empty($employee_id) || empty($product_name) || empty($description) || empty($category) || empty($price) || empty($stock)) {
+            $response["message"] = "All fields including employee_id are required";
             echo json_encode($response);
             exit;
         }
@@ -40,11 +42,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // START TRANSACTION
         $conn->beginTransaction();
 
-        // 1. Insert main item (formerly products table)
-        $stmt = $conn->prepare("INSERT INTO items (seller_id, product_name, product_description, category, price, stock, main_image_url, image_urls) VALUES (:seller_id, :product_name, :description, :category, :price, :stock, :main_image_url, :image_url)");
+        // First verify that the employee exists and belongs to this seller (optional but recommended)
+        $check_employee = $conn->prepare("SELECT id FROM employees WHERE id = :employee_id AND seller_id = :seller_id");
+        $check_employee->execute([
+            ':employee_id' => $employee_id,
+            ':seller_id' => $seller_id
+        ]);
+        
+        if ($check_employee->rowCount() === 0) {
+            throw new Exception("Invalid employee for this seller");
+        }
+
+        // 1. Insert main item with employee_id
+        $stmt = $conn->prepare("INSERT INTO items (seller_id, employee_id, product_name, product_description, category, price, stock, main_image_url, image_urls) VALUES (:seller_id, :employee_id, :product_name, :description, :category, :price, :stock, :main_image_url, :image_url)");
 
         $result = $stmt->execute([
             ':seller_id' => $seller_id,
+            ':employee_id' => $employee_id, // Add employee_id parameter
             ':product_name' => $product_name,
             ':description' => $description,
             ':category' => $category,
@@ -150,6 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $response["message"] = "Item added successfully";
         $response["item_id"] = $item_id;
         $response["has_variations"] = !empty($variants);
+        $response["employee_id"] = $employee_id;
 
     } catch (PDOException $e) {
         // ROLLBACK ON PDO ERROR
