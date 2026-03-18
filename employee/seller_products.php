@@ -7,17 +7,30 @@ header("Access-Control-Allow-Headers: Content-Type");
 require_once '/var/www/html/connection/db_connection.php';
 
 try {
-    // Get seller_id from POST or GET
-    $seller_id = $_POST['seller_id'] ?? $_GET['seller_id'] ?? null;
+    // Get employee_id from POST or GET (changed from seller_id)
+    $employee_id = $_POST['employee_id'] ?? $_GET['employee_id'] ?? null;
 
-    if (!$seller_id) {
-        echo json_encode(["status" => "error", "message" => "Seller ID required"]);
+    if (!$employee_id) {
+        echo json_encode(["status" => "error", "message" => "Employee ID required"]);
         exit;
     }
 
-    $seller_id = intval($seller_id);
+    $employee_id = intval($employee_id);
 
-    // Query to get seller's items with calculated fields
+    // First get the seller_id from the employee
+    $employee_sql = "SELECT seller_id FROM employees WHERE id = :employee_id";
+    $employee_stmt = $conn->prepare($employee_sql);
+    $employee_stmt->execute([':employee_id' => $employee_id]);
+    $employee = $employee_stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$employee) {
+        echo json_encode(["status" => "error", "message" => "Employee not found"]);
+        exit;
+    }
+
+    $seller_id = $employee['seller_id'];
+
+    // Query to get seller's items with calculated fields (now using seller_id from employee lookup)
     $sql = "SELECT
                 i.id,
                 i.product_name,
@@ -82,7 +95,9 @@ try {
         "status" => "success",
         "message" => "Items retrieved successfully",
         "products" => $items, // Keeping "products" key for frontend compatibility
-        "count" => count($items)
+        "count" => count($items),
+        "employee_id" => $employee_id,
+        "seller_id" => $seller_id
     ]);
 
 } catch (PDOException $e) {
@@ -98,5 +113,7 @@ try {
 }
 
 // Close PDO connection
-$conn = null;
+if (isset($conn) && $conn !== null) {
+    $conn = null;
+}
 ?>
