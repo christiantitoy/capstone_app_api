@@ -48,10 +48,10 @@ try {
 
     // Original list-all-products code remains here:
     $sql = "SELECT p.id, p.product_name, p.price, p.main_image_url, p.seller_id, s.shop_name 
-            FROM products p 
-            JOIN seller_profiles s ON p.seller_id = s.id
-            WHERE p.status = 'approved' 
-            ORDER BY p.id DESC";
+        FROM items p 
+        JOIN sellers s ON p.seller_id = s.id
+        WHERE p.status = 'approved' 
+        ORDER BY p.id DESC";
 
     $stmt = $conn->query($sql);
     $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
