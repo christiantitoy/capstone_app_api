@@ -15,8 +15,8 @@ try {
         exit;
     }
     
-    // Validate required fields
-    $required_fields = ['buyer_id', 'recipient_name', 'phone_number', 'barangay', 'street_address'];
+    // Validate required fields - updated to match AddressRequest
+    $required_fields = ['buyer_id', 'recipient_name', 'phone_number', 'full_address', 'gps_location'];
     foreach ($required_fields as $field) {
         if (!isset($data[$field]) || empty(trim($data[$field]))) {
             echo json_encode([
@@ -31,8 +31,8 @@ try {
     $buyer_id = intval($data['buyer_id']);
     $recipient_name = trim($data['recipient_name']);
     $phone_number = trim($data['phone_number']);
-    $barangay = trim($data['barangay']);
-    $street_address = trim($data['street_address']);
+    $full_address = trim($data['full_address']);
+    $gps_location = trim($data['gps_location']);
     $is_default = isset($data['is_default']) ? intval($data['is_default']) : 0;
     
     // Validate buyer exists
@@ -56,19 +56,11 @@ try {
         exit;
     }
 
-    // Validate barangay from allowed list
-    $allowed_barangays = [
-        'Bagacay', 'Bajumpandan', 'Balugo', 'Banilad', 'Bantayan', 'Batinguel', 'Bunao',
-        'Cadawinonan', 'Calindagan', 'Camanjac', 'Candau-ay', 'Cantil-e', 'Darong',
-        'Junob', 'Looc', 'Mangnao', 'Motong', 'Piapi', 'Poblacion 1', 'Poblacion 2',
-        'Poblacion 3', 'Poblacion 4', 'Poblacion 5', 'Poblacion 6', 'Poblacion 7',
-        'Poblacion 8', 'Tabuctubig', 'Taclobo', 'Talay'
-    ];
-
-    if (!in_array($barangay, $allowed_barangays)) {
+    // Validate GPS location format (latitude,longitude)
+    if (!preg_match('/^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/', $gps_location)) {
         echo json_encode([
             'status' => 'error',
-            'message' => 'Invalid barangay selected'
+            'message' => 'Invalid GPS location format. Expected format: latitude,longitude'
         ]);
         exit;
     }
@@ -78,23 +70,23 @@ try {
 
     try {
         // If setting as default, update other addresses to not default
-        if ($is_default) {
+        if ($is_default == 1) {
             $update_defaults = $conn->prepare("UPDATE buyer_addresses SET is_default = 0 WHERE buyer_id = :buyer_id");
             $update_defaults->execute([':buyer_id' => $buyer_id]);
         }
 
-        // Insert new address
+        // Insert new address - updated fields to match database schema
         $sql = "INSERT INTO buyer_addresses
-                (buyer_id, recipient_name, phone_number, barangay, street_address, is_default)
-                VALUES (:buyer_id, :recipient_name, :phone_number, :barangay, :street_address, :is_default)";
+                (buyer_id, recipient_name, phone_number, full_address, gps_location, is_default)
+                VALUES (:buyer_id, :recipient_name, :phone_number, :full_address, :gps_location, :is_default)";
 
         $stmt = $conn->prepare($sql);
         $result = $stmt->execute([
             ':buyer_id' => $buyer_id,
             ':recipient_name' => $recipient_name,
             ':phone_number' => $phone_number,
-            ':barangay' => $barangay,
-            ':street_address' => $street_address,
+            ':full_address' => $full_address,
+            ':gps_location' => $gps_location,
             ':is_default' => $is_default
         ]);
 
@@ -104,7 +96,7 @@ try {
             // Commit transaction
             $conn->commit();
 
-            // Return success with the created address data
+            // Return success with the created address data - matching AddressResponse format
             echo json_encode([
                 'status' => 'success',
                 'message' => 'Address saved successfully',
@@ -114,12 +106,9 @@ try {
                     'buyer_id' => $buyer_id,
                     'recipient_name' => $recipient_name,
                     'phone_number' => $phone_number,
-                    'barangay' => $barangay,
-                    'street_address' => $street_address,
-                    'is_default' => $is_default,
-                    'city' => 'Dumaguete City',
-                    'province' => 'Negros Oriental',
-                    'zip_code' => '6200'
+                    'full_address' => $full_address,
+                    'gps_location' => $gps_location,
+                    'is_default' => $is_default
                 ]
             ]);
         } else {
