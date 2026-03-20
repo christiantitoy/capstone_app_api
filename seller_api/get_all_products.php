@@ -14,9 +14,9 @@ try {
     if (isset($_GET['id'])) {
         $id = intval($_GET['id']);
 
-        $sql = "SELECT p.id, p.product_name, p.product_description, p.price, p.stock, p.main_image_url, p.has_variations, s.shop_name 
-            FROM products p 
-            JOIN seller_profiles s ON p.seller_id = s.id
+        $sql = "SELECT p.id, p.product_name, p.product_description, p.price, p.stock, p.main_image_url, p.has_variations, s.store_name as shop_name 
+            FROM items p 
+            JOIN stores s ON p.seller_id = s.seller_id
             WHERE p.id = :id AND p.status = 'approved'";
 
         $stmt = $conn->prepare($sql);
