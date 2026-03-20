@@ -47,9 +47,9 @@ try {
     }
 
     // Original list-all-products code remains here:
-    $sql = "SELECT p.id, p.product_name, p.price, p.main_image_url, p.seller_id, s.shop_name 
+    $sql = "SELECT p.id, p.product_name, p.price, p.main_image_url, p.seller_id, s.store_name as shop_name 
         FROM items p 
-        JOIN sellers s ON p.seller_id = s.id
+        JOIN stores s ON p.seller_id = s.seller_id
         WHERE p.status = 'approved' 
         ORDER BY p.id DESC";
 
