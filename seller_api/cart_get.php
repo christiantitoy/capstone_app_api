@@ -24,22 +24,22 @@ try {
                 ci.is_purchased,
                 ci.added_at,
                 ci.updated_at,
-                p.product_name,
-                p.product_description,
-                p.stock,
-                p.main_image_url,
-                sp.shop_name,
-                sp.id AS seller_id,
-                pv.price AS variant_price,
-                pv.stock AS variant_stock,
-                pv.image_urls AS variant_images,
-                pv.options_json_value
+                i.product_name,
+                i.product_description,
+                i.stock,
+                i.main_image_url,
+                s.store_name AS shop_name,
+                s.seller_id AS seller_id,
+                iv.price AS variant_price,
+                iv.stock AS variant_stock,
+                iv.image_urls AS variant_images,
+                iv.options_json_value
             FROM cart_items ci
-            LEFT JOIN products p ON ci.product_id = p.id
-            LEFT JOIN seller_profiles sp ON p.seller_id = sp.id
-            LEFT JOIN product_variants pv ON ci.variation_id = pv.id
+            LEFT JOIN items i ON ci.product_id = i.id
+            LEFT JOIN stores s ON i.seller_id = s.seller_id
+            LEFT JOIN item_variants iv ON ci.variation_id = iv.id
             WHERE ci.buyer_id = :buyer_id
-            AND p.status = 'approved'
+            AND i.status = 'approved'
             AND ci.is_purchased = 0
             ORDER BY ci.added_at DESC";
 
