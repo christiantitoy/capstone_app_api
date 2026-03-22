@@ -18,7 +18,8 @@ try {
     $buyer_id = (int)$_GET['buyer_id'];
 
     // ────────────────────────────────────────────────────────────────
-    // Comprehensive query: orders → items → product → variant → seller
+    // Comprehensive query: orders → items → item_variants → stores → sellers
+    // Updated with new table names: items, item_variants, stores, sellers
     // ────────────────────────────────────────────────────────────────
     $sql = "
         SELECT 
@@ -39,8 +40,9 @@ try {
             -- Buyer Address
             ba.recipient_name,
             ba.phone_number,
-            ba.barangay,
-            ba.street_address,
+            ba.full_address,
+            ba.gps_location,
+            ba.is_default,
 
             -- Order Item
             oi.id                   AS item_id,
@@ -51,37 +53,46 @@ try {
             oi.unit_price,
             oi.total_price,
 
-            -- Product
-            p.product_name,
-            p.category,
-            p.main_image_url,
-            p.image_urls                AS product_image_urls,
-            p.has_variations,
+            -- Item (formerly products)
+            i.product_name,
+            i.category,
+            i.main_image_url,
+            i.image_urls                AS product_image_urls,
+            i.has_variations,
 
-            -- Product Variant (if any)
-            pv.options_json,
-            pv.options_json_value,
-            pv.price                    AS variant_price,
-            pv.sku,
-            pv.image_urls               AS variant_image_urls,
+            -- Item Variant (formerly product_variants)
+            iv.options_json,
+            iv.options_json_value,
+            iv.price                    AS variant_price,
+            iv.sku,
+            iv.image_urls               AS variant_image_urls,
 
-            -- Seller
-            sp.shop_name,
-            sp.fullname                 AS seller_fullname,
-            sp.shop_category,
-            sp.business_type
+            -- Store (formerly seller_profiles)
+            s.store_name,
+            s.category                  AS store_category,
+            s.description               AS store_description,
+            s.contact_number,
+            s.logo_url,
+            s.banner_url,
+            s.owner_full_name,
+            
+            -- Seller (user account)
+            sel.full_name               AS seller_fullname,
+            sel.email                   AS seller_email
 
         FROM orders o
         LEFT JOIN buyer_addresses ba 
             ON o.address_id = ba.id
         LEFT JOIN order_items oi 
             ON o.id = oi.order_id
-        LEFT JOIN products p
-            ON oi.product_id = p.id
-        LEFT JOIN product_variants pv
-            ON oi.variation_id = pv.id
-        LEFT JOIN seller_profiles sp
-            ON p.seller_id = sp.id
+        LEFT JOIN items i
+            ON oi.product_id = i.id
+        LEFT JOIN item_variants iv
+            ON oi.variation_id = iv.id
+        LEFT JOIN stores s
+            ON i.seller_id = s.seller_id
+        LEFT JOIN sellers sel
+            ON i.seller_id = sel.id
         WHERE o.buyer_id = :buyer_id
         ORDER BY o.created_at DESC, oi.id ASC
     ";
@@ -114,10 +125,17 @@ try {
                 'updatedAt'     => $row['order_updated_at'],
                 'lockedAt'      => $row['locked_at'],
 
+                // Address fields
                 'recipientName'  => $row['recipient_name']  ?? null,
                 'phoneNumber'    => $row['phone_number']   ?? null,
-                'barangay'       => $row['barangay']       ?? null,
-                'streetAddress'  => $row['street_address'] ?? null,
+                'fullAddress'    => $row['full_address']   ?? null,
+                'gpsLocation'    => $row['gps_location']   ?? null,
+                'isDefault'      => (bool)($row['is_default'] ?? 0),
+
+                // Display fields for frontend convenience
+                'city'           => 'Dumaguete City',
+                'province'       => 'Negros Oriental',
+                'zipCode'        => '6200',
 
                 'items' => []
             ];
@@ -134,8 +152,8 @@ try {
             'unitPrice'       => (float)$row['unit_price'],
             'totalPrice'      => (float)$row['total_price'],
 
-            // Product
-            'productName'     => $row['product_name']     ?? '[Product Removed]',
+            // Item (product) details
+            'productName'     => $row['product_name']     ?? '[Item Removed]',
             'category'        => $row['category']         ?? null,
             'mainImageUrl'    => $row['main_image_url']   ?? null,
             'productImageUrls'=> $row['product_image_urls'] ? explode(',', $row['product_image_urls']) : [],
@@ -155,12 +173,20 @@ try {
             ];
         }
 
-        // Seller (same for all items of the same product → but we attach per item)
+        // Store & Seller information
+        $item['store'] = [
+            'storeName'      => $row['store_name']        ?? null,
+            'storeCategory'  => $row['store_category']    ?? null,
+            'description'    => $row['store_description'] ?? null,
+            'contactNumber'  => $row['contact_number']    ?? null,
+            'logoUrl'        => $row['logo_url']          ?? null,
+            'bannerUrl'      => $row['banner_url']        ?? null,
+            'ownerFullName'  => $row['owner_full_name']   ?? null,
+        ];
+        
         $item['seller'] = [
-            'shopName'      => $row['shop_name']        ?? null,
-            'sellerName'    => $row['seller_fullname']  ?? null,
-            'shopCategory'  => $row['shop_category']    ?? null,
-            'businessType'  => $row['business_type']    ?? null,
+            'fullName'      => $row['seller_fullname']  ?? null,
+            'email'         => $row['seller_email']     ?? null,
         ];
 
         $ordersMap[$orderId]['items'][] = $item;
@@ -190,3 +216,4 @@ try {
         'message' => $e->getMessage()
     ]);
 }
+?>
