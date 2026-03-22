@@ -15,8 +15,8 @@ try {
     
     $buyer_id = intval($_GET['buyer_id']);
     
-    $sql = "SELECT id, recipient_name, phone_number, barangay, street_address, 
-                   is_default, created_at, updated_at 
+    $sql = "SELECT id, buyer_id, recipient_name, phone_number, full_address, 
+                   gps_location, is_default, created_at, updated_at 
             FROM buyer_addresses 
             WHERE buyer_id = :buyer_id
             ORDER BY is_default DESC, created_at DESC";
