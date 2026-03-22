@@ -56,7 +56,10 @@ try {
             subtotal,
             shipping_fee,
             discount,
-            total_amount
+            total_amount,
+            status,
+            created_at,
+            updated_at
         )
         VALUES (
             :buyer_id,
@@ -65,7 +68,10 @@ try {
             :subtotal,
             :shipping_fee,
             :discount,
-            :total_amount
+            :total_amount,
+            'pending',
+            CURRENT_TIMESTAMP,
+            CURRENT_TIMESTAMP
         )
     ";
 
@@ -109,46 +115,60 @@ try {
 
     foreach ($data['items'] as $item) {
 
+        // ✅ Validate required fields for each item
+        if (!isset($item['product_id']) || !isset($item['quantity']) || !isset($item['unit_price'])) {
+            throw new Exception("Missing required fields in order item");
+        }
+
         // ✅ SIMPLE NULL FIX
         $variationId = isset($item['variation_id']) &&
-                       $item['variation_id'] !== ''
-                       ? $item['variation_id']
+                       $item['variation_id'] !== '' &&
+                       $item['variation_id'] !== null
+                       ? intval($item['variation_id'])
                        : null;
 
-        $selectedOptions = isset($item['selected_options'])
+        $selectedOptions = isset($item['selected_options']) && !empty($item['selected_options'])
             ? $item['selected_options']
             : null;
 
-        $totalPrice = $item['unit_price'] * $item['quantity'];
+        $quantity = intval($item['quantity']);
+        $unitPrice = floatval($item['unit_price']);
+        $totalPrice = $unitPrice * $quantity;
 
         // ✅ Insert item
         $itemStmt->execute([
             ':order_id' => $orderId,
-            ':product_id' => $item['product_id'],
+            ':product_id' => intval($item['product_id']),
             ':variation_id' => $variationId,
             ':selected_options' => $selectedOptions,
-            ':quantity' => $item['quantity'],
-            ':unit_price' => $item['unit_price'],
+            ':quantity' => $quantity,
+            ':unit_price' => $unitPrice,
             ':total_price' => $totalPrice
         ]);
 
-        // ✅ POSTGRES SAFE UPDATE
-        $updateSql = "
-            UPDATE cart_items
-            SET is_purchased = 1
-            WHERE buyer_id = :buyer_id
-              AND product_id = :product_id
-              AND variation_id IS NOT DISTINCT FROM :variation_id
-              AND is_purchased = 0
-        ";
+        // ✅ Check if cart_items table exists and update is_purchased
+        // This part assumes you have a cart_items table with is_purchased column
+        try {
+            $updateSql = "
+                UPDATE cart_items
+                SET is_purchased = 1
+                WHERE buyer_id = :buyer_id
+                  AND product_id = :product_id
+                  AND variation_id IS NOT DISTINCT FROM :variation_id
+                  AND is_purchased = 0
+            ";
 
-        $updateStmt = $conn->prepare($updateSql);
+            $updateStmt = $conn->prepare($updateSql);
 
-        $updateStmt->execute([
-            ':buyer_id' => $data['buyer_id'],
-            ':product_id' => $item['product_id'],
-            ':variation_id' => $variationId
-        ]);
+            $updateStmt->execute([
+                ':buyer_id' => $data['buyer_id'],
+                ':product_id' => intval($item['product_id']),
+                ':variation_id' => $variationId
+            ]);
+        } catch (PDOException $e) {
+            // Log error but don't fail the order if cart update fails
+            error_log("Failed to update cart_items: " . $e->getMessage());
+        }
     }
 
     $conn->commit();
@@ -178,8 +198,7 @@ try {
 
     echo json_encode([
         "status" => "error",
-        "message" => "Failed to place order",
-        "error" => $e->getMessage()
+        "message" => $e->getMessage()
     ]);
 }
 
