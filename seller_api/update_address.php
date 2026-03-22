@@ -15,8 +15,8 @@ try {
         exit;
     }
     
-    // Validate required fields
-    $required_fields = ['address_id', 'buyer_id', 'recipient_name', 'phone_number', 'barangay', 'street_address'];
+    // Validate required fields - updated to match new schema
+    $required_fields = ['address_id', 'buyer_id', 'recipient_name', 'phone_number', 'full_address', 'gps_location'];
     foreach ($required_fields as $field) {
         if (!isset($data[$field]) || empty(trim($data[$field]))) {
             echo json_encode([
@@ -31,26 +31,9 @@ try {
     $buyer_id = intval($data['buyer_id']);
     $recipient_name = trim($data['recipient_name']);
     $phone_number = trim($data['phone_number']);
-    $barangay = trim($data['barangay']);
-    $street_address = trim($data['street_address']);
+    $full_address = trim($data['full_address']);
+    $gps_location = trim($data['gps_location']);
     $is_default = isset($data['is_default']) ? intval($data['is_default']) : 0;
-    
-    // Validate barangay from allowed list
-    $allowed_barangays = [
-        'Bagacay', 'Bajumpandan', 'Balugo', 'Banilad', 'Bantayan', 'Batinguel', 'Bunao',
-        'Cadawinonan', 'Calindagan', 'Camanjac', 'Candau-ay', 'Cantil-e', 'Darong',
-        'Junob', 'Looc', 'Mangnao', 'Motong', 'Piapi', 'Poblacion 1', 'Poblacion 2',
-        'Poblacion 3', 'Poblacion 4', 'Poblacion 5', 'Poblacion 6', 'Poblacion 7',
-        'Poblacion 8', 'Tabuctubig', 'Taclobo', 'Talay'
-    ];
-    
-    if (!in_array($barangay, $allowed_barangays)) {
-        echo json_encode([
-            'status' => 'error',
-            'message' => 'Invalid barangay selected'
-        ]);
-        exit;
-    }
     
     // Validate phone number format
     if (!preg_match('/^09[0-9]{9}$/', $phone_number)) {
@@ -91,12 +74,12 @@ try {
             ]);
         }
 
-        // Update the address
+        // Update the address - updated fields to match new schema
         $update_sql = "UPDATE buyer_addresses
                        SET recipient_name = :recipient_name,
                            phone_number = :phone_number,
-                           barangay = :barangay,
-                           street_address = :street_address,
+                           full_address = :full_address,
+                           gps_location = :gps_location,
                            is_default = :is_default,
                            updated_at = CURRENT_TIMESTAMP
                        WHERE id = :address_id AND buyer_id = :buyer_id";
@@ -105,8 +88,8 @@ try {
         $result = $update_stmt->execute([
             ':recipient_name' => $recipient_name,
             ':phone_number' => $phone_number,
-            ':barangay' => $barangay,
-            ':street_address' => $street_address,
+            ':full_address' => $full_address,
+            ':gps_location' => $gps_location,
             ':is_default' => $is_default,
             ':address_id' => $address_id,
             ':buyer_id' => $buyer_id
@@ -130,8 +113,8 @@ try {
                         'buyer_id' => $updated_address['buyer_id'],
                         'recipient_name' => $updated_address['recipient_name'],
                         'phone_number' => $updated_address['phone_number'],
-                        'barangay' => $updated_address['barangay'],
-                        'street_address' => $updated_address['street_address'],
+                        'full_address' => $updated_address['full_address'],
+                        'gps_location' => $updated_address['gps_location'],
                         'is_default' => $updated_address['is_default'],
                         'city' => 'Dumaguete City',
                         'province' => 'Negros Oriental',
