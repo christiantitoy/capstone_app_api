@@ -1,6 +1,6 @@
 <?php
 // add.php
-session_start(); // Make sure session is started for flash messages
+// REMOVE this line: session_start();
 require_once $_SERVER['DOCUMENT_ROOT'] . '/seller/backend/session/auth.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/connection/db_connection.php';
 
