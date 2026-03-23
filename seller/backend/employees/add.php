@@ -1,6 +1,5 @@
 <?php
 // add.php
-// REMOVE this line: session_start();
 require_once $_SERVER['DOCUMENT_ROOT'] . '/seller/backend/session/auth.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/connection/db_connection.php';
 
@@ -29,7 +28,7 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     exit;
 }
 
-// Validate password length (optional)
+// Validate password length
 if (strlen($password) < 6) {
     $_SESSION['error'] = "Password must be at least 6 characters long.";
     header("Location: /seller/ui/employees.php");
