@@ -4,7 +4,6 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/seller/backend/session/auth.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/connection/db_connection.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    $_SESSION['error'] = "Invalid request method";
     header("Location: /seller/ui/employees.php");
     exit;
 }
@@ -14,28 +13,12 @@ $email     = trim($_POST['email'] ?? '');
 $password  = $_POST['password'] ?? '';
 $role      = $_POST['role'] ?? '';
 
-// Validate required fields
 if (empty($full_name) || empty($email) || empty($password) || !in_array($role, ['order_manager', 'product_manager'])) {
-    $_SESSION['error'] = "Missing required fields. Please fill in all fields.";
-    header("Location: /seller/ui/employees.php");
-    exit;
+    // In real project → use session flash message + redirect back with error
+    die("Missing required fields");
 }
 
-// Validate email format
-if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    $_SESSION['error'] = "Invalid email format.";
-    header("Location: /seller/ui/employees.php");
-    exit;
-}
-
-// Validate password length
-if (strlen($password) < 6) {
-    $_SESSION['error'] = "Password must be at least 6 characters long.";
-    header("Location: /seller/ui/employees.php");
-    exit;
-}
-
-// Hash the password
+// Simple password hash (use password_hash in real project!)
 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
 try {
@@ -45,19 +28,14 @@ try {
     ");
     $stmt->execute([$full_name, $email, $hashed_password, $seller_id, $role]);
 
-    // Success → redirect back with success message
-    $_SESSION['success'] = "Employee added successfully!";
-    header("Location: /seller/ui/employees.php?success=1");
+    // Success → redirect back
+    header("Location: ../../ui/employees.php?success=1");
     exit;
-    
 } catch (PDOException $e) {
-    if ($e->getCode() == 23505) { // unique violation (PostgreSQL)
-        $_SESSION['error'] = "Email already exists. Please use a different email address.";
-    } else {
-        $_SESSION['error'] = "Database error: " . $e->getMessage();
+    if ($e->getCode() == 23505) { // unique violation
+        die("Email already exists");
     }
-    header("Location: /seller/ui/employees.php");
-    exit;
+    die("Error: " . $e->getMessage());
 }
 
 $conn = null;
