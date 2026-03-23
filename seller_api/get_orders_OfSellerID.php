@@ -25,7 +25,7 @@ try {
 
     $seller_id = intval($seller_id);
 
-    // Prepare SQL with optional filters
+    // Prepare SQL with optional filters - ADAPTED TO YOUR ACTUAL TABLE STRUCTURES
     $sql = "SELECT
                 o.id AS order_id,
                 o.buyer_id,
@@ -38,36 +38,36 @@ try {
                 o.created_at AS order_date,
                 ba.recipient_name,
                 ba.phone_number,
-                ba.barangay,
-                ba.street_address,
+                ba.full_address,
+                ba.gps_location,
                 ba.is_default,
-                p.product_name,
-                p.product_description,
-                p.category,
-                p.id AS product_id,
-                p.main_image_url,
-                p.seller_id,
+                i.product_name,
+                i.product_description,
+                i.category,
+                i.id AS product_id,
+                i.main_image_url,
+                i.seller_id,
                 oi.quantity,
                 oi.unit_price,
                 oi.total_price,
                 oi.variation_id,
-                pv.options_json_value AS variation,
-                pv.sku,
-                pv.image_urls
+                iv.options_json_value AS variation,
+                iv.sku,
+                iv.image_urls
             FROM
                 orders o
             INNER JOIN
                 order_items oi ON o.id = oi.order_id
             INNER JOIN
-                products p ON oi.product_id = p.id
+                items i ON oi.product_id = i.id
             LEFT JOIN
-                product_variants pv ON oi.variation_id = pv.id
+                item_variants iv ON oi.variation_id = iv.id
             INNER JOIN
                 buyers b ON o.buyer_id = b.id
             INNER JOIN
                 buyer_addresses ba ON o.address_id = ba.id
             WHERE
-                p.seller_id = :seller_id";
+                i.seller_id = :seller_id";
 
     // Add status filter if provided
     if ($status && $status !== 'all') {
@@ -79,7 +79,7 @@ try {
     // Prepare and execute main query
     $stmt = $conn->prepare($sql);
 
-    // Bind parameters - use bindValue for LIMIT and OFFSET as they need to be treated as integers
+    // Bind parameters
     $stmt->bindValue(':seller_id', $seller_id, PDO::PARAM_INT);
     $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
     $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
@@ -107,15 +107,15 @@ try {
             "shipping_info" => [
                 "recipient_name" => $row['recipient_name'],
                 "phone_number" => $row['phone_number'],
-                "barangay" => $row['barangay'],
-                "street_address" => $row['street_address'],
+                "full_address" => $row['full_address'],
+                "gps_location" => $row['gps_location'],
                 "is_default" => (bool)$row['is_default']
             ],
             "product_info" => [
                 "product_id" => (int)$row['product_id'],
                 "product_name" => $row['product_name'],
                 "product_description" => $row['product_description'],
-                "discount" => (float)$row['discount'],
+                "discount" => isset($row['discount']) ? (float)$row['discount'] : null,
                 "category" => $row['category'],
                 "quantity" => (int)$row['quantity'],
                 "unit_price" => (float)$row['unit_price'],
@@ -135,8 +135,8 @@ try {
     $count_sql = "SELECT COUNT(DISTINCT o.id) as total
                   FROM orders o
                   INNER JOIN order_items oi ON o.id = oi.order_id
-                  INNER JOIN products p ON oi.product_id = p.id
-                  WHERE p.seller_id = :seller_id";
+                  INNER JOIN items i ON oi.product_id = i.id
+                  WHERE i.seller_id = :seller_id";
 
     if ($status && $status !== 'all') {
         $count_sql .= " AND o.status = :status";
@@ -174,5 +174,5 @@ try {
     ]);
 }
 
-$conn = null; // Close PDO connection
+$conn = null;
 ?>
