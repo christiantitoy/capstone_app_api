@@ -1,12 +1,23 @@
+<?php
+// /admin/ui/buyers.php
+session_start();
+
+// Simple auth check
+if (!isset($_SESSION['admin_id'])) {
+    header("Location: login.php");
+    exit;
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard | Capstone App</title>
+    <title>Buyers Management | Admin Dashboard</title>
     <link rel="icon" type="image/png" href="../admin/images/app_icon.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="../css/dashboard.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../admin/css/dashboard.css">
 </head>
 <body>
 
@@ -17,10 +28,10 @@
             <h2>Admin<span>Dashboard</span></h2>
         </div>
         <nav class="sidebar-nav">
-            <a href="/admin/ui/dashboard.php" class="nav-item active">
+            <a href="/admin/ui/dashboard.php" class="nav-item">
                 <i class="fas fa-tachometer-alt"></i><span>Dashboard</span>
             </a>
-            <a href="/admin/ui/buyers.php" class="nav-item">
+            <a href="/admin/ui/buyers.php" class="nav-item active">
                 <i class="fas fa-users"></i><span>Buyers</span>
             </a>
             <a href="/admin/ui/sellers.php" class="nav-item">
@@ -54,8 +65,8 @@
     <main class="main-content">
         <header class="main-header">
             <div class="header-left">
-                <h1>Dashboard Overview</h1>
-                <p>Welcome back, Admin!</p>
+                <h1>Buyers Management</h1>
+                <p>Manage all buyers on the platform</p>
             </div>
             <div class="header-right">
                 <div class="notifications">
@@ -78,34 +89,16 @@
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon" style="background:#e67e2220;color:#e67e22">
-                    <i class="fas fa-store"></i>
-                </div>
-                <div class="stat-info">
-                    <h3 id="totalSellers">0</h3>
-                    <p>Total Sellers</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon" style="background:#3498db20;color:#3498db">
-                    <i class="fas fa-motorcycle"></i>
-                </div>
-                <div class="stat-info">
-                    <h3 id="totalRiders">0</h3>
-                    <p>Total Riders</p>
-                </div>
-            </div>
-            <div class="stat-card">
                 <div class="stat-icon" style="background:#27ae6020;color:#27ae60">
-                    <i class="fas fa-box"></i>
+                    <i class="fas fa-user-check"></i>
                 </div>
                 <div class="stat-info">
-                    <h3 id="totalProducts">0</h3>
-                    <p>Total Products</p>
+                    <h3 id="activeBuyers">0</h3>
+                    <p>Active Buyers</p>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon" style="background:#e74c3c20;color:#e74c3c">
+                <div class="stat-icon" style="background:#e67e2220;color:#e67e22">
                     <i class="fas fa-shopping-cart"></i>
                 </div>
                 <div class="stat-info">
@@ -115,54 +108,31 @@
             </div>
         </section>
 
-        <!-- PENDING APPROVALS SECTION -->
-        <div class="full-width-section pending-approvals">
+        <!-- BUYERS LIST SECTION -->
+        <div class="full-width-section buyers-list">
             <div class="section-header">
-                <h2>Pending Approvals</h2>
-                <a href="#" class="view-all">View All</a>
+                <h2>Buyers List</h2>
+                <div class="search-container">
+                    <input type="text" class="search-field" id="searchBuyer" placeholder="Search buyer...">
+                    <i class="fas fa-search search-icon"></i>
+                </div>
             </div>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Type</th>
-                            <th>Name</th>
-                            <th>Date Submitted</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="pendingApprovalsBody">
-                        <tr>
-                            <td colspan="4" style="text-align: center;">Loading...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
 
-        <!-- RECENT ORDERS SECTION -->
-        <div class="full-width-section recent-orders">
-            <div class="section-header">
-                <h2>Recent Orders</h2>
-                <a href="/admin/ui/orders.php" class="view-all">View All</a>
-            </div>
             <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Order ID</th>
-                            <th>Customer</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-                    <tbody id="recentOrdersBody">
-                        <tr>
-                            <td colspan="5" style="text-align: center;">Loading orders...</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="buyer_holder">
+                    <div class="table-header">
+                        <div class="col-id">ID</div>
+                        <div class="col-username">Username</div>
+                        <div class="col-email">Email</div>
+                        <div class="col-avatar">Avatar</div>
+                        <div class="col-orders">Orders</div>
+                        <div class="col-status">Status</div>
+                    </div>
+                    
+                    <div class="table-body" id="buyersTableBody">
+                        <div class="loading">Loading buyers...</div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -182,7 +152,7 @@
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     document.getElementById('currentDate').textContent = new Date().toLocaleDateString(undefined, options);
     
-    // Simple logout function (to be connected to backend later)
+    // Logout function
     document.getElementById('logoutBtn').addEventListener('click', function() {
         if (confirm('Are you sure you want to logout?')) {
             window.location.href = '/admin/backend/logout.php';
