@@ -2,7 +2,15 @@
 // /seller/ui/dashboard.php
 require_once __DIR__ . '/../backend/session/auth.php';
 
+$seller_id = $_SESSION['seller_id'] ?? null;
+
+if (!$seller_id) {
+    header("Location: /seller/ui/login.php");
+    exit;
+}
+
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -95,18 +103,15 @@ require_once __DIR__ . '/../backend/session/auth.php';
         <section class="stats-cards">
             <div class="stat-card">
                 <div class="stat-icon" style="background:#3498db20;color:#3498db"><i class="fas fa-box"></i></div>
-                <div class="stat-info"><h3>24</h3><p>Total Products</p></div>
-                <div class="stat-trend positive"><i class="fas fa-arrow-up"></i> 12%</div>
+                <div class="stat-info"><h3 id="products-count">--</h3><p>Total Products</p></div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon" style="background:#e67e2220;color:#e67e22"><i class="fas fa-shopping-cart"></i></div>
-                <div class="stat-info"><h3>342</h3><p>Total Orders</p></div>
-                <div class="stat-trend positive"><i class="fas fa-arrow-up"></i> 8%</div>
+                <div class="stat-info"><h3 id="orders-count">--</h3><p>Total Orders</p></div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon" style="background:#3498db20;color:#3498db"><i class="fas fa-dollar-sign"></i></div>
                 <div class="stat-info"><h3>$18,420.50</h3><p>Total Revenue</p></div>
-                <div class="stat-trend positive"><i class="fas fa-arrow-up"></i> 15%</div>
             </div>
         </section>
 
@@ -214,6 +219,31 @@ require_once __DIR__ . '/../backend/session/auth.php';
 </div>
 
 <script src="/seller/js/logout.js"></script>
+
+
+ <script>
+        const sellerId = <?php echo json_encode($seller_id); ?>;
+        
+        async function loadData() {
+            try {
+                const response = await fetch(`/seller/backend/dashboard_backends/count_products.php?seller_id=${sellerId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('products-count').textContent = data.products_count;
+                    document.getElementById('orders-count').textContent = data.orders_count;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        // Load data when page loads
+        loadData();
+        
+        // Auto-refresh every 30 seconds
+        setInterval(loadData, 30000);
+    </script>
 
 </body>
 </html>
