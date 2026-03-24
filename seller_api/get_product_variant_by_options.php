@@ -24,9 +24,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         $searchValues = explode(',', $options_value);
         $searchValues = array_map('trim', $searchValues); // Trim all values
 
-        // Get all variants for this product
-        $query = "SELECT * FROM product_variants
-                 WHERE product_id = :product_id";
+        // ✅ Using item_variants table with options_json_value column
+        $query = "SELECT * FROM item_variants
+                 WHERE item_id = :product_id";
 
         $stmt = $conn->prepare($query);
         $stmt->execute([':product_id' => $product_id]);
@@ -37,6 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             $foundVariant = null;
 
             foreach ($variants as $variant) {
+                // ✅ Using options_json_value column
                 $dbOptions = $variant['options_json_value'] ?? '';
 
                 // Skip if empty
