@@ -18,50 +18,49 @@ try {
     $sql = "SELECT 
                 i.id,
                 i.seller_id,
-                i.product_name,
-                i.product_description,
-                i.price,
-                i.stock,
-                i.main_image_url,
-                i.image_urls,
-                i.has_variations,
-                s.store_name AS shop_name
+                s.store_name as shop_name,
+                io.option_name,
+                io.option_value,
+                iv.price,
+                iv.stock,
+                iv.image_urls 
             FROM items i
             JOIN stores s ON s.seller_id = i.seller_id
-            WHERE i.id = :id
-              AND i.status = 'approved'
-            LIMIT 1";
+            JOIN item_options io ON io.item_id = i.id
+            JOIN item_variants iv ON iv.item_id = i.id
+            WHERE i.id = :id 
+              AND i.status = 'approved'";
 
     $stmt = $conn->prepare($sql);
     $stmt->execute([':id' => $id]);
+    
+    $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $products = [];
 
-    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    foreach ($result as $row) {
+        $products[] = [
+            'id' => (int)$row['id'],
+            'seller_id' => (int)$row['seller_id'],
+            'shop_name' => $row['shop_name'],
+            'option_name' => $row['option_name'],
+            'option_value' => $row['option_value'],
+            'price' => (float)$row['price'],
+            'stock' => (int)$row['stock'],
+            'image_urls' => $row['image_urls']
+        ];
+    }
 
-    if (!$row) {
+    if (empty($products)) {
         echo json_encode([
             'status' => 'error',
             'message' => 'Product not found'
         ]);
-        exit;
+    } else {
+        echo json_encode([
+            'status' => 'success',
+            'products' => $products
+        ]);
     }
-
-    $product = [
-        'id' => (int)$row['id'],
-        'seller_id' => (int)$row['seller_id'],
-        'title' => $row['product_name'], // ✅ mapped
-        'description' => $row['product_description'], // ✅ mapped
-        'price' => (float)$row['price'],
-        'stock' => (int)$row['stock'],
-        'shop_name' => $row['shop_name'],
-        'image_url' => $row['main_image_url'] ?? '', // ✅ main image
-        'image_urls' => $row['image_urls'] ?? '', // optional extra images
-        'has_variations' => (int)$row['has_variations']
-    ];
-
-    echo json_encode([
-        'status' => 'success',
-        'products' => [$product]
-    ]);
 
 } catch (PDOException $e) {
     echo json_encode([
