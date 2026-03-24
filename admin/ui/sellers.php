@@ -1,5 +1,5 @@
 <?php
-// /admin/ui/buyers.php
+// /admin/ui/sellers.php
 session_start();
 
 // Simple auth check
@@ -14,10 +14,10 @@ session_start();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buyers Management | Admin Dashboard</title>
+    <title>Sellers Management | Admin Dashboard</title>
     <link rel="icon" type="image/png" href="../admin/images/app_icon.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="../css/buyers.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../css/sellers.css?v=<?= time() ?>">
 </head>
 <body>
 
@@ -31,10 +31,10 @@ session_start();
             <a href="/admin/ui/dashboard.php" class="nav-item">
                 <i class="fas fa-tachometer-alt"></i><span>Dashboard</span>
             </a>
-            <a href="/admin/ui/buyers.php" class="nav-item active">
+            <a href="/admin/ui/buyers.php" class="nav-item">
                 <i class="fas fa-users"></i><span>Buyers</span>
             </a>
-            <a href="/admin/ui/sellers.php" class="nav-item">
+            <a href="/admin/ui/sellers.php" class="nav-item active">
                 <i class="fas fa-store"></i><span>Sellers</span>
             </a>
             <a href="/admin/ui/products.php" class="nav-item">
@@ -65,8 +65,8 @@ session_start();
     <main class="main-content">
         <header class="main-header">
             <div class="header-left">
-                <h1>Buyers Management</h1>
-                <p>Manage all buyers on the platform</p>
+                <h1>Sellers Management</h1>
+                <p>Manage all sellers on the platform</p>
             </div>
             <div class="header-right">
                 <div class="notifications">
@@ -81,56 +81,64 @@ session_start();
         <section class="stats-cards">
             <div class="stat-card">
                 <div class="stat-icon" style="background:#3498db20;color:#3498db">
-                    <i class="fas fa-users"></i>
+                    <i class="fas fa-store"></i>
                 </div>
                 <div class="stat-info">
-                    <h3 id="totalBuyers">0</h3>
-                    <p>Total Buyers</p>
+                    <h3 id="totalSellers">0</h3>
+                    <p>Total Sellers</p>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon" style="background:#27ae6020;color:#27ae60">
-                    <i class="fas fa-user-check"></i>
+                    <i class="fas fa-check-circle"></i>
                 </div>
                 <div class="stat-info">
-                    <h3 id="activeBuyers">0</h3>
-                    <p>Active Buyers</p>
+                    <h3 id="approvedSellers">0</h3>
+                    <p>Approved Sellers</p>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon" style="background:#e67e2220;color:#e67e22">
-                    <i class="fas fa-shopping-cart"></i>
+                    <i class="fas fa-clock"></i>
                 </div>
                 <div class="stat-info">
-                    <h3 id="totalOrders">0</h3>
-                    <p>Total Orders</p>
+                    <h3 id="pendingSellers">0</h3>
+                    <p>Pending Approval</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#e74c3c20;color:#e74c3c">
+                    <i class="fas fa-box"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="totalProducts">0</h3>
+                    <p>Total Products</p>
                 </div>
             </div>
         </section>
 
-        <!-- BUYERS LIST SECTION -->
-        <div class="full-width-section buyers-list">
+        <!-- SELLERS LIST SECTION -->
+        <div class="full-width-section sellers-list">
             <div class="section-header">
-                <h2>Buyers List</h2>
+                <h2>Sellers List</h2>
                 <div class="search-container">
-                    <input type="text" class="search-field" id="searchBuyer" placeholder="Search buyer...">
+                    <input type="text" class="search-field" id="searchSeller" placeholder="Search seller...">
                     <i class="fas fa-search search-icon"></i>
                 </div>
             </div>
 
             <div class="table-container">
-                <div class="buyer_holder">
-                    <div class="table-header">
+                <div class="seller_holder">
+                    <div class="seller-table-header">
                         <div class="col-id">ID</div>
-                        <div class="col-username">Username</div>
-                        <div class="col-email">Email</div>
-                        <div class="col-avatar">Avatar</div>
-                        <div class="col-orders">Orders</div>
+                        <div class="col-shop">Shop</div>
+                        <div class="col-category">Category</div>
                         <div class="col-status">Status</div>
+                        <div class="col-actions">Actions</div>
                     </div>
                     
-                    <div class="table-body" id="buyersTableBody">
-                        <div class="loading">Loading buyers...</div>
+                    <div class="table-body" id="sellersTableBody">
+                        <div class="loading">Loading sellers...</div>
                     </div>
                 </div>
             </div>
