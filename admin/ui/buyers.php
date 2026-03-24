@@ -17,7 +17,7 @@ if (!isset($_SESSION['admin_id'])) {
     <title>Buyers Management | Admin Dashboard</title>
     <link rel="icon" type="image/png" href="../admin/images/app_icon.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="../admin/css/dashboard.css">
+    <link rel="stylesheet" href="../css/buyers.css?v=<?= time() ?>">
 </head>
 <body>
 
