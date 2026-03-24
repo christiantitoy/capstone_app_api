@@ -222,7 +222,7 @@ if (!$seller_id) {
 
 
  <script>
-        const sellerId = <?php echo json_encode($seller_id); ?>;
+         const sellerId = <?php echo json_encode($seller_id); ?>;
         
         async function loadData() {
             try {
@@ -238,11 +238,8 @@ if (!$seller_id) {
             }
         }
         
-        // Load data when page loads
+        // Load data only once when page loads
         loadData();
-        
-        // Auto-refresh every 30 seconds
-        setInterval(loadData, 30000);
     </script>
 
 </body>
