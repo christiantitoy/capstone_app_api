@@ -16,20 +16,20 @@ try {
     $id = intval($_GET['id']);
 
     $sql = "SELECT 
-                p.id,
-                p.seller_id,
-                s.shop_name,
-                po.option_name,
-                po.option_value,
-                pv.price,
-                pv.stock,
-                pv.image_urls 
-            FROM products p
-            JOIN seller_profiles s ON s.id = p.seller_id
-            JOIN product_options po ON po.product_id = p.id
-            JOIN product_variants pv ON pv.product_id = p.id
-            WHERE p.id = :id 
-              AND p.status = 'approved'";
+                i.id,
+                i.seller_id,
+                s.store_name as shop_name,
+                io.option_name,
+                io.option_value,
+                iv.price,
+                iv.stock,
+                iv.image_urls 
+            FROM items i
+            JOIN stores s ON s.seller_id = i.seller_id
+            JOIN item_options io ON io.item_id = i.id
+            JOIN item_variants iv ON iv.item_id = i.id
+            WHERE i.id = :id 
+              AND i.status = 'approved'";
 
     $stmt = $conn->prepare($sql);
     $stmt->execute([':id' => $id]);
