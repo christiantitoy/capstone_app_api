@@ -23,6 +23,6 @@ if (isset($_COOKIE['remember_token'])) {
 }
 
 // Redirect to login page
-header("Location: /seller/ui/login.php");
+header("Location: /seller/ui/index.php");
 exit;
 ?>
