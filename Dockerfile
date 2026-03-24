@@ -29,5 +29,7 @@ RUN composer install --no-interaction --no-dev --optimize-autoloader
 # Copy the rest of the app
 COPY . .
 
-# Expose port 80
-EXPOSE 80
+# Simple fix: Dynamically set the port and start Apache
+CMD sed -i "s/Listen 80/Listen ${PORT:-80}/g" /etc/apache2/ports.conf && \
+    echo "ServerName localhost" >> /etc/apache2/apache2.conf && \
+    apache2-foreground
