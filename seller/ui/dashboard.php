@@ -115,7 +115,7 @@ if (!$seller_id) {
             </div>
         </section>
 
-        <!-- Recent Orders - full width -->
+        <!-- Recent Orders Section -->
         <div class="full-width-section recent-orders">
             <div class="section-header">
                 <h2>Recent Orders</h2>
@@ -132,12 +132,10 @@ if (!$seller_id) {
                             <th>Status</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr><td>#00345</td><td>Maria Santos</td><td>Wireless Earbuds Pro</td><td>$39.99</td><td><span class="status-badge status-delivered">Delivered</span></td></tr>
-                        <tr><td>#00344</td><td>Juan Dela Cruz</td><td>Smart LED Bulb (4-pack)</td><td>$23.99</td><td><span class="status-badge status-shipped">Shipped</span></td></tr>
-                        <tr><td>#00343</td><td>Ana Reyes</td><td>Phone Fast Charger 65W</td><td>$21.00</td><td><span class="status-badge status-pending">Pending</span></td></tr>
-                        <tr><td>#00342</td><td>Pedro Gomez</td><td>Reusable Water Bottle 1L</td><td>$17.00</td><td><span class="status-badge status-delivered">Delivered</span></td></tr>
-                        <tr><td>#00341</td><td>Luz Fernandez</td><td>Portable Power Bank 20000mAh</td><td>$28.00</td><td><span class="status-badge status-shipped">Shipped</span></td></tr>
+                    <tbody id="recent-orders-body">
+                        <tr>
+                            <td colspan="5" style="text-align: center;">Loading orders...</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -222,7 +220,11 @@ if (!$seller_id) {
 
 
  <script>
-         const sellerId = <?php echo json_encode($seller_id); ?>;
+
+    // --------------------------------------------------------------------------------------------------
+    // JS code to fetch and display products and orders count on the dashboard cards. 
+    // This runs only once when the page loads.
+        const sellerId = <?php echo json_encode($seller_id); ?>;
         
         async function loadData() {
             try {
@@ -240,6 +242,48 @@ if (!$seller_id) {
         
         // Load data only once when page loads
         loadData();
+
+// --------------------------------------------------------------------------------------------------
+    // JS code to fetch and display recent orders in the "Recent Orders" table.
+    //  This also runs once on page load.
+    fetch(`/seller/backend/dashboard_backends/get_recent_orders.php?seller_id=${sellerId}`)
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.getElementById('recent-orders-body');
+                
+                if (data.success && data.orders.length > 0) {
+                    tbody.innerHTML = '';
+                    
+                    data.orders.forEach(order => {
+                        let statusClass = 'status-badge';
+                        if (order.status === 'delivered' || order.status === 'complete') {
+                            statusClass += ' status-delivered';
+                        } else if (order.status === 'shipped') {
+                            statusClass += ' status-shipped';
+                        } else {
+                            statusClass += ' status-pending';
+                        }
+                        
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>#${String(order.order_id).padStart(5, '0')}</td>
+                                <td>${order.customer_name || 'Guest'}</td>
+                                <td>${order.products}</td>
+                                <td>$${parseFloat(order.total_amount).toFixed(2)}</td>
+                                <td><span class="${statusClass}">${order.status.charAt(0).toUpperCase() + order.status.slice(1)}</span></td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No orders found</td></tr>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('recent-orders-body').innerHTML = '<tr><td colspan="5" style="text-align: center;">Error loading orders</td></tr>';
+            });
+// -------------------------------------------------------------------------------------------------------------------
+
     </script>
 
 </body>
