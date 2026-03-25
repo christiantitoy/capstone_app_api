@@ -10,9 +10,10 @@ if (!isset($conn) || $conn === null) {
 }
 
 try {
-    // If an ID is passed in the query (e.g. get_all_products.php?id=5)
+    // If an ID is passed in the query (e.g. get_all_products.php?id=5&buyerId=123)
     if (isset($_GET['id'])) {
         $id = intval($_GET['id']);
+        $buyerId = isset($_GET['buyerId']) ? intval($_GET['buyerId']) : null;
 
         $sql = "SELECT p.id, p.product_name, p.product_description, p.price, p.stock, p.main_image_url, p.has_variations, s.store_name as shop_name 
             FROM items p 
@@ -27,6 +28,18 @@ try {
 
         if (count($result) > 0) {
             foreach ($result as $row) {
+                // Check if this product is favorited by the buyer
+                $isFavorite = false;
+                if ($buyerId !== null) {
+                    $checkFavSql = "SELECT COUNT(*) FROM favorites WHERE buyer_id = :buyerId AND product_id = :productId";
+                    $favStmt = $conn->prepare($checkFavSql);
+                    $favStmt->execute([
+                        ':buyerId' => $buyerId,
+                        ':productId' => $row['id']
+                    ]);
+                    $isFavorite = $favStmt->fetchColumn() > 0;
+                }
+
                 $products[] = [
                     'id' => (int)$row['id'],
                     'title' => $row['product_name'],
@@ -35,7 +48,8 @@ try {
                     'stock' => (int)$row['stock'],
                     'shop' => $row['shop_name'],
                     'has_variations' => (int)$row['has_variations'],
-                    'image_url' => $row['main_image_url']
+                    'image_url' => $row['main_image_url'],
+                    'is_favorite' => $isFavorite
                 ];
             }
             echo json_encode(['status' => 'success', 'products' => $products]);
@@ -46,7 +60,7 @@ try {
         exit;
     }
 
-    // Original list-all-products code remains here:
+    // Original list-all-products code remains unchanged
     $sql = "SELECT p.id, p.product_name, p.price, p.main_image_url, p.seller_id, s.store_name as shop_name 
         FROM items p 
         JOIN stores s ON p.seller_id = s.seller_id
@@ -79,5 +93,4 @@ try {
 }
 
 $conn = null;
-
 ?>

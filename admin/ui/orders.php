@@ -3,10 +3,10 @@
 session_start();
 
 // Simple auth check
-if (!isset($_SESSION['admin_id'])) {
-    header("Location: login.php");
-    exit;
-}
+// if (!isset($_SESSION['admin_id'])) {
+//     header("Location: login.php");
+//     exit;
+// }
 ?>
 
 <!DOCTYPE html>

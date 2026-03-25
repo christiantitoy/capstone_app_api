@@ -31,7 +31,7 @@ body {
 .nav-links { display:flex; gap:2.2rem; align-items:center; }
 .nav-links a { text-decoration:none; color:var(--dark); font-weight:500; transition:color 0.25s; }
 .nav-links a:hover { color:var(--secondary); }
-.nav-btn { padding:0.65rem 1.5rem; border-radius:6px; background:var(--secondary); color:white; font-weight:600; text-decoration:none; transition:all 0.25s; }
+.nav-btn { padding:0.65rem 1.5rem; border-radius:6px; background:var(--secondary); color:white !important; font-weight:600; text-decoration:none; transition:all 0.25s; }
 .nav-btn:hover { background:var(--secondary-dark); transform:translateY(-1px); }
 
 /* Hero */
