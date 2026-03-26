@@ -319,8 +319,8 @@ $role_display = [
 <script>
 // Role descriptions
 const roleDescriptions = {
-    order_manager: 'Can view all orders, update order status (pending → shipped → delivered), and view customer information. Cannot add or edit products.',
-    product_manager: 'Can add new products, edit product details (name, price, stock), and upload product images. Cannot view orders.'
+    order_manager: 'Can view all orders, update order status (packed → ready for delivery), and view customer information. Cannot add or edit products.',
+    product_manager: 'Can add new products, edit product details (price and stock), and upload product images. Cannot view orders.'
 };
 
 function updateRoleDescription() {
