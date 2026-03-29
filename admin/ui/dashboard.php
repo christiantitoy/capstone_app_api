@@ -129,7 +129,7 @@ require_once '../backend/session/auth_admin.php';
                 <a href="#" class="view-all">View All</a>
             </div>
             <div class="table-container">
-                表
+                <table>
                     <thead>
                         <tr>
                             <th>Type</th>
@@ -154,7 +154,7 @@ require_once '../backend/session/auth_admin.php';
                 <a href="/admin/ui/orders.php" class="view-all">View All</a>
             </div>
             <div class="table-container">
-                表
+                <table>
                     <thead>
                         <tr>
                             <th>Order ID</th>
