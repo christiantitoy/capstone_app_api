@@ -156,7 +156,7 @@ require_once '../backend/session/auth_admin.php';
     document.getElementById('currentDate').textContent = new Date().toLocaleDateString(undefined, options);
 
     // Function to fetch and display buyers
-    async function loadBuyers() {
+    async function loadBuyers(searchTerm = '') {
         const tableBody = document.getElementById('buyersTableBody');
         
         try {
@@ -164,24 +164,37 @@ require_once '../backend/session/auth_admin.php';
             const result = await response.json();
             
             if (result.success && result.data.length > 0) {
+                // Filter buyers based on search term
+                let filteredBuyers = result.data;
+                if (searchTerm) {
+                    filteredBuyers = result.data.filter(buyer => 
+                        buyer.username.toLowerCase().includes(searchTerm) || 
+                        buyer.email.toLowerCase().includes(searchTerm)
+                    );
+                }
+                
                 // Update total buyers count
                 document.getElementById('totalBuyers').textContent = result.data.length;
-                document.getElementById('activeBuyers').textContent = result.data.length;
+                document.getElementById('activeBuyers').textContent = filteredBuyers.length;
                 
-                // Display buyers in table
-                tableBody.innerHTML = result.data.map(buyer => `
-                    <div class="table-row">
-                        <div class="col-id">${buyer.id}</div>
-                        <div class="col-username">${escapeHtml(buyer.username)}</div>
-                        <div class="col-email">${escapeHtml(buyer.email)}</div>
-                        <div class="col-avatar">
-                            ${buyer.avatar_url ? 
-                                `<img src="${buyer.avatar_url}" alt="Avatar" class="avatar-img">` : 
-                                `<div class="avatar-placeholder">${buyer.username.charAt(0).toUpperCase()}</div>`
-                            }
+                if (filteredBuyers.length > 0) {
+                    // Display filtered buyers in table
+                    tableBody.innerHTML = filteredBuyers.map(buyer => `
+                        <div class="table-row">
+                            <div class="col-id">${buyer.id}</div>
+                            <div class="col-username">${escapeHtml(buyer.username)}</div>
+                            <div class="col-email">${escapeHtml(buyer.email)}</div>
+                            <div class="col-avatar">
+                                ${buyer.avatar_url ? 
+                                    `<img src="${buyer.avatar_url}" alt="Avatar" class="avatar-img">` : 
+                                    `<div class="avatar-placeholder">${buyer.username.charAt(0).toUpperCase()}</div>`
+                                }
+                            </div>
                         </div>
-                    </div>
-                `).join('');
+                    `).join('');
+                } else {
+                    tableBody.innerHTML = `<div class="no-data">No buyers found matching "${searchTerm}"</div>`;
+                }
             } else {
                 tableBody.innerHTML = '<div class="no-data">No buyers found</div>';
                 document.getElementById('totalBuyers').textContent = '0';
@@ -201,25 +214,20 @@ require_once '../backend/session/auth_admin.php';
         return div.innerHTML;
     }
     
-    // Search functionality
+    // Search functionality with debouncing
+    let searchTimeout;
     document.getElementById('searchBuyer').addEventListener('input', function(e) {
-        const searchTerm = e.target.value.toLowerCase();
-        const rows = document.querySelectorAll('.table-row');
-        
-        rows.forEach(row => {
-            const username = row.querySelector('.col-username').textContent.toLowerCase();
-            const email = row.querySelector('.col-email').textContent.toLowerCase();
-            
-            if (username.includes(searchTerm) || email.includes(searchTerm)) {
-                row.style.display = 'flex';
-            } else {
-                row.style.display = 'none';
-            }
-        });
+        clearTimeout(searchTimeout);
+        const searchTerm = e.target.value.toLowerCase().trim();
+        searchTimeout = setTimeout(() => {
+            loadBuyers(searchTerm);
+        }, 300);
     });
     
     // Load buyers when page loads
-    document.addEventListener('DOMContentLoaded', loadBuyers);
+    document.addEventListener('DOMContentLoaded', () => {
+        loadBuyers();
+    });
 </script>
 
 </body>
