@@ -47,7 +47,7 @@ require_once '../backend/session/auth_admin.php';
             <div class="user-profile">
                 <div class="avatar">A</div>
                 <div>
-                    <h4>Admin User</h4>
+                    <h4><?php echo $_SESSION['admin_name']; ?></h4>
                     <p>Administrator</p>
                 </div>
             </div>
@@ -93,15 +93,6 @@ require_once '../backend/session/auth_admin.php';
                     <p>Active Buyers</p>
                 </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-icon" style="background:#e67e2220;color:#e67e22">
-                    <i class="fas fa-shopping-cart"></i>
-                </div>
-                <div class="stat-info">
-                    <h3 id="totalOrders">0</h3>
-                    <p>Total Orders</p>
-                </div>
-            </div>
         </section>
 
         <!-- BUYERS LIST SECTION -->
@@ -121,8 +112,6 @@ require_once '../backend/session/auth_admin.php';
                         <div class="col-username">Username</div>
                         <div class="col-email">Email</div>
                         <div class="col-avatar">Avatar</div>
-                        <div class="col-orders">Orders</div>
-                        <div class="col-status">Status</div>
                     </div>
                     
                     <div class="table-body" id="buyersTableBody">
@@ -142,7 +131,6 @@ require_once '../backend/session/auth_admin.php';
         </footer>
     </main>
 </div>
-
 
 <!-- Logout Modal -->
 <div id="logoutModal" class="modal">
@@ -167,6 +155,71 @@ require_once '../backend/session/auth_admin.php';
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     document.getElementById('currentDate').textContent = new Date().toLocaleDateString(undefined, options);
 
+    // Function to fetch and display buyers
+    async function loadBuyers() {
+        const tableBody = document.getElementById('buyersTableBody');
+        
+        try {
+            const response = await fetch('../backend/buyers/get_all_buyers.php');
+            const result = await response.json();
+            
+            if (result.success && result.data.length > 0) {
+                // Update total buyers count
+                document.getElementById('totalBuyers').textContent = result.data.length;
+                document.getElementById('activeBuyers').textContent = result.data.length;
+                
+                // Display buyers in table
+                tableBody.innerHTML = result.data.map(buyer => `
+                    <div class="table-row">
+                        <div class="col-id">${buyer.id}</div>
+                        <div class="col-username">${escapeHtml(buyer.username)}</div>
+                        <div class="col-email">${escapeHtml(buyer.email)}</div>
+                        <div class="col-avatar">
+                            ${buyer.avatar_url ? 
+                                `<img src="${buyer.avatar_url}" alt="Avatar" class="avatar-img">` : 
+                                `<div class="avatar-placeholder">${buyer.username.charAt(0).toUpperCase()}</div>`
+                            }
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                tableBody.innerHTML = '<div class="no-data">No buyers found</div>';
+                document.getElementById('totalBuyers').textContent = '0';
+                document.getElementById('activeBuyers').textContent = '0';
+            }
+        } catch (error) {
+            console.error('Error loading buyers:', error);
+            tableBody.innerHTML = '<div class="error">Error loading buyers. Please try again.</div>';
+        }
+    }
+    
+    // Helper function to escape HTML
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // Search functionality
+    document.getElementById('searchBuyer').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const rows = document.querySelectorAll('.table-row');
+        
+        rows.forEach(row => {
+            const username = row.querySelector('.col-username').textContent.toLowerCase();
+            const email = row.querySelector('.col-email').textContent.toLowerCase();
+            
+            if (username.includes(searchTerm) || email.includes(searchTerm)) {
+                row.style.display = 'flex';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+    
+    // Load buyers when page loads
+    document.addEventListener('DOMContentLoaded', loadBuyers);
 </script>
 
 </body>

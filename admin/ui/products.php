@@ -47,7 +47,7 @@ require_once '../backend/session/auth_admin.php';
             <div class="user-profile">
                 <div class="avatar">A</div>
                 <div>
-                    <h4>Admin User</h4>
+                    <h4><?php echo $_SESSION['admin_name']; ?></h4>
                     <p>Administrator</p>
                 </div>
             </div>
