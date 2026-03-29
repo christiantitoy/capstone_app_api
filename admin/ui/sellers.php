@@ -1,12 +1,7 @@
 <?php
 // /admin/ui/sellers.php
-session_start();
+require_once '../backend/session/auth_admin.php';
 
-// Simple auth check
-// if (!isset($_SESSION['admin_id'])) {
-//     header("Location: login.php");
-//     exit;
-// }
 ?>
 
 <!DOCTYPE html>
