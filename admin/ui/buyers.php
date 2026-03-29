@@ -160,7 +160,7 @@ require_once '../backend/session/auth_admin.php';
         const tableBody = document.getElementById('buyersTableBody');
         
         try {
-            const response = await fetch('../backend/get_buyers.php');
+            const response = await fetch('../backend/buyers/get_all_buyers.php');
             const result = await response.json();
             
             if (result.success && result.data.length > 0) {
