@@ -13,6 +13,7 @@ require_once '../backend/session/auth_admin.php';
     <link rel="icon" type="image/png" href="../admin/images/app_icon.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/riders.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../css/logout.css?v=<?= time() ?>">
 </head>
 <body>
 
@@ -151,17 +152,31 @@ require_once '../backend/session/auth_admin.php';
     </main>
 </div>
 
+
+<!-- Logout Modal -->
+<div id="logoutModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Confirm Logout</h3>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to logout?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-cancel" id="cancelLogoutBtn">Cancel</button>
+            <button class="btn btn-logout" id="confirmLogoutBtn">Logout</button>
+        </div>
+    </div>
+</div>
+
+<script src="/admin/js/logout.js"></script>
+
+
 <script>
     // Display current date
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     document.getElementById('currentDate').textContent = new Date().toLocaleDateString(undefined, options);
     
-    // Logout function
-    document.getElementById('logoutBtn').addEventListener('click', function() {
-        if (confirm('Are you sure you want to logout?')) {
-            window.location.href = '/admin/backend/logout.php';
-        }
-    });
 </script>
 
 </body>
