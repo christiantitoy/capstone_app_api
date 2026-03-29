@@ -411,40 +411,61 @@ td {
 
 .table-header {
     display: grid;
-    grid-template-columns: 80px 200px 250px 100px 80px 100px;
+    grid-template-columns: 80px 1fr 1.5fr 100px;
     background: #f8f9fa;
     padding: 12px;
     font-weight: 600;
     border-bottom: 2px solid #e9ecef;
 }
 
-.buyer-row {
+.table-row {
     display: grid;
-    grid-template-columns: 80px 200px 250px 100px 80px 100px;
+    grid-template-columns: 80px 1fr 1.5fr 100px;
     padding: 12px;
     border-bottom: 1px solid #e9ecef;
     align-items: center;
 }
 
-.buyer-row:hover {
+.table-row:hover {
     background: #f8f9fa;
 }
 
-.col-avatar img {
+.col-id {
+    font-weight: 500;
+}
+
+.col-username {
+    color: #2c3e50;
+}
+
+.col-email {
+    color: #7f8c8d;
+    font-size: 13px;
+}
+
+.col-avatar {
+    display: flex;
+    align-items: center;
+}
+
+.avatar-img {
     width: 40px;
     height: 40px;
     border-radius: 50%;
     object-fit: cover;
 }
 
-.status-active {
-    color: #27ae60;
-    font-weight: 500;
-}
-
-.status-inactive {
-    color: #e74c3c;
-    font-weight: 500;
+.avatar-placeholder {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #3498db;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 18px;
 }
 
 .loading {
@@ -453,9 +474,27 @@ td {
     color: #7f8c8d;
 }
 
+.no-data {
+    text-align: center;
+    padding: 40px;
+    color: #7f8c8d;
+}
+
+.error {
+    text-align: center;
+    padding: 40px;
+    color: #e74c3c;
+}
+
 @media (max-width: 768px) {
-    .table-header, .buyer-row {
-        grid-template-columns: 60px 150px 180px 80px 60px 80px;
+    .table-header, .table-row {
+        grid-template-columns: 60px 1fr 1.2fr 80px;
         font-size: 12px;
+    }
+    
+    .avatar-img, .avatar-placeholder {
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
     }
 }

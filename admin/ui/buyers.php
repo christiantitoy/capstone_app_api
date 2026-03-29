@@ -96,30 +96,30 @@ require_once '../backend/session/auth_admin.php';
         </section>
 
         <!-- BUYERS LIST SECTION -->
-        <div class="full-width-section buyers-list">
-            <div class="section-header">
-                <h2>Buyers List</h2>
-                <div class="search-container">
-                    <input type="text" class="search-field" id="searchBuyer" placeholder="Search buyer...">
-                    <i class="fas fa-search search-icon"></i>
-                </div>
+    <div class="full-width-section buyers-list">
+        <div class="section-header">
+            <h2>Buyers List</h2>
+            <div class="search-container">
+                <input type="text" class="search-field" id="searchBuyer" placeholder="Search buyer...">
+                <i class="fas fa-search search-icon"></i>
             </div>
+        </div>
 
-            <div class="table-container">
-                <div class="buyer_holder">
-                    <div class="table-header">
-                        <div class="col-id">ID</div>
-                        <div class="col-username">Username</div>
-                        <div class="col-email">Email</div>
-                        <div class="col-avatar">Avatar</div>
-                    </div>
-                    
-                    <div class="table-body" id="buyersTableBody">
-                        <div class="loading">Loading buyers...</div>
-                    </div>
+        <div class="table-container">
+            <div class="buyer_holder">
+                <div class="table-header">
+                    <div class="col-id">ID</div>
+                    <div class="col-username">Username</div>
+                    <div class="col-email">Email</div>
+                    <div class="col-avatar">Avatar</div>
+                </div>
+                
+                <div id="buyersTableBody">
+                    <div class="loading">Loading buyers...</div>
                 </div>
             </div>
         </div>
+    </div>
 
         <footer class="main-footer">
             <p>© 2024 Admin Dashboard. All rights reserved.</p>
@@ -160,7 +160,7 @@ require_once '../backend/session/auth_admin.php';
         const tableBody = document.getElementById('buyersTableBody');
         
         try {
-            const response = await fetch('../backend/buyers/get_all_buyers.php');
+            const response = await fetch('../backend/get_buyers.php');
             const result = await response.json();
             
             if (result.success && result.data.length > 0) {
