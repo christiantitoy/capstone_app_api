@@ -1,3 +1,9 @@
+<?php
+// /admin/ui/dashboard.php
+require_once '../backend/session/auth_admin.php';
+
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
