@@ -10,16 +10,17 @@ try {
         throw new Exception("DATABASE CONNECTION FAILED");
     }
 
-    $sql = "SELECT id, shop_name, business_address, shop_category FROM seller_profiles";
+    $sql = "SELECT seller_id, store_name, category, open_time, logo_url FROM stores";
     $stmt = $conn->query($sql);
 
-    $shops = [];
+    $stores = [];
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $shops[] = [
-            'id' => $row['id'],
-            'shop_name' => $row['shop_name'],
-            'business_address' => $row['business_address'],
-            'shop_category' => $row['shop_category']
+        $stores[] = [
+            'seller_id' => $row['seller_id'],
+            'store_name' => $row['store_name'],
+            'category' => $row['category'],
+            'open_time' => $row['open_time'],
+            'logo_url' => $row['logo_url']
         ];
     }
 
@@ -27,7 +28,7 @@ try {
         'status' => 'success',
         'message' => 'YEHEY NA FETCHED NA!',
         'data' => [
-            'shops' => $shops
+            'stores' => $stores
         ]
     ]);
 
