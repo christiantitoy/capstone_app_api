@@ -81,10 +81,5 @@ try {
         'message' => 'Unexpected error',
         'error' => $e->getMessage()
     ]);
-} finally {
-    // Always close the connection
-    if (isset($conn)) {
-        $conn = null;
-    }
 }
 ?>
