@@ -14,7 +14,7 @@ if (!$databaseUrl) {
 // Parse the connection string
 $parsed  = parse_url($databaseUrl);
 $host    = $parsed['host'];
-$port    = 6543; // Force transaction pooler port
+$port = 5432;
 $dbname  = ltrim($parsed['path'], '/');
 $user    = $parsed['user'];
 $password = $parsed['pass'];
