@@ -30,6 +30,11 @@ $seller_email = $_SESSION['seller_email'] ?? '';
             box-sizing: border-box;
         }
 
+        :root {
+            --dark: #2c3e50;
+            --danger: #e74c3c;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -213,7 +218,7 @@ $seller_email = $_SESSION['seller_email'] ?? '';
             text-align: center;
         }
 
-        .logout-btn {
+        .logout-trigger {
             width: 100%;
             padding: 12px;
             background: #e74c3c;
@@ -230,7 +235,7 @@ $seller_email = $_SESSION['seller_email'] ?? '';
             gap: 10px;
         }
 
-        .logout-btn:hover {
+        .logout-trigger:hover {
             background: #c0392b;
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
@@ -328,7 +333,7 @@ $seller_email = $_SESSION['seller_email'] ?? '';
             </div>
 
             <div class="logout-btn-container">
-                <button class="logout-btn" id="logoutBtn">
+                <button class="logout-trigger">
                     <i class="fas fa-sign-out-alt"></i>
                     Logout
                 </button>
@@ -341,6 +346,7 @@ $seller_email = $_SESSION['seller_email'] ?? '';
     </div>
 </div>
 
+<!-- Logout Modal - matches logout.js structure -->
 <div class="modal-overlay" id="logoutModal">
     <div class="modal-content">
         <div class="modal-header">
