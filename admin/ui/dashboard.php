@@ -203,6 +203,8 @@ require_once '../backend/session/auth_admin.php';
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     document.getElementById('currentDate').textContent = new Date().toLocaleDateString(undefined, options);
 
+    // ----------------------------------------------------------------------------
+
     // Fetch counts from getCount.php and populate stat cards
     fetch('/admin/backend/dashboard/getCount.php')
         .then(res => res.json())
@@ -217,6 +219,10 @@ require_once '../backend/session/auth_admin.php';
             }
         })
         .catch(err => console.error('Failed to load counts:', err));
+
+    // ---------------------------------------------------------------------------------
+
+    
 </script>
 
 </body>

@@ -21,5 +21,7 @@ try {
         'success' => false,
         'message' => 'Database error: ' . $e->getMessage()
     ]);
+} finally {
+    $conn = null; // Close the database connection
 }
 ?>
