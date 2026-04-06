@@ -186,7 +186,7 @@ require_once '../backend/session/auth_admin.php';
     // Load orders from backend
     async function loadOrders() {
         try {
-            const response = await fetch('/admin/backend/getAllOrders.php');
+            const response = await fetch('/admin/backend/orders/getAllOrders.php');
             const result = await response.json();
             
             if (result.success) {
