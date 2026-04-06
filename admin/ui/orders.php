@@ -134,11 +134,10 @@ require_once '../backend/session/auth_admin.php';
                     <div class="order-table-header">
                         <div class="col-id">Order ID</div>
                         <div class="col-customer">Customer</div>
+                        <div class="col-product-ids">Product IDs</div>
                         <div class="col-amount">Amount</div>
                         <div class="col-status">Status</div>
-                        <div class="col-rider">Rider</div>
                         <div class="col-date">Date</div>
-                        <div class="col-actions">Actions</div>
                     </div>
                     
                     <div class="table-body" id="ordersTableBody">
@@ -159,7 +158,6 @@ require_once '../backend/session/auth_admin.php';
     </main>
 </div>
 
-
 <!-- Logout Modal -->
 <div id="logoutModal" class="modal">
     <div class="modal-content">
@@ -179,10 +177,148 @@ require_once '../backend/session/auth_admin.php';
 <script src="/admin/js/logout.js"></script>
 
 <script>
+    let allOrders = [];
+    
     // Display current date
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     document.getElementById('currentDate').textContent = new Date().toLocaleDateString(undefined, options);
     
+    // Load orders from backend
+    async function loadOrders() {
+        try {
+            const response = await fetch('/admin/backend/getAllOrders.php');
+            const result = await response.json();
+            
+            if (result.success) {
+                allOrders = result.data;
+                
+                // Update stats
+                document.getElementById('totalOrders').textContent = result.status_counts.total;
+                document.getElementById('pendingOrders').textContent = result.status_counts.pending;
+                document.getElementById('shippedOrders').textContent = result.status_counts.shipped;
+                document.getElementById('deliveredOrders').textContent = result.status_counts.delivered;
+                
+                // Display orders
+                displayOrders(allOrders);
+            } else {
+                document.getElementById('ordersTableBody').innerHTML = '<div class="error">Failed to load orders</div>';
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('ordersTableBody').innerHTML = '<div class="error">Error loading orders</div>';
+        }
+    }
+    
+    // Display orders in table
+    function displayOrders(orders) {
+        const tbody = document.getElementById('ordersTableBody');
+        
+        if (orders.length === 0) {
+            tbody.innerHTML = '<div class="no-data">No orders found</div>';
+            return;
+        }
+        
+        let html = '';
+        orders.forEach(order => {
+            // Set status badge class
+            let statusClass = getStatusClass(order.status);
+            let statusText = order.status.charAt(0).toUpperCase() + order.status.slice(1);
+            
+            // Format date
+            const orderDate = new Date(order.created_at);
+            const formattedDate = orderDate.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+            
+            html += `
+                <div class="order-row" onclick="viewOrder(${order.order_id})">
+                    <div class="col-id">#${order.order_id}</div>
+                    <div class="col-customer">
+                        <div class="customer-info">
+                            <strong>${escapeHtml(order.customer_name || 'N/A')}</strong>
+                            <small>${escapeHtml(order.customer_email || 'No email')}</small>
+                        </div>
+                    </div>
+                    <div class="col-product-ids">
+                        <div class="product-ids">
+                            ${order.product_ids ? order.product_ids.split(',').map(id => 
+                                `<span class="product-id-badge">${id.trim()}</span>`
+                            ).join('') : 'No products'}
+                        </div>
+                        <small>${order.total_items} item(s)</small>
+                    </div>
+                    <div class="col-amount">₱${parseFloat(order.total_amount).toFixed(2)}</div>
+                    <div class="col-status">
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="col-date">${formattedDate}</div>
+                </div>
+            `;
+        });
+        
+        tbody.innerHTML = html;
+    }
+    
+    // Get status class for styling
+    function getStatusClass(status) {
+        switch(status) {
+            case 'pending': return 'status-pending';
+            case 'packed': return 'status-packed';
+            case 'shipped': return 'status-shipped';
+            case 'delivered': return 'status-delivered';
+            case 'cancelled': return 'status-cancelled';
+            case 'complete': return 'status-complete';
+            case 'locked': return 'status-locked';
+            case 'assigned': return 'status-assigned';
+            default: return 'status-pending';
+        }
+    }
+    
+    // Helper function to escape HTML
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // View order function (for future development)
+    function viewOrder(id) {
+        alert('Order details will be implemented soon. Order ID: ' + id);
+    }
+    
+    // Filter and search functionality
+    function filterOrders() {
+        const statusFilter = document.getElementById('statusFilter').value;
+        const searchTerm = document.getElementById('searchOrder').value.toLowerCase();
+        
+        let filteredOrders = [...allOrders];
+        
+        // Filter by status
+        if (statusFilter !== 'all') {
+            filteredOrders = filteredOrders.filter(order => order.status === statusFilter);
+        }
+        
+        // Filter by search term (order ID or customer name)
+        if (searchTerm) {
+            filteredOrders = filteredOrders.filter(order => 
+                order.order_id.toString().includes(searchTerm) ||
+                (order.customer_name && order.customer_name.toLowerCase().includes(searchTerm)) ||
+                (order.customer_email && order.customer_email.toLowerCase().includes(searchTerm))
+            );
+        }
+        
+        displayOrders(filteredOrders);
+    }
+    
+    // Event listeners for filters
+    document.getElementById('statusFilter').addEventListener('change', filterOrders);
+    document.getElementById('searchOrder').addEventListener('input', filterOrders);
+    
+    // Load orders when page loads
+    loadOrders();
 </script>
 
 </body>
