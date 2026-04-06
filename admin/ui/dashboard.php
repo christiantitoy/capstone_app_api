@@ -204,7 +204,7 @@ require_once '../backend/session/auth_admin.php';
     document.getElementById('currentDate').textContent = new Date().toLocaleDateString(undefined, options);
 
     // Fetch counts from getCount.php and populate stat cards
-    fetch('/admin/backend/getCount.php')
+    fetch('/admin/backend/dashboard/getCount.php')
         .then(res => res.json())
         .then(response => {
             if (response.success) {
