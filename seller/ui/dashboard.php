@@ -92,10 +92,6 @@ if (!$seller_id) {
                 </a>
             </div>
             <div class="header-right">
-                <div class="notifications">
-                    <i class="fas fa-bell"></i>
-                    <span class="notification-badge">3</span>
-                </div>
                 <div class="date-display"><?= date('F j, Y') ?></div>
             </div>
         </header>

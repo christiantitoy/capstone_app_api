@@ -177,7 +177,7 @@ require_once '../backend/session/auth_admin.php';
     // Load products from backend
     async function loadProducts() {
         try {
-            const response = await fetch('/admin/backend/getAllproducts.php');
+            const response = await fetch('/admin/backend/products/getAllproducts.php');
             const result = await response.json();
             
             if (result.success) {

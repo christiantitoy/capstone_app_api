@@ -34,7 +34,7 @@ $admin_name  = $_SESSION['admin_name'] ?? 'Admin';
 // 5. Paranoid check: critical data must exist
 if ($admin_id === null || $admin_id <= 0) {
     session_destroy();
-    header("Location: ../login.php?error=invalid_session");
+    header("Location: ../ui/login.php?error=invalid_session");
     exit;
 }
 ?>
