@@ -481,3 +481,21 @@ td {
     background: #ffebee;
     color: #e74c3c;
 }
+
+.search-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.search-field {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    width: 250px;
+    font-size: 14px;
+}
+
+.search-icon {
+    color: #7f8c8d;
+}
