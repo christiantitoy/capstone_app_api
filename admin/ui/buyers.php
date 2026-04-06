@@ -92,30 +92,30 @@ require_once '../backend/session/auth_admin.php';
         </section>
 
         <!-- BUYERS LIST SECTION -->
-    <div class="full-width-section buyers-list">
-        <div class="section-header">
-            <h2>Buyers List</h2>
-            <div class="search-container">
-                <input type="text" class="search-field" id="searchBuyer" placeholder="Search buyer...">
-                <i class="fas fa-search search-icon"></i>
+        <div class="full-width-section buyers-list">
+            <div class="section-header">
+                <h2>Buyers List</h2>
+                <div class="search-container">
+                    <input type="text" class="search-field" id="searchBuyer" placeholder="Search buyer...">
+                    <i class="fas fa-search search-icon"></i>
+                </div>
             </div>
-        </div>
 
-        <div class="table-container">
-            <div class="buyer_holder">
-                <div class="table-header">
-                    <div class="col-id">ID</div>
-                    <div class="col-username">Username</div>
-                    <div class="col-email">Email</div>
-                    <div class="col-avatar">Avatar</div>
-                </div>
-                
-                <div id="buyersTableBody">
-                    <div class="loading">Loading buyers...</div>
+            <div class="table-container">
+                <div class="buyer_holder">
+                    <div class="table-header">
+                        <div class="col-id">ID</div>
+                        <div class="col-username">Username</div>
+                        <div class="col-email">Email</div>
+                        <div class="col-avatar">Avatar</div>
+                    </div>
+                    
+                    <div id="buyersTableBody">
+                        <div class="loading">Loading buyers...</div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
         <footer class="main-footer">
             <p>© 2024 Admin Dashboard. All rights reserved.</p>
@@ -147,10 +147,18 @@ require_once '../backend/session/auth_admin.php';
 <script src="/admin/js/logout.js"></script>
 
 <script>
+    // Store original buyers data for filtering
+    let allBuyers = [];
+    
     // Display current date
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     document.getElementById('currentDate').textContent = new Date().toLocaleDateString(undefined, options);
 
+    // Function to view buyer details (for future development)
+    function viewBuyer(id, username, email) {
+        alert(`Buyer details will be implemented soon.\n\nID: ${id}\nUsername: ${username}\nEmail: ${email}`);
+    }
+    
     // Function to fetch and display buyers
     async function loadBuyers(searchTerm = '') {
         const tableBody = document.getElementById('buyersTableBody');
@@ -160,23 +168,26 @@ require_once '../backend/session/auth_admin.php';
             const result = await response.json();
             
             if (result.success && result.data.length > 0) {
+                // Store all buyers
+                allBuyers = result.data;
+                
                 // Filter buyers based on search term
-                let filteredBuyers = result.data;
+                let filteredBuyers = allBuyers;
                 if (searchTerm) {
-                    filteredBuyers = result.data.filter(buyer => 
+                    filteredBuyers = allBuyers.filter(buyer => 
                         buyer.username.toLowerCase().includes(searchTerm) || 
                         buyer.email.toLowerCase().includes(searchTerm)
                     );
                 }
                 
                 // Update total buyers count
-                document.getElementById('totalBuyers').textContent = result.data.length;
+                document.getElementById('totalBuyers').textContent = allBuyers.length;
                 document.getElementById('activeBuyers').textContent = filteredBuyers.length;
                 
                 if (filteredBuyers.length > 0) {
-                    // Display filtered buyers in table
+                    // Display filtered buyers in table with clickable rows
                     tableBody.innerHTML = filteredBuyers.map(buyer => `
-                        <div class="table-row">
+                        <div class="table-row" onclick="viewBuyer(${buyer.id}, '${escapeHtml(buyer.username)}', '${escapeHtml(buyer.email)}')">
                             <div class="col-id">${buyer.id}</div>
                             <div class="col-username">${escapeHtml(buyer.username)}</div>
                             <div class="col-email">${escapeHtml(buyer.email)}</div>
