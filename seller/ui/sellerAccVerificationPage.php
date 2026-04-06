@@ -335,25 +335,25 @@ $seller_email = $_SESSION['seller_email'] ?? '';
             </div>
 
             <div class="contact-support">
-                <p>Need assistance? <a href="mailto:support@example.com">Contact Support</a></p>
                 <p style="margin-top: 10px; font-size: 12px;">We'll notify you via email once your account is approved.</p>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Logout Modal (using existing logout.js which handles this) -->
-<div id="logoutModal" class="modal">
+<div class="modal-overlay" id="logoutModal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3>Confirm Logout</h3>
+            <h3>Sign Out</h3>
+            <button class="modal-close" id="closeModal">×</button>
         </div>
         <div class="modal-body">
-            <p>Are you sure you want to logout?</p>
+            <p>Are you sure you want to sign out?</p>
+            <p class="text-secondary">You will need to log in again to access your dashboard.</p>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-cancel" id="cancelLogoutBtn">Cancel</button>
-            <button class="btn btn-logout" id="confirmLogoutBtn">Logout</button>
+            <button class="btn btn-secondary" id="cancelLogout">Cancel</button>
+            <a href="/seller/backend/auth/logout.php" class="btn btn-danger">Sign Out</a>
         </div>
     </div>
 </div>
