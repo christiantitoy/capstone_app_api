@@ -9,7 +9,7 @@ require_once '../backend/session/auth_admin.php';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard | Capstone App</title>
+    <title>Admin Dashboard | PalitOra App</title>
     <link rel="icon" type="image/png" href="../admin/images/app_icon.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/dashboard.css?v=<?= time() ?>">
@@ -65,10 +65,6 @@ require_once '../backend/session/auth_admin.php';
                 <p>Welcome back, Admin!</p>
             </div>
             <div class="header-right">
-                <div class="notifications">
-                    <i class="fas fa-bell"></i>
-                    <span class="notification-badge">3</span>
-                </div>
                 <div class="date-display" id="currentDate"></div>
             </div>
         </header>

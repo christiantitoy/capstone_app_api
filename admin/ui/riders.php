@@ -65,10 +65,6 @@ require_once '../backend/session/auth_admin.php';
                 <p>Manage delivery riders on the platform</p>
             </div>
             <div class="header-right">
-                <div class="notifications">
-                    <i class="fas fa-bell"></i>
-                    <span class="notification-badge">3</span>
-                </div>
                 <div class="date-display" id="currentDate"></div>
             </div>
         </header>
