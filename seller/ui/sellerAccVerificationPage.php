@@ -21,26 +21,46 @@ $seller_email = $_SESSION['seller_email'] ?? '';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account Verification | Seller Dashboard</title>
     <link rel="icon" type="image/png" href="/seller/image/app_icon.png">
-    <link rel="stylesheet" href="../css/dashboard.css?v=<?= time() ?>">
-    <link rel="stylesheet" href="../css/error.css?v=<?= time() ?>">
-    <link rel="stylesheet" href="../css/logout.css?v=<?= time() ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/logout.css?v=<?= time() ?>">
     <style>
-        /* Additional styles for verification page */
-        .verification-content {
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             display: flex;
-            justify-content: center;
             align-items: center;
-            min-height: calc(100vh - 200px);
-            padding: 40px 20px;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .verification-container {
+            max-width: 550px;
+            width: 100%;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .verification-card {
-            max-width: 600px;
-            width: 100%;
             background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             overflow: hidden;
         }
 
@@ -188,6 +208,34 @@ $seller_email = $_SESSION['seller_email'] ?? '';
             line-height: 1.5;
         }
 
+        .logout-btn-container {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .logout-btn {
+            width: 100%;
+            padding: 12px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .logout-btn:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+        }
+
         .contact-support {
             text-align: center;
             margin-top: 20px;
@@ -219,134 +267,79 @@ $seller_email = $_SESSION['seller_email'] ?? '';
 </head>
 <body>
 
-<div class="dashboard-container">
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <h2>Seller<span>Dashboard</span></h2>
+<div class="verification-container">
+    <div class="verification-card">
+        <div class="verification-header">
+            <div class="verification-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <h1>Account Under Review</h1>
+            <p>Your seller account is being verified by our team</p>
         </div>
-        <nav class="sidebar-nav">
-            <a href="#" class="nav-item" style="opacity: 0.5; cursor: not-allowed;">
-                <i class="fas fa-tachometer-alt"></i><span>Dashboard</span>
-            </a>
-            <a href="#" class="nav-item" style="opacity: 0.5; cursor: not-allowed;">
-                <i class="fas fa-box"></i><span>Products</span>
-            </a>
-            <a href="#" class="nav-item" style="opacity: 0.5; cursor: not-allowed;">
-                <i class="fas fa-shopping-cart"></i><span>Orders</span>
-            </a>
-            <a href="#" class="nav-item" style="opacity: 0.5; cursor: not-allowed;">
-                <i class="fas fa-users"></i><span>Employees</span>
-            </a>
-            <a href="#" class="nav-item" style="opacity: 0.5; cursor: not-allowed;">
-                <i class="fas fa-cog"></i><span>Settings</span>
-            </a>
-        </nav>
-        <div class="sidebar-footer">
-            <div class="user-profile">
-                <div class="avatar"><?= strtoupper(substr($seller_name, 0, 1)) ?></div>
-                <div>
-                    <h4><?= htmlspecialchars($seller_name) ?></h4>
-                    <p>Pending Approval</p>
+        
+        <div class="verification-body">
+            <div style="text-align: center;">
+                <div class="status-badge">
+                    <i class="fas fa-hourglass-half"></i>
+                    <span>Pending Approval</span>
                 </div>
             </div>
-            <button class="logout-btn" id="logoutBtn">
-                <i class="fas fa-sign-out-alt"></i>
-            </button>
-        </div>
-    </aside>
 
-    <main class="main-content">
-        <header class="main-header">
-            <div class="header-left">
-                <h1>Account Verification</h1>
-                <p>Please wait while we verify your seller account</p>
-                <a href="#" class="plan-badge" style="background: #f59e0b; cursor: default;">
-                    <i class="fas fa-clock"></i>
-                    Pending Approval
-                </a>
-            </div>
-            <div class="header-right">
-                <div class="date-display"><?= date('F j, Y') ?></div>
-            </div>
-        </header>
-
-        <div class="verification-content">
-            <div class="verification-card">
-                <div class="verification-header">
-                    <div class="verification-icon">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <h1>Account Under Review</h1>
-                    <p>Your seller account is being verified by our team</p>
+            <div class="info-box">
+                <div class="info-item">
+                    <i class="fas fa-user"></i>
+                    <span class="label">Name:</span>
+                    <span class="value"><?= htmlspecialchars($seller_name) ?></span>
                 </div>
-                
-                <div class="verification-body">
-                    <div style="text-align: center;">
-                        <div class="status-badge">
-                            <i class="fas fa-hourglass-half"></i>
-                            <span>Pending Approval</span>
-                        </div>
-                    </div>
+                <div class="info-item">
+                    <i class="fas fa-envelope"></i>
+                    <span class="label">Email:</span>
+                    <span class="value"><?= htmlspecialchars($seller_email) ?></span>
+                </div>
+            </div>
 
-                    <div class="info-box">
-                        <div class="info-item">
-                            <i class="fas fa-user"></i>
-                            <span class="label">Name:</span>
-                            <span class="value"><?= htmlspecialchars($seller_name) ?></span>
-                        </div>
-                        <div class="info-item">
-                            <i class="fas fa-envelope"></i>
-                            <span class="label">Email:</span>
-                            <span class="value"><?= htmlspecialchars($seller_email) ?></span>
-                        </div>
-                    </div>
+            <div class="message-box">
+                <i class="fas fa-info-circle"></i>
+                <p>Thank you for registering as a seller! Your account has been successfully verified via email and is now waiting for admin approval. This process ensures the quality and security of our marketplace.</p>
+            </div>
 
-                    <div class="message-box">
-                        <i class="fas fa-info-circle"></i>
-                        <p>Thank you for registering as a seller! Your account has been successfully verified via email and is now waiting for admin approval. This process ensures the quality and security of our marketplace.</p>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>Email Verification ✓</h4>
+                        <p>Your email has been successfully verified.</p>
                     </div>
-
-                    <div class="steps">
-                        <div class="step">
-                            <div class="step-number">1</div>
-                            <div class="step-content">
-                                <h4>Email Verification ✓</h4>
-                                <p>Your email has been successfully verified.</p>
-                            </div>
-                        </div>
-                        <div class="step">
-                            <div class="step-number">2</div>
-                            <div class="step-content">
-                                <h4>Admin Review <i class="fas fa-spinner fa-spin" style="margin-left: 5px; font-size: 12px;"></i></h4>
-                                <p>Our team is reviewing your seller application. This usually takes 24-48 hours.</p>
-                            </div>
-                        </div>
-                        <div class="step">
-                            <div class="step-number">3</div>
-                            <div class="step-content">
-                                <h4>Start Selling</h4>
-                                <p>Once approved, you can set up your shop and start selling!</p>
-                            </div>
-                        </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>Admin Review <i class="fas fa-spinner fa-spin" style="margin-left: 5px; font-size: 12px;"></i></h4>
+                        <p>Our team is reviewing your seller application. This usually takes 24-48 hours.</p>
                     </div>
-
-                    <div class="contact-support">
-                        <p>Need assistance? <a href="mailto:support@example.com">Contact Support</a></p>
-                        <p style="margin-top: 10px; font-size: 12px;">We'll notify you via email once your account is approved.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>Start Selling</h4>
+                        <p>Once approved, you can set up your shop and start selling!</p>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <footer class="main-footer">
-            <p>© <?= date('Y') ?> Seller Dashboard. All rights reserved.</p>
-            <div class="footer-links">
-                <a href="#">Privacy Policy</a> •
-                <a href="#">Terms of Service</a> •
-                <a href="#">Help Center</a>
+            <div class="logout-btn-container">
+                <button class="logout-btn" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
             </div>
-        </footer>
-    </main>
+
+            <div class="contact-support">
+                <p>Need assistance? <a href="mailto:support@example.com">Contact Support</a></p>
+                <p style="margin-top: 10px; font-size: 12px;">We'll notify you via email once your account is approved.</p>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Logout Modal (using existing logout.js which handles this) -->
