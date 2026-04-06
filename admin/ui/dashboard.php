@@ -143,32 +143,6 @@ require_once '../backend/session/auth_admin.php';
             </div>
         </div>
 
-        <!-- RECENT ORDERS SECTION -->
-        <div class="full-width-section recent-orders">
-            <div class="section-header">
-                <h2>Recent Orders</h2>
-                <a href="/admin/ui/orders.php" class="view-all">View All</a>
-            </div>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Order ID</th>
-                            <th>Customer</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-                    <tbody id="recentOrdersBody">
-                        <tr>
-                            <td colspan="5" style="text-align: center;">Loading orders...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
         <footer class="main-footer">
             <p>© 2024 Admin Dashboard. All rights reserved.</p>
             <div class="footer-links">

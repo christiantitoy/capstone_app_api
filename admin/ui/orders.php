@@ -90,7 +90,7 @@ require_once '../backend/session/auth_admin.php';
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon" style="background:#27ae6020;color:#27ae60">
+                <div class="stat-icon" style="background:#00ff00;color:#00ff00">
                     <i class="fas fa-truck"></i>
                 </div>
                 <div class="stat-info">
@@ -99,7 +99,7 @@ require_once '../backend/session/auth_admin.php';
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon" style="background:#e74c3c20;color:#e74c3c">
+                <div class="stat-icon" style="background:#27ae6020;color:#27ae60">
                     <i class="fas fa-check-circle"></i>
                 </div>
                 <div class="stat-info">
