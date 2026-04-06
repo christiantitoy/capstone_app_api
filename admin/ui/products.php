@@ -124,10 +124,10 @@ require_once '../backend/session/auth_admin.php';
                     <div class="product-table-header">
                         <div class="col-id">ID</div>
                         <div class="col-name">Product Name</div>
+                        <div class="col-category">Category</div>
                         <div class="col-price">Price</div>
                         <div class="col-stock">Stock</div>
                         <div class="col-status">Status</div>
-                        <div class="col-actions">Actions</div>
                     </div>
                     
                     <div class="table-body" id="productsTableBody">
@@ -167,6 +167,9 @@ require_once '../backend/session/auth_admin.php';
 <script src="/admin/js/logout.js"></script>
 
 <script>
+    // Store original products data for filtering
+    let allProducts = [];
+    
     // Display current date
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     document.getElementById('currentDate').textContent = new Date().toLocaleDateString(undefined, options);
@@ -174,18 +177,18 @@ require_once '../backend/session/auth_admin.php';
     // Load products from backend
     async function loadProducts() {
         try {
-            const response = await fetch('/admin/backend/products/getAllproducts.php');
+            const response = await fetch('/admin/backend/getAllproducts.php');
             const result = await response.json();
             
             if (result.success) {
-                // Update stats
-                const products = result.data;
+                // Store all products
+                allProducts = result.data;
                 const totalCount = result.total_count;
                 
                 // Calculate stats
-                const approved = products.filter(p => p.status === 'approved').length;
-                const onHold = products.filter(p => p.status === 'on_hold').length;
-                const removed = products.filter(p => p.status === 'removed').length;
+                const approved = allProducts.filter(p => p.status === 'approved').length;
+                const onHold = allProducts.filter(p => p.status === 'on_hold').length;
+                const removed = allProducts.filter(p => p.status === 'removed').length;
                 
                 document.getElementById('totalProducts').textContent = totalCount;
                 document.getElementById('approvedProducts').textContent = approved;
@@ -193,7 +196,7 @@ require_once '../backend/session/auth_admin.php';
                 document.getElementById('removedProducts').textContent = removed;
                 
                 // Display products
-                displayProducts(products);
+                displayProducts(allProducts);
             } else {
                 document.getElementById('productsTableBody').innerHTML = '<div class="error">Failed to load products</div>';
             }
@@ -222,26 +225,19 @@ require_once '../backend/session/auth_admin.php';
             else if (product.status === 'removed') statusClass = 'status-removed';
             
             html += `
-                <div class="product-row">
+                <div class="product-row" onclick="viewProduct(${product.id})">
                     <div class="col-id">${product.id}</div>
                     <div class="col-name">
                         <div class="product-info">
                             <strong>${escapeHtml(product.product_name)}</strong>
-                            <small>${escapeHtml(product.category)}</small>
+                            <small>Seller ID: ${product.seller_id}</small>
                         </div>
                     </div>
+                    <div class="col-category">${escapeHtml(product.category)}</div>
                     <div class="col-price">₱${parseFloat(product.price).toFixed(2)}</div>
                     <div class="col-stock">${product.stock}</div>
                     <div class="col-status">
                         <span class="status-badge ${statusClass}">${statusText}</span>
-                    </div>
-                    <div class="col-actions">
-                        <button class="action-btn view-btn" onclick="viewProduct(${product.id})">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="action-btn edit-btn" onclick="editProduct(${product.id})">
-                            <i class="fas fa-edit"></i>
-                        </button>
                     </div>
                 </div>
             `;
@@ -257,29 +253,27 @@ require_once '../backend/session/auth_admin.php';
         return div.innerHTML;
     }
     
-    // Search functionality
+    // Search functionality with proper CSS class preservation
     document.getElementById('searchProduct').addEventListener('input', function(e) {
         const searchTerm = e.target.value.toLowerCase();
-        const rows = document.querySelectorAll('.product-row');
         
-        rows.forEach(row => {
-            const productName = row.querySelector('.col-name strong').textContent.toLowerCase();
-            if (productName.includes(searchTerm)) {
-                row.style.display = 'flex';
-            } else {
-                row.style.display = 'none';
-            }
-        });
+        if (searchTerm === '') {
+            displayProducts(allProducts);
+            return;
+        }
+        
+        const filteredProducts = allProducts.filter(product => 
+            product.product_name.toLowerCase().includes(searchTerm) ||
+            product.category.toLowerCase().includes(searchTerm) ||
+            product.id.toString().includes(searchTerm)
+        );
+        
+        displayProducts(filteredProducts);
     });
     
-    // View product function
+    // View product function (for future development)
     function viewProduct(id) {
-        alert('View product ID: ' + id + ' - Feature coming soon');
-    }
-    
-    // Edit product function
-    function editProduct(id) {
-        alert('Edit product ID: ' + id + ' - Feature coming soon');
+        alert('View product functionality will be implemented soon. Product ID: ' + id);
     }
     
     // Load products when page loads
