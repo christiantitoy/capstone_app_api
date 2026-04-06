@@ -148,7 +148,7 @@ require_once '../backend/session/auth_admin.php';
         </div>
 
         <footer class="main-footer">
-            <p>© 2024 Admin Dashboard. All rights reserved.</p>
+            <p>© 2026 Admin Dashboard. All rights reserved.</p>
             <div class="footer-links">
                 <a href="#">Privacy Policy</a> •
                 <a href="#">Terms of Service</a> •

@@ -39,62 +39,85 @@ if (!empty($errors)) {
 }
 
 try {
-    // Get seller by email - include is_confirmed, setup_shop, AND seller_plan fields
-    $stmt = $conn->prepare("SELECT id, full_name, email, password, is_confirmed, setup_shop, token, seller_plan FROM sellers WHERE email = ?");
+    // Get seller by email - include is_confirmed, setup_shop, seller_plan, AND approval_status fields
+    $stmt = $conn->prepare("SELECT id, full_name, email, password, is_confirmed, setup_shop, token, seller_plan, approval_status FROM sellers WHERE email = ?");
     $stmt->execute([$email]);
     $seller = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if ($seller && password_verify($password, $seller['password'])) {
         // Check if email is confirmed
         if ($seller['is_confirmed'] == 1) {
-            // Email is confirmed - check shop setup status
-            if ($seller['setup_shop'] == 1) {
-                // Shop is set up - login successful and redirect to dashboard
+            // Email is confirmed - check approval status
+            if ($seller['approval_status'] == 'approved') {
+                // Account is approved - check shop setup status
+                if ($seller['setup_shop'] == 1) {
+                    // Shop is set up - login successful and redirect to dashboard
+                    $_SESSION['seller_id'] = $seller['id'];
+                    $_SESSION['seller_name'] = $seller['full_name'];
+                    $_SESSION['seller_email'] = $seller['email'];
+                    $_SESSION['seller_plan'] = $seller['seller_plan'] ?? 'Bronze';
+                    $_SESSION['logged_in'] = true;
+                    
+                    // Set remember me cookie if requested (30 days)
+                    if ($remember) {
+                        $token = bin2hex(random_bytes(32));
+                        $expiry = time() + (86400 * 30); // 30 days
+                        
+                        setcookie('remember_token', $token, $expiry, '/', '', false, true);
+                        $_SESSION['remember_token'] = $token;
+                    }
+                    
+                    // Clear any old error messages
+                    unset($_SESSION['login_errors']);
+                    unset($_SESSION['login_email']);
+                    
+                    // Redirect to dashboard
+                    header("Location: /seller/ui/dashboard.php");
+                    exit;
+                } else {
+                    // Email confirmed, approved but shop not set up - redirect to shop info page
+                    $_SESSION['seller_id'] = $seller['id'];
+                    $_SESSION['seller_name'] = $seller['full_name'];
+                    $_SESSION['seller_email'] = $seller['email'];
+                    $_SESSION['seller_plan'] = $seller['seller_plan'] ?? 'Bronze';
+                    $_SESSION['logged_in'] = true;
+                    
+                    // Set remember me cookie if requested (30 days)
+                    if ($remember) {
+                        $token = bin2hex(random_bytes(32));
+                        $expiry = time() + (86400 * 30); // 30 days
+                        
+                        setcookie('remember_token', $token, $expiry, '/', '', false, true);
+                        $_SESSION['remember_token'] = $token;
+                    }
+                    
+                    // Clear any old error messages
+                    unset($_SESSION['login_errors']);
+                    unset($_SESSION['login_email']);
+                    
+                    // Redirect to shop setup page
+                    header("Location: /seller/ui/shop-form.php");
+                    exit;
+                }
+            } elseif ($seller['approval_status'] == 'pending') {
+                // Account is pending admin approval
                 $_SESSION['seller_id'] = $seller['id'];
                 $_SESSION['seller_name'] = $seller['full_name'];
                 $_SESSION['seller_email'] = $seller['email'];
-                $_SESSION['seller_plan'] = $seller['seller_plan'] ?? 'free'; // Store plan with default
-                $_SESSION['logged_in'] = true;
-                
-                // Set remember me cookie if requested (30 days)
-                if ($remember) {
-                    $token = bin2hex(random_bytes(32));
-                    $expiry = time() + (86400 * 30); // 30 days
-                    
-                    setcookie('remember_token', $token, $expiry, '/', '', false, true);
-                    $_SESSION['remember_token'] = $token;
-                }
+                $_SESSION['approval_status'] = 'pending';
                 
                 // Clear any old error messages
                 unset($_SESSION['login_errors']);
                 unset($_SESSION['login_email']);
                 
-                // Redirect to dashboard
-                header("Location: /seller/ui/dashboard.php");
+                // Redirect to verification pending page
+                header("Location: /seller/ui/sellerAccVerificationPage.php");
                 exit;
-            } else {
-                // Email confirmed but shop not set up - redirect to shop info page
-                $_SESSION['seller_id'] = $seller['id'];
-                $_SESSION['seller_name'] = $seller['full_name'];
-                $_SESSION['seller_email'] = $seller['email'];
-                $_SESSION['seller_plan'] = $seller['seller_plan'] ?? 'free'; // Store plan with default
-                $_SESSION['logged_in'] = true;
-                
-                // Set remember me cookie if requested (30 days)
-                if ($remember) {
-                    $token = bin2hex(random_bytes(32));
-                    $expiry = time() + (86400 * 30); // 30 days
-                    
-                    setcookie('remember_token', $token, $expiry, '/', '', false, true);
-                    $_SESSION['remember_token'] = $token;
-                }
-                
-                // Clear any old error messages
-                unset($_SESSION['login_errors']);
-                unset($_SESSION['login_email']);
-                
-                // Redirect to shop setup page
-                header("Location: /seller/ui/shop-form.php");
+            } elseif ($seller['approval_status'] == 'rejected') {
+                // Account was rejected by admin
+                $_SESSION['login_errors'] = ["Your seller account has been rejected. Please contact support for more information."];
+                $_SESSION['login_email'] = $email;
+                header("Location: $redirect");
                 exit;
             }
         } else {

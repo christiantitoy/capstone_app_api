@@ -1,0 +1,361 @@
+<?php
+// /seller/ui/sellerAccVerificationPage.php
+
+require_once __DIR__ . '/../backend/session/auth.php';
+
+$seller_id = $_SESSION['seller_id'] ?? null;
+
+// Check if seller is logged in and has pending approval
+if (!isset($_SESSION['seller_id']) || !isset($_SESSION['approval_status']) || $_SESSION['approval_status'] !== 'pending') {
+    header("Location: /seller/ui/login.php");
+    exit;
+}
+
+// Get seller information
+$seller_name = $_SESSION['seller_name'] ?? 'Seller';
+$seller_email = $_SESSION['seller_email'] ?? '';
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Verification Pending | Seller Dashboard</title>
+    <link rel="icon" type="image/png" href="../admin/images/app_icon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .verification-container {
+            max-width: 500px;
+            width: 100%;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .verification-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 30px;
+            text-align: center;
+            color: white;
+        }
+
+        .icon-wrapper {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+
+        .icon-wrapper i {
+            font-size: 40px;
+        }
+
+        .card-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .card-header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .card-body {
+            padding: 40px 30px;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .info-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-item i {
+            width: 20px;
+            color: #f59e0b;
+            font-size: 16px;
+        }
+
+        .info-item .label {
+            font-weight: 600;
+            color: #2c3e50;
+            min-width: 80px;
+        }
+
+        .info-item .value {
+            color: #7f8c8d;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #fef3c7;
+            color: #d97706;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .status-badge i {
+            font-size: 14px;
+        }
+
+        .message-box {
+            background: #e3f2fd;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .message-box p {
+            color: #1976d2;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .message-box i {
+            margin-right: 8px;
+        }
+
+        .steps {
+            margin: 25px 0;
+        }
+
+        .step {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .step-number {
+            width: 30px;
+            height: 30px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .step-content h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .step-content p {
+            font-size: 13px;
+            color: #7f8c8d;
+            line-height: 1.5;
+        }
+
+        .logout-btn {
+            width: 100%;
+            padding: 14px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .logout-btn:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+        }
+
+        .contact-support {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .contact-support p {
+            font-size: 13px;
+            color: #7f8c8d;
+        }
+
+        .contact-support a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .contact-support a:hover {
+            text-decoration: underline;
+        }
+
+        .loader {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .verification-container {
+                margin: 20px;
+            }
+            
+            .card-body {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="verification-container">
+        <div class="verification-card">
+            <div class="card-header">
+                <div class="icon-wrapper">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <h1>Account Under Review</h1>
+                <p>Your seller account is being verified</p>
+            </div>
+            
+            <div class="card-body">
+                <div style="text-align: center;">
+                    <div class="status-badge">
+                        <i class="fas fa-hourglass-half"></i>
+                        <span>Pending Approval</span>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <div class="info-item">
+                        <i class="fas fa-user"></i>
+                        <span class="label">Name:</span>
+                        <span class="value"><?php echo htmlspecialchars($seller_name); ?></span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-envelope"></i>
+                        <span class="label">Email:</span>
+                        <span class="value"><?php echo htmlspecialchars($seller_email); ?></span>
+                    </div>
+                </div>
+
+                <div class="message-box">
+                    <i class="fas fa-info-circle"></i>
+                    <p>Thank you for registering as a seller! Your account has been successfully verified via email and is now waiting for admin approval. This process ensures the quality and security of our marketplace.</p>
+                </div>
+
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Email Verification ✓</h4>
+                            <p>Your email has been successfully verified.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Admin Review <i class="fas fa-spinner fa-spin" style="margin-left: 5px; font-size: 12px;"></i></h4>
+                            <p>Our team is reviewing your seller application. This usually takes 24-48 hours.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Start Selling</h4>
+                            <p>Once approved, you can set up your shop and start selling!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="logout-btn" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout and Return to Login
+                </button>
+
+                <div class="contact-support">
+                    <p>Need assistance? <a href="mailto:support@example.com">Contact Support</a></p>
+                    <p style="margin-top: 10px; font-size: 12px;">We'll notify you via email once your account is approved.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            // Clear all session storage
+            sessionStorage.clear();
+            
+            // Create a form to POST logout request
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/seller/backend/auth/sellerLogout-process.php';
+            document.body.appendChild(form);
+            form.submit();
+        });
+    </script>
+</body>
+</html>
