@@ -202,8 +202,21 @@ require_once '../backend/session/auth_admin.php';
     // Display current date
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     document.getElementById('currentDate').textContent = new Date().toLocaleDateString(undefined, options);
-    
-    
+
+    // Fetch counts from getCount.php and populate stat cards
+    fetch('/admin/backend/getCount.php')
+        .then(res => res.json())
+        .then(response => {
+            if (response.success) {
+                const data = response.data;
+                document.getElementById('totalBuyers').textContent   = data.buyers.total;
+                document.getElementById('totalSellers').textContent  = data.sellers.total;
+                document.getElementById('totalProducts').textContent = data.products.total_approved;
+                document.getElementById('totalOrders').textContent   = data.orders.total;
+                // totalRiders — update once riders backend is ready
+            }
+        })
+        .catch(err => console.error('Failed to load counts:', err));
 </script>
 
 </body>
