@@ -1,6 +1,7 @@
+# Use official PHP 8.2 Apache image
 FROM php:8.2-apache
 
-# Install dependencies and PHP extensions
+# Install PostgreSQL driver + git + unzip + other PHP extensions
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     git \
@@ -8,7 +9,8 @@ RUN apt-get update && apt-get install -y \
     libcurl4-openssl-dev \
     libonig-dev \
     libssl-dev \
-    && docker-php-ext-install pdo_pgsql curl mbstring \
+    && docker-php-ext-install pdo_pgsql \
+    && docker-php-ext-install curl mbstring \
     && docker-php-ext-enable curl mbstring \
     && rm -rf /var/lib/apt/lists/*
 
@@ -21,15 +23,21 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy composer files first
+# Copy only composer.json first for caching
 COPY composer.json ./
+
+# Install PHP dependencies
 RUN composer install --no-interaction --no-dev --optimize-autoloader
 
 # Copy the rest of the app
 COPY . .
 
-# Simple CMD - forces correct port binding for Render
-CMD bash -c "echo 'Listen ${PORT:-10000}' > /etc/apache2/ports.conf && \
-    sed -i 's/<VirtualHost \\*:80>/<VirtualHost \\*:${PORT:-10000}>/g' /etc/apache2/sites-available/000-default.conf && \
-    echo 'ServerName localhost' >> /etc/apache2/apache2.conf && \
-    apache2-foreground"
+# Force correct binding - this usually fixes the 521 error on Render
+CMD bash -c '
+    PORT=${PORT:-10000}
+    echo "Listen ${PORT}" > /etc/apache2/ports.conf
+    sed -i "s/Listen 80/Listen ${PORT}/g" /etc/apache2/ports.conf 2>/dev/null || true
+    sed -i "s/<VirtualHost \*:80>/<VirtualHost \*:${PORT}>/g" /etc/apache2/sites-available/000-default.conf
+    echo "ServerName localhost" >> /etc/apache2/apache2.conf
+    apache2-foreground
+'
