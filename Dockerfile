@@ -29,19 +29,39 @@ RUN composer install --no-interaction --no-dev --optimize-autoloader
 # Copy the rest of the app
 COPY . .
 
-# === FIXED START COMMAND ===
-CMD bash -c ' \
-    # Enable necessary Apache modules (important for PHP + clean config)
-    a2enmod rewrite headers \
-    && \
-    # Replace default Listen 80 with the Render PORT (usually 10000)
-    sed -i "s/Listen 80/Listen ${PORT:-10000}/g" /etc/apache2/ports.conf \
-    && \
-    # Make sure Apache listens on ALL interfaces (0.0.0.0), not just localhost
-    sed -i "s/<VirtualHost \*:80>/<VirtualHost \*:${PORT:-10000}>/g" /etc/apache2/sites-available/000-default.conf \
-    && \
-    # Add ServerName to suppress warnings
-    echo "ServerName localhost" >> /etc/apache2/apache2.conf \
-    && \
+# ==================== FIXED CMD FOR RENDER ====================
+# This version completely overrides the default Apache config to work reliably with Render's port (usually 10000)
+
+CMD bash -c '
+    # Enable useful Apache modules
+    a2enmod rewrite headers 2>/dev/null || true
+
+    # Force Apache to listen ONLY on the correct Render port (default 10000)
+    echo "Listen ${PORT:-10000}" > /etc/apache2/ports.conf
+
+    # Create a clean VirtualHost configuration that listens on all interfaces (*)
+    cat > /etc/apache2/sites-available/000-default.conf <<EOL
+<VirtualHost *:${PORT:-10000}>
+    ServerName localhost
+    DocumentRoot /var/www/html
+
+    <Directory /var/www/html>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog \${APACHE_LOG_DIR}/error.log
+    CustomLog \${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+EOL
+
+    # Enable the site
+    a2ensite 000-default.conf
+
+    # Suppress ServerName warning
+    echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
     # Start Apache in foreground
-    apache2-foreground'
+    apache2-foreground
+'
