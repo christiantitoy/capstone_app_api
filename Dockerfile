@@ -32,10 +32,30 @@ RUN composer install --no-interaction --no-dev --optimize-autoloader
 # Copy the rest of the app
 COPY . .
 
-# Force correct binding - this usually fixes the 521 error on Render
-CMD bash -c 'PORT=${PORT:-10000}; \
-    echo "Listen ${PORT}" > /etc/apache2/ports.conf; \
-    sed -i "s/Listen 80/Listen ${PORT}/g" /etc/apache2/ports.conf 2>/dev/null || true; \
-    sed -i "s/<VirtualHost \*:80>/<VirtualHost \*:${PORT}>/g" /etc/apache2/sites-available/000-default.conf; \
-    echo "ServerName localhost" >> /etc/apache2/apache2.conf; \
-    apache2-foreground'
+# Force correct binding for Render (this usually fixes the 521)
+CMD bash -c '
+    PORT=${PORT:-10000}
+
+    echo "Listen ${PORT}" > /etc/apache2/ports.conf
+
+    cat > /etc/apache2/sites-available/000-default.conf << EOF
+<VirtualHost *:${PORT}>
+    ServerName localhost
+    DocumentRoot /var/www/html
+
+    <Directory /var/www/html>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog \${APACHE_LOG_DIR}/error.log
+    CustomLog \${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+EOF
+
+    a2ensite 000-default.conf 2>/dev/null || true
+    echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
+    apache2-foreground
+'

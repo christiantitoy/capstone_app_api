@@ -1,6 +1,4 @@
 <?php
-echo json_encode([
-    "status" => true,
-    "message" => "Palitora API Running, all thanks to Earl gwapo!!!"
-]);
+echo "OK - Server running on port " . $_SERVER['SERVER_PORT'];
+phpinfo();
 ?>
