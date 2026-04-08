@@ -33,11 +33,9 @@ RUN composer install --no-interaction --no-dev --optimize-autoloader
 COPY . .
 
 # Force correct binding - this usually fixes the 521 error on Render
-CMD bash -c '
-    PORT=${PORT:-10000}
-    echo "Listen ${PORT}" > /etc/apache2/ports.conf
-    sed -i "s/Listen 80/Listen ${PORT}/g" /etc/apache2/ports.conf 2>/dev/null || true
-    sed -i "s/<VirtualHost \*:80>/<VirtualHost \*:${PORT}>/g" /etc/apache2/sites-available/000-default.conf
-    echo "ServerName localhost" >> /etc/apache2/apache2.conf
-    apache2-foreground
-'
+CMD bash -c 'PORT=${PORT:-10000}; \
+    echo "Listen ${PORT}" > /etc/apache2/ports.conf; \
+    sed -i "s/Listen 80/Listen ${PORT}/g" /etc/apache2/ports.conf 2>/dev/null || true; \
+    sed -i "s/<VirtualHost \*:80>/<VirtualHost \*:${PORT}>/g" /etc/apache2/sites-available/000-default.conf; \
+    echo "ServerName localhost" >> /etc/apache2/apache2.conf; \
+    apache2-foreground'
