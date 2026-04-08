@@ -29,7 +29,7 @@ RUN composer install --no-interaction --no-dev --optimize-autoloader
 # Copy the rest of the app
 COPY . .
 
-CMD sed -i "s/Listen 80/Listen ${PORT:-10000}/g" /etc/apache2/ports.conf && \
-    sed -i "s/*:80/*:${PORT:-10000}/g" /etc/apache2/sites-enabled/000-default.conf && \
+CMD sed -i "s/Listen 80/Listen ${PORT}/g" /etc/apache2/ports.conf && \
+    sed -i "s/<VirtualHost \*:80>/<VirtualHost *:${PORT}>/g" /etc/apache2/sites-enabled/000-default.conf && \
     echo "ServerName localhost" >> /etc/apache2/apache2.conf && \
     apache2-foreground
