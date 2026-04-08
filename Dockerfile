@@ -23,16 +23,25 @@ WORKDIR /var/www/html
 # Copy only composer.json first for caching
 COPY composer.json ./
 
-# Install PHP dependencies (composer.lock will be created automatically)
+# Install PHP dependencies
 RUN composer install --no-interaction --no-dev --optimize-autoloader
 
 # Copy the rest of the app
 COPY . .
 
-CMD bash -c "sed -i 's/Listen 80/Listen \$PORT/' /etc/apache2/ports.conf && \
-cat <<EOF > /etc/apache2/sites-enabled/000-default.conf
-<VirtualHost *:\$PORT>
-    DocumentRoot /var/www/html
-</VirtualHost>
-EOF
-apache2-foreground"
+# === FIXED START COMMAND ===
+CMD bash -c ' \
+    # Enable necessary Apache modules (important for PHP + clean config)
+    a2enmod rewrite headers \
+    && \
+    # Replace default Listen 80 with the Render PORT (usually 10000)
+    sed -i "s/Listen 80/Listen ${PORT:-10000}/g" /etc/apache2/ports.conf \
+    && \
+    # Make sure Apache listens on ALL interfaces (0.0.0.0), not just localhost
+    sed -i "s/<VirtualHost \*:80>/<VirtualHost \*:${PORT:-10000}>/g" /etc/apache2/sites-available/000-default.conf \
+    && \
+    # Add ServerName to suppress warnings
+    echo "ServerName localhost" >> /etc/apache2/apache2.conf \
+    && \
+    # Start Apache in foreground
+    apache2-foreground'
