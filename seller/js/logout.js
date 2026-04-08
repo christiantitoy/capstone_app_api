@@ -1,4 +1,6 @@
+// Add this to your existing DOMContentLoaded event
 document.addEventListener('DOMContentLoaded', () => {
+    // Your existing logout modal code
     const modal = document.getElementById('logoutModal');
     const trigger = document.querySelector('.logout-trigger');
     const closeBtn = document.getElementById('closeModal');
@@ -18,15 +20,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (closeBtn) closeBtn.addEventListener('click', closeModal);
     if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
 
-    // Click outside to close
     modal.addEventListener('click', e => {
         if (e.target === modal) closeModal();
     });
 
-    // Escape key to close
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape' && modal.classList.contains('active')) {
             closeModal();
         }
     });
+
+    // Add profile click - redirect to profile page
+    const userProfile = document.getElementById('userProfile');
+    if (userProfile) {
+        userProfile.addEventListener('click', () => {
+            window.location.href = '/seller/ui/profile.php';
+        });
+    }
 });
