@@ -59,11 +59,11 @@ require_once __DIR__ . '/../backend/session/auth.php';
             </div>
         </header>
 
-        <div class="button-container">
+        <!-- <div class="button-container">
             <a href="#" class="add-product-btn">
                 <i class="fas fa-plus"></i> Add New Product
             </a>
-        </div>
+        </div> -->
 
         <!-- Product List -->
         <div id="productsGrid" class="products-grid">
