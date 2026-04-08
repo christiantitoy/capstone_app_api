@@ -59,7 +59,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
             </div>
         </header>
 
-        <div style="margin-bottom: 2rem; display: flex; justify-content: flex-end;">
+        <div class="button-container">
             <a href="#" class="add-product-btn">
                 <i class="fas fa-plus"></i> Add New Product
             </a>
@@ -67,7 +67,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
 
         <!-- Product List -->
         <div id="productsGrid" class="products-grid">
-            <div style="text-align: center; padding: 3rem;">Loading products...</div>
+            <div class="loading-state">Loading products...</div>
         </div>
 
         <footer class="main-footer">
@@ -126,8 +126,8 @@ function displayProducts(products) {
             <div class="product-card" data-product-id="${product.id}">
                 <div class="product-image">
                     ${product.main_image_url ? 
-                        `<img src="${product.main_image_url}" alt="${product.product_name}" style="width: 100%; height: 100%; object-fit: cover;">` : 
-                        `<i class="fas fa-box" style="font-size: 3rem; color: #bdc3c7;"></i>`
+                        `<img src="${product.main_image_url}" alt="${escapeHtml(product.product_name)}">` : 
+                        `<i class="fas fa-box"></i>`
                     }
                 </div>
                 <div class="product-info">
@@ -174,7 +174,7 @@ function showNoProducts() {
             <i class="fas fa-box-open"></i>
             <h3>No Products Yet</h3>
             <p>Start by adding your first product to sell</p>
-            <a href="#" class="add-product-btn" style="margin-top: 1.5rem; display: inline-block;">
+            <a href="#" class="add-product-btn">
                 <i class="fas fa-plus"></i> Add Your First Product
             </a>
         </div>
@@ -206,7 +206,7 @@ function deleteProduct(productId) {
         .then(data => {
             if (data.success) {
                 alert('Product deleted successfully');
-                loadProducts(); // Reload the list
+                loadProducts();
             } else {
                 alert('Error deleting product');
             }
@@ -228,14 +228,6 @@ function escapeHtml(str) {
     });
 }
 </script>
-
-<style>
-/* Add missing stock-out style that might be needed */
-.stock-out {
-    background: #e74c3c !important;
-    color: white !important;
-}
-</style>
 
 </body>
 </html>
