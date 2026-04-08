@@ -29,8 +29,10 @@ RUN composer install --no-interaction --no-dev --optimize-autoloader
 # Copy the rest of the app
 COPY . .
 
-CMD bash -c 'echo "Listen ${PORT}" > /etc/apache2/ports.conf && \
-echo "<VirtualHost *:${PORT}>\
-\nDocumentRoot /var/www/html\
-\n</VirtualHost>" > /etc/apache2/sites-enabled/000-default.conf && \
-apache2-foreground'
+CMD bash -c "sed -i 's/Listen 80/Listen \$PORT/' /etc/apache2/ports.conf && \
+cat <<EOF > /etc/apache2/sites-enabled/000-default.conf
+<VirtualHost *:\$PORT>
+    DocumentRoot /var/www/html
+</VirtualHost>
+EOF
+apache2-foreground"
