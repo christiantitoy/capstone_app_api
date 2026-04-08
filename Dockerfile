@@ -14,9 +14,6 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-enable curl mbstring \
     && rm -rf /var/lib/apt/lists/*
 
-# Enable Apache modules
-RUN a2enmod rewrite headers
-
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
@@ -26,11 +23,13 @@ WORKDIR /var/www/html
 # Copy only composer.json first for caching
 COPY composer.json ./
 
-# Install PHP dependencies
+# Install PHP dependencies (composer.lock will be created automatically)
 RUN composer install --no-interaction --no-dev --optimize-autoloader
 
 # Copy the rest of the app
 COPY . .
 
-# Ultra simple CMD - forces Render's port (10000) and all interfaces
-CMD bash -c 'PORT=${PORT:-10000}; echo "Listen ${PORT}" > /etc/apache2/ports.conf; sed -i "s/<VirtualHost \*:80>/<VirtualHost \*:${PORT}>/g" /etc/apache2/sites-available/000-default.conf; echo "ServerName localhost" >> /etc/apache2/apache2.conf; apache2-foreground'
+# Simple fix: Dynamically set the port and start Apache
+CMD sed -i "s/Listen 80/Listen ${PORT:-80}/g" /etc/apache2/ports.conf && \
+    echo "ServerName localhost" >> /etc/apache2/apache2.conf && \
+    apache2-foreground
