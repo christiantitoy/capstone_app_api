@@ -72,9 +72,61 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
 }
 
-.user-profile { display: flex; align-items: center; gap: 10px; }
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+    cursor: pointer;
+    border-radius: 8px;
+    padding: 4px 8px;
+    transition: background 0.2s;
+}
+
+.user-profile:hover {
+    background: #f0f2f5;
+}
+
+.user-info {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.seller-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-profile p {
+    font-size: 0.75rem;
+    margin: 0;
+    color: var(--gray);
+}
+
+.logout-btn {
+    background: none;
+    border: none;
+    color: #e74c3c;
+    font-size: 1.3rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 8px;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+
+.logout-btn:hover {
+    background: #fee;
+}
 
 .avatar {
     width: 38px; height: 38px;
@@ -84,8 +136,6 @@ body {
     display: grid; place-items: center;
     font-weight: bold; font-size: 1.1rem;
 }
-
-.logout-btn { color: #e74c3c; font-size: 1.3rem; text-decoration: none; }
 
 /* ─── Main Content ─── */
 .main-content {

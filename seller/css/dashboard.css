@@ -138,8 +138,6 @@ body {
     font-weight: bold; font-size: 1.1rem;
 }
 
-.logout-btn { color: #e74c3c; font-size: 1.3rem; text-decoration: none; }
-
 /* Main Content */
 .main-content {
     overflow-y: auto;

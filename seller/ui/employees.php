@@ -79,21 +79,18 @@ $role_display = [
         <div class="sidebar-header">
             <h2>Seller<span>Dashboard</span></h2>
         </div>
-
         <nav class="sidebar-nav">
-            <a href="/seller/ui/dashboard.php" class="nav-item"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
+            <a href="/seller/ui/dashboard.php" class="nav-item active"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
             <a href="/seller/ui/products.php" class="nav-item"><i class="fas fa-box"></i><span>Products</span></a>
             <a href="/seller/ui/orders.php" class="nav-item"><i class="fas fa-shopping-cart"></i><span>Orders</span></a>
-            <a href="/seller/ui/employees.php" class="nav-item active"><i class="fas fa-users"></i><span>Employees</span></a>
-            <!-- <a href="/seller/ui/analytics.php" class="nav-item"><i class="fas fa-chart-bar"></i><span>Analytics</span></a> -->
+            <a href="/seller/ui/employees.php" class="nav-item"><i class="fas fa-users"></i><span>Employees</span></a>
             <a href="#" class="nav-item"><i class="fas fa-cog"></i><span>Settings</span></a>
         </nav>
-
         <div class="sidebar-footer">
-            <div class="user-profile">
+            <div class="user-profile" id="userProfile">
                 <div class="avatar"><?= strtoupper(substr($seller_name, 0, 1)) ?></div>
-                <div>
-                    <h4><?= htmlspecialchars($seller_name) ?></h4>
+                <div class="user-info">
+                    <h4 class="seller-name"><?= htmlspecialchars($seller_name) ?></h4>
                     <p>Seller Account</p>
                 </div>
             </div>
