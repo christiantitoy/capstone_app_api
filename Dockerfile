@@ -32,14 +32,14 @@ RUN composer install --no-interaction --no-dev --optimize-autoloader
 # Copy the rest of the app
 COPY . .
 
-# ==================== FIXED CMD FOR RENDER ====================
+# ==================== FIXED & PROPERLY ESCAPED CMD FOR RENDER ====================
 CMD bash -c '
-    # Force Apache to listen ONLY on the correct Render port (default 10000)
+    # Force Apache to listen on the correct Render port (usually 10000)
     echo "Listen ${PORT:-10000}" > /etc/apache2/ports.conf
 
-    # Create a clean VirtualHost configuration
-    cat > /etc/apache2/sites-available/000-default.conf <<EOL
-<VirtualHost *:${PORT:-10000}>
+    # Create clean VirtualHost config that listens on all interfaces
+    cat > /etc/apache2/sites-available/000-default.conf <<'"'"'EOL'"'"'
+<VirtualHost *:'"${PORT:-10000}"'>
     ServerName localhost
     DocumentRoot /var/www/html
 
@@ -49,17 +49,17 @@ CMD bash -c '
         Require all granted
     </Directory>
 
-    ErrorLog \${APACHE_LOG_DIR}/error.log
-    CustomLog \${APACHE_LOG_DIR}/access.log combined
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
 EOL
 
     # Enable the site
     a2ensite 000-default.conf
 
-    # Suppress ServerName warning
+    # Suppress warning
     echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
-    # Start Apache in foreground
+    # Start Apache
     apache2-foreground
 '
