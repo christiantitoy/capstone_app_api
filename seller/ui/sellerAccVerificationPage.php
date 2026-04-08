@@ -1,13 +1,41 @@
 <?php
 // /seller/ui/sellerAccVerificationPage.php
+session_start();
 
-require_once '/seller/backend/session/auth.php';
+// ── Auth & pending guard ──────────────────────────────────────────────
+if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true ||
+    !isset($_SESSION['seller_id']) || $_SESSION['seller_id'] <= 0) {
+    header("Location: /seller/ui/login.php");
+    exit;
+}
 
-// Extra guard: must be pending approval to view this page
+// Inactivity timeout (30 minutes)
+$timeout = 30 * 60;
+if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $timeout)) {
+    session_unset();
+    session_destroy();
+    header("Location: /seller/ui/login.php?msg=session_expired");
+    exit;
+}
+$_SESSION['last_activity'] = time();
+
+// Session fixation protection
+if (!isset($_SESSION['initiated'])) {
+    session_regenerate_id(true);
+    $_SESSION['initiated'] = true;
+}
+
+// Must be pending to view this page
 if (!isset($_SESSION['approval_status']) || $_SESSION['approval_status'] !== 'pending') {
     header("Location: /seller/ui/login.php");
     exit;
 }
+
+// Safe variables (mirrors auth.php exports)
+$seller_id    = $_SESSION['seller_id'];
+$seller_name  = $_SESSION['seller_name']  ?? 'Seller';
+$seller_email = $_SESSION['seller_email'] ?? '';
+$seller_plan  = $_SESSION['seller_plan']  ?? 'free';
 ?>
 
 <!DOCTYPE html>
@@ -173,8 +201,8 @@ if (!isset($_SESSION['approval_status']) || $_SESSION['approval_status'] !== 'pe
             color: white;
         }
 
-        .step-number.done   { background: #27ae60; }
-        .step-number.active { background: #f59e0b; }
+        .step-number.done    { background: #27ae60; }
+        .step-number.active  { background: #f59e0b; }
         .step-number.pending { background: #bdc3c7; }
 
         .step-content h4 {
