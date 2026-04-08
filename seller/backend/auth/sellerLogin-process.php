@@ -77,12 +77,13 @@ try {
             exit;
         }
 
-        // ── STEP 3: Check approval status ─────────────────────────────────────
+       // ── STEP 3: Check approval status ─────────────────────────────────────
         if ($seller['approval_status'] === 'pending') {
             $_SESSION['seller_id']       = $seller['id'];
             $_SESSION['seller_name']     = $seller['full_name'];
             $_SESSION['seller_email']    = $seller['email'];
             $_SESSION['approval_status'] = 'pending';
+            $_SESSION['logged_in']       = true; // ← add this so auth.php passes
             unset($_SESSION['login_errors'], $_SESSION['login_email']);
 
             header("Location: /seller/ui/sellerAccVerificationPage.php");
