@@ -8,8 +8,9 @@ header('Content-Type: application/json');
 
 // Get POST data
 $input = json_decode(file_get_contents('php://input'), true);
-$email = $input['email'] ?? $_POST['email'] ?? null;
+$email = $input['email'] ?? null;
 
+// Validate email
 if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
     echo json_encode([
         'success' => false,
@@ -24,35 +25,32 @@ try {
     $checkUserStmt->execute([$email]);
     $user = $checkUserStmt->fetch(PDO::FETCH_ASSOC);
     
-    // For security, always return success even if email doesn't exist
-    $emailExists = ($user !== false);
-    
-    if (!$emailExists) {
-        // Log internally but return generic success
-        error_log("Password reset attempted for non-existent email: $email");
-        echo json_encode([
-            'success' => true,
-            'message' => 'If an account exists with this email, you will receive an OTP'
-        ]);
-        exit;
-    }    
-    
-    // Check cooldown (2 minutes)
-    $cooldownStmt = $conn->prepare("
-        SELECT GREATEST(0, 120 - EXTRACT(EPOCH FROM (NOW() - MAX(last_request_at)))::INTEGER) as remaining_seconds
-        FROM password_resets
-        WHERE email = ? AND created_at > NOW() - INTERVAL '2 minutes'
-    ");
-    $cooldownStmt->execute([$email]);
-    $cooldown = $cooldownStmt->fetch(PDO::FETCH_ASSOC);
-    
-    $remainingSeconds = $cooldown['remaining_seconds'] ?? 0;
-    
-    if ($remainingSeconds > 0) {
+    // Return error if email not found
+    if (!$user) {
         echo json_encode([
             'success' => false,
-            'message' => "Please wait {$remainingSeconds} seconds before requesting again",
-            'remaining_seconds' => (int)$remainingSeconds
+            'message' => 'Email not found. Please register first.'
+        ]);
+        exit;
+    }
+    
+    // Check if there's a recent OTP request (within 2 minutes)
+    $cooldownStmt = $conn->prepare("
+        SELECT id, EXTRACT(EPOCH FROM (NOW() - last_request_at)) as seconds_since_last
+        FROM password_resets 
+        WHERE email = ? 
+        AND created_at > NOW() - INTERVAL '2 minutes'
+        ORDER BY created_at DESC 
+        LIMIT 1
+    ");
+    $cooldownStmt->execute([$email]);
+    $recentRequest = $cooldownStmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($recentRequest && $recentRequest['seconds_since_last'] < 120) {
+        $remainingSeconds = 120 - (int)$recentRequest['seconds_since_last'];
+        echo json_encode([
+            'success' => false,
+            'message' => "Please wait {$remainingSeconds} seconds before requesting again"
         ]);
         exit;
     }
@@ -60,31 +58,31 @@ try {
     // Generate 6-digit OTP
     $otpCode = sprintf("%06d", mt_rand(1, 999999));
     
-    // Delete any previous unverified OTPs for this email
+    // Delete old unverified OTPs
     $deleteStmt = $conn->prepare("DELETE FROM password_resets WHERE email = ? AND is_verified = FALSE");
     $deleteStmt->execute([$email]);
     
-    // Insert new OTP request
+    // Insert new OTP
     $insertStmt = $conn->prepare("
-        INSERT INTO password_resets (email, otp_code, otp_expires_at, last_request_at)
-        VALUES (?, ?, NOW() + INTERVAL '10 minutes', NOW())
+        INSERT INTO password_resets (email, otp_code, otp_expires_at, last_request_at, created_at)
+        VALUES (?, ?, NOW() + INTERVAL '10 minutes', NOW(), NOW())
         RETURNING id
     ");
     $insertStmt->execute([$email, $otpCode]);
-    $resetRecord = $insertStmt->fetch(PDO::FETCH_ASSOC);
+    $newRecord = $insertStmt->fetch(PDO::FETCH_ASSOC);
     
-    // Send OTP via Brevo
+    // Send OTP email via Brevo
     $apiKey = getenv('BREVO_API_KEY');
     if (!$apiKey) {
-        error_log("BREVO_API_KEY not set.");
+        error_log("BREVO_API_KEY not set");
         echo json_encode([
             'success' => false,
-            'message' => 'Email service configuration error'
+            'message' => 'Email service error. Please try again later.'
         ]);
         exit;
     }
     
-    // Prepare HTML email with OTP
+    // Email content
     $htmlContent = "
     <!DOCTYPE html>
     <html>
@@ -124,10 +122,10 @@ try {
         ],
         "subject" => "Password Reset OTP - PalitOra",
         "htmlContent" => $htmlContent,
-        "textContent" => "Your OTP code for password reset is: $otpCode\n\nThis code expires in 10 minutes.\n\nNever share this OTP with anyone."
+        "textContent" => "Your OTP code for password reset is: $otpCode\n\nThis code expires in 10 minutes."
     ];
     
-    // Send email using cURL
+    // Send email
     $ch = curl_init("https://api.brevo.com/v3/smtp/email");
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
         "accept: application/json",
@@ -139,6 +137,7 @@ try {
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($brevoData));
     
     $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $error = curl_error($ch);
     curl_close($ch);
     
@@ -151,32 +150,26 @@ try {
         exit;
     }
     
-    $jsonResponse = json_decode($response, true);
-    
-    if (isset($jsonResponse['messageId'])) {
-        // Return success with email (for step 2 to use)
+    if ($httpCode === 201 || $httpCode === 200) {
         echo json_encode([
             'success' => true,
             'message' => 'OTP sent to your email',
-            'email' => $email,
-            'otp_expires_in' => 600 // 10 minutes in seconds
+            'id' => $newRecord['id'],
+            'email' => $email
         ]);
-        exit;
     } else {
         error_log("Brevo API error: " . $response);
         echo json_encode([
             'success' => false,
             'message' => 'Failed to send OTP. Please try again.'
         ]);
-        exit;
     }
     
 } catch (PDOException $e) {
-    error_log("Request OTP error: " . $e->getMessage());
+    error_log("Database error: " . $e->getMessage());
     echo json_encode([
         'success' => false,
         'message' => 'An error occurred. Please try again later.'
     ]);
-    exit;
 }
 ?>
