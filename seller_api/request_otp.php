@@ -1,5 +1,5 @@
 <?php
-// /backend/forgot_password/request_otp.php
+// /seller_api/request_otp.php
 
 session_start();
 require_once '/var/www/html/connection/db_connection.php';
@@ -28,13 +28,14 @@ try {
     $emailExists = ($user !== false);
     
     if (!$emailExists) {
-        // Still return success to prevent email enumeration
+        // Log internally but return generic success
+        error_log("Password reset attempted for non-existent email: $email");
         echo json_encode([
             'success' => true,
             'message' => 'If an account exists with this email, you will receive an OTP'
         ]);
         exit;
-    }
+    }    
     
     // Check cooldown (2 minutes)
     $cooldownStmt = $conn->prepare("
