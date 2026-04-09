@@ -15,14 +15,14 @@ try {
         exit;
     }
 
-    // ✅ Required fields
+    // ✅ Required fields - Changed 'discount' to 'platform_fee'
     $required = [
         'buyer_id',
         'address_id',
         'payment_method',
         'subtotal',
         'shipping_fee',
-        'discount',
+        'platform_fee',     // ✅ Changed from 'discount'
         'total_amount',
         'items'
     ];
@@ -47,7 +47,7 @@ try {
 
     $conn->beginTransaction();
 
-    // ✅ INSERT ORDER
+    // ✅ INSERT ORDER - Changed column from 'discount' to 'platform_fee'
     $orderSql = "
         INSERT INTO orders (
             buyer_id,
@@ -55,7 +55,7 @@ try {
             payment_method,
             subtotal,
             shipping_fee,
-            discount,
+            platform_fee,      -- ✅ Changed from discount
             total_amount,
             status,
             created_at,
@@ -67,7 +67,7 @@ try {
             :payment_method,
             :subtotal,
             :shipping_fee,
-            :discount,
+            :platform_fee,      -- ✅ Changed from discount
             :total_amount,
             'pending',
             CURRENT_TIMESTAMP,
@@ -83,7 +83,7 @@ try {
         ':payment_method' => $data['payment_method'],
         ':subtotal' => $data['subtotal'],
         ':shipping_fee' => $data['shipping_fee'],
-        ':discount' => $data['discount'],
+        ':platform_fee' => $data['platform_fee'],      // ✅ Changed from discount
         ':total_amount' => $data['total_amount']
     ]);
 
