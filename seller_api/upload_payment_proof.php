@@ -6,7 +6,8 @@ header("Access-Control-Allow-Methods: POST");
 header("Access-Control-Allow-Headers: Content-Type");
 header('Content-Type: application/json');
 
-require_once __DIR__ . '/../../vendor/autoload.php';
+// Use absolute path from your project root
+require_once '/var/www/html/vendor/autoload.php';
 
 use Cloudinary\Configuration\Configuration;
 use Cloudinary\Api\Upload\UploadApi;
