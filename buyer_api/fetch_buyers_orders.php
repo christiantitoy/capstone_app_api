@@ -19,7 +19,7 @@ try {
 
     // ────────────────────────────────────────────────────────────────
     // Comprehensive query: orders → items → item_variants → stores → sellers
-    // Updated with new table names: items, item_variants, stores, sellers
+    // FIXED: Changed o.discount to o.platform_fee
     // ────────────────────────────────────────────────────────────────
     $sql = "
         SELECT 
@@ -30,7 +30,7 @@ try {
             o.payment_method,
             o.subtotal,
             o.shipping_fee,
-            o.discount,
+            o.platform_fee,              -- ✅ FIXED: Changed from discount to platform_fee
             o.total_amount,
             o.status                AS order_status,
             o.created_at            AS order_created_at,
@@ -114,11 +114,11 @@ try {
             $ordersMap[$orderId] = [
                 'id'            => (int)$row['order_id'],
                 'buyerId'       => (int)$row['buyer_id'],
-                'addressId'     => (int)$row['address_id'],
+                'addressId'     => isset($row['address_id']) ? (int)$row['address_id'] : null,
                 'paymentMethod' => $row['payment_method'],
                 'subtotal'      => (float)$row['subtotal'],
                 'shippingFee'   => (float)$row['shipping_fee'],
-                'discount'      => (float)$row['discount'],
+                'platformFee'   => (float)($row['platform_fee'] ?? 0),  // ✅ FIXED: Changed from discount
                 'totalAmount'   => (float)$row['total_amount'],
                 'status'        => $row['order_status'],
                 'createdAt'     => $row['order_created_at'],
@@ -130,7 +130,7 @@ try {
                 'phoneNumber'    => $row['phone_number']   ?? null,
                 'fullAddress'    => $row['full_address']   ?? null,
                 'gpsLocation'    => $row['gps_location']   ?? null,
-                'isDefault'      => (bool)($row['is_default'] ?? 0),
+                'isDefault'      => (bool)($row['is_default'] ?? false),
 
                 // Display fields for frontend convenience
                 'city'           => 'Dumaguete City',
@@ -143,11 +143,26 @@ try {
 
         if ($row['item_id'] === null) continue;
 
+        // Handle product_image_urls safely (could be JSON or comma-separated)
+        $productImageUrls = [];
+        if (!empty($row['product_image_urls'])) {
+            if (is_string($row['product_image_urls'])) {
+                // Try to decode as JSON first
+                $decoded = json_decode($row['product_image_urls'], true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    $productImageUrls = $decoded;
+                } else {
+                    // Fallback to comma-separated
+                    $productImageUrls = explode(',', $row['product_image_urls']);
+                }
+            }
+        }
+
         $item = [
             'itemId'          => (int)$row['item_id'],
             'productId'       => (int)$row['product_id'],
             'variationId'     => $row['variation_id'] ? (int)$row['variation_id'] : null,
-            'selectedOptions' => $row['selected_options'] ?? null,       // usually JSON string
+            'selectedOptions' => $row['selected_options'] ?? null,
             'quantity'        => (int)$row['quantity'],
             'unitPrice'       => (float)$row['unit_price'],
             'totalPrice'      => (float)$row['total_price'],
@@ -156,20 +171,33 @@ try {
             'productName'     => $row['product_name']     ?? '[Item Removed]',
             'category'        => $row['category']         ?? null,
             'mainImageUrl'    => $row['main_image_url']   ?? null,
-            'productImageUrls'=> $row['product_image_urls'] ? explode(',', $row['product_image_urls']) : [],
-            'hasVariations'   => (bool)($row['has_variations'] ?? 0),
+            'productImageUrls'=> $productImageUrls,
+            'hasVariations'   => (bool)($row['has_variations'] ?? false),
 
             // Variant (only if variation_id was used)
             'variant'         => null,
         ];
 
         if ($row['variation_id']) {
+            // Handle variant_image_urls safely
+            $variantImageUrls = [];
+            if (!empty($row['variant_image_urls'])) {
+                if (is_string($row['variant_image_urls'])) {
+                    $decoded = json_decode($row['variant_image_urls'], true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        $variantImageUrls = $decoded;
+                    } else {
+                        $variantImageUrls = explode(',', $row['variant_image_urls']);
+                    }
+                }
+            }
+
             $item['variant'] = [
                 'sku'                => $row['sku'] ?? null,
-                'optionsJson'        => $row['options_json']        ?? null,   // jsonb → usually assoc array after json_decode
-                'optionsJsonValue'   => $row['options_json_value']  ?? null,
+                'optionsJson'        => $row['options_json'] ?? null,
+                'optionsJsonValue'   => $row['options_json_value'] ?? null,
                 'variantPrice'       => $row['variant_price'] ? (float)$row['variant_price'] : null,
-                'variantImageUrls'   => $row['variant_image_urls'] ? explode(',', $row['variant_image_urls']) : [],
+                'variantImageUrls'   => $variantImageUrls,
             ];
         }
 
@@ -207,7 +235,7 @@ try {
     echo json_encode([
         'status'  => 'error',
         'message' => 'Database error occurred',
-        'debug' => $e->getMessage(),  // ← This will show the real error
+        'debug' => $e->getMessage(),  // Remove in production
         'code' => $e->getCode()
     ]);
 } catch (Exception $e) {
