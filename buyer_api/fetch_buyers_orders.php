@@ -206,8 +206,9 @@ try {
     http_response_code(500);
     echo json_encode([
         'status'  => 'error',
-        'message' => 'Database error occurred'
-        // 'debug' => $e->getMessage()   // remove in production
+        'message' => 'Database error occurred',
+        'debug' => $e->getMessage(),  // ← This will show the real error
+        'code' => $e->getCode()
     ]);
 } catch (Exception $e) {
     http_response_code(500);
