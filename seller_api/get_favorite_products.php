@@ -25,13 +25,13 @@ try {
             i.id,
             i.product_name as title,
             i.price,
-            s.full_name as shop,
+            s.store_name as shop,
             i.seller_id,
             i.main_image_url as image_url,
             f.created_at as favorited_at
         FROM favorites f
         INNER JOIN items i ON f.product_id = i.id
-        INNER JOIN sellers s ON i.seller_id = s.id
+        INNER JOIN stores s ON i.seller_id = s.seller_id
         WHERE f.buyer_id = :buyerId
         AND i.status = 'approved'
         ORDER BY f.created_at DESC
