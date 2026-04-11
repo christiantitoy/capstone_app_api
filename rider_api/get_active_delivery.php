@@ -48,7 +48,7 @@ try {
             ba.gps_location,
             ba.is_default,
 
-            -- Store Info (Updated to use stores table)
+            -- Store Info
             s.seller_id AS store_seller_id,
             s.store_name,
             s.category AS store_category,
@@ -68,10 +68,10 @@ try {
         INNER JOIN buyers b ON b.id = o.buyer_id
         INNER JOIN buyer_addresses ba ON ba.id = o.address_id
         LEFT JOIN (
-            SELECT DISTINCT oi.order_id, p.seller_id
+            SELECT DISTINCT oi.order_id, i.seller_id
             FROM order_items oi
-            LEFT JOIN products p ON p.id = oi.product_id
-            WHERE p.seller_id IS NOT NULL
+            LEFT JOIN items i ON i.id = oi.product_id
+            WHERE i.seller_id IS NOT NULL
         ) AS order_sellers ON order_sellers.order_id = o.id
         LEFT JOIN stores s ON s.seller_id = order_sellers.seller_id
         WHERE od.rider_id = ?
@@ -85,17 +85,28 @@ try {
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($row) {
-        // Get order items
+        // Get order items from items table
         $order_id = $row['order_id'];
         $items_sql = "
-            SELECT oi.*,
-                   p.product_name, 
-                   p.category, 
-                   p.main_image_url,
-                   s.store_name AS seller_store_name
+            SELECT 
+                oi.id,
+                oi.order_id,
+                oi.product_id,
+                oi.variation_id,
+                oi.selected_options,
+                oi.quantity,
+                oi.unit_price,
+                oi.total_price,
+                i.product_name,
+                i.product_description,
+                i.category,
+                i.main_image_url,
+                i.image_urls,
+                i.has_variations,
+                s.store_name AS seller_store_name
             FROM order_items oi
-            LEFT JOIN products p ON p.id = oi.product_id
-            LEFT JOIN stores s ON s.seller_id = p.seller_id
+            LEFT JOIN items i ON i.id = oi.product_id
+            LEFT JOIN stores s ON s.seller_id = i.seller_id
             WHERE oi.order_id = ?
         ";
 
