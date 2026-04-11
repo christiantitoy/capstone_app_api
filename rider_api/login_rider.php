@@ -16,7 +16,7 @@ try {
     $password = $data['password'];
 
     // Fetch rider by email (includes is_confirmed)
-    $stmt = $conn->prepare("SELECT id, password_hash, is_confirmed, status FROM riders WHERE email = :email");
+    $stmt = $conn->prepare("SELECT id, password_hash, verification_status, status FROM riders WHERE email = :email");
     $stmt->execute([':email' => $email]);
 
     $rider = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -39,7 +39,7 @@ try {
         echo json_encode([
             "status" => "success",
             "rider_id" => (int)$rider['id'],
-            "is_confirmed" => (bool)$rider['is_confirmed']
+            "verification_status" => $rider['verification_status']
         ]);
 
     } else {

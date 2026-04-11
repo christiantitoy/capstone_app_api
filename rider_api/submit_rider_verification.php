@@ -36,14 +36,21 @@ try {
         throw new Exception('Missing required files: id_front, id_back, or barangay_clearance');
     }
 
-    // Check if rider exists
-    $stmt = $conn->prepare("SELECT id FROM riders WHERE id = :rider_id");
+    // Check if rider exists and get current verification_status
+    $stmt = $conn->prepare("SELECT id, verification_status FROM riders WHERE id = :rider_id");
     $stmt->execute([':rider_id' => $rider_id]);
-    if (!$stmt->fetch()) {
+    $rider = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$rider) {
         throw new Exception('Rider not found');
     }
 
-    // Check if verification already exists
+    // Check if already verified
+    if ($rider['verification_status'] === 'complete') {
+        throw new Exception('Your account is already verified');
+    }
+
+    // Check if verification already exists in rider_verifications table
     $stmt = $conn->prepare("SELECT id, status FROM rider_verifications WHERE rider_id = :rider_id");
     $stmt->execute([':rider_id' => $rider_id]);
     $existing = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -104,49 +111,71 @@ try {
         }
     }
 
-    // Save to database
-    if ($existing) {
-        // Update existing rejected verification
-        $stmt = $conn->prepare("
-            UPDATE rider_verifications 
-            SET id_type = :id_type,
-                id_number = :id_number,
-                id_front_url = :id_front_url,
-                id_back_url = :id_back_url,
-                barangay_clearance_url = :barangay_clearance_url,
-                status = 'pending',
-                submitted_at = NOW(),
-                reviewed_at = NULL
-            WHERE rider_id = :rider_id
+    // Begin transaction
+    $conn->beginTransaction();
+
+    try {
+        // Save to rider_verifications table
+        if ($existing) {
+            // Update existing rejected verification
+            $stmt = $conn->prepare("
+                UPDATE rider_verifications 
+                SET id_type = :id_type,
+                    id_number = :id_number,
+                    id_front_url = :id_front_url,
+                    id_back_url = :id_back_url,
+                    barangay_clearance_url = :barangay_clearance_url,
+                    status = 'pending',
+                    submitted_at = NOW(),
+                    reviewed_at = NULL
+                WHERE rider_id = :rider_id
+            ");
+        } else {
+            // Insert new verification
+            $stmt = $conn->prepare("
+                INSERT INTO rider_verifications 
+                (rider_id, id_type, id_number, id_front_url, id_back_url, barangay_clearance_url, status, submitted_at)
+                VALUES 
+                (:rider_id, :id_type, :id_number, :id_front_url, :id_back_url, :barangay_clearance_url, 'pending', NOW())
+            ");
+        }
+
+        $result = $stmt->execute([
+            ':rider_id' => $rider_id,
+            ':id_type' => $id_type,
+            ':id_number' => $id_number,
+            ':id_front_url' => $uploadedUrls['id_front'],
+            ':id_back_url' => $uploadedUrls['id_back'],
+            ':barangay_clearance_url' => $uploadedUrls['barangay_clearance']
+        ]);
+
+        if (!$result) {
+            throw new Exception('Failed to save verification data to database');
+        }
+
+        // ✅ UPDATE RIDER'S verification_status TO 'pending'
+        $updateRiderStmt = $conn->prepare("
+            UPDATE riders 
+            SET verification_status = 'pending' 
+            WHERE id = :rider_id
         ");
-    } else {
-        // Insert new verification
-        $stmt = $conn->prepare("
-            INSERT INTO rider_verifications 
-            (rider_id, id_type, id_number, id_front_url, id_back_url, barangay_clearance_url, status, submitted_at)
-            VALUES 
-            (:rider_id, :id_type, :id_number, :id_front_url, :id_back_url, :barangay_clearance_url, 'pending', NOW())
-        ");
+        $updateRiderStmt->execute([':rider_id' => $rider_id]);
+
+        // Commit transaction
+        $conn->commit();
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Verification documents submitted successfully',
+            'verification_status' => 'pending',
+            'urls' => $uploadedUrls
+        ]);
+
+    } catch (Exception $e) {
+        // Rollback on error
+        $conn->rollBack();
+        throw $e;
     }
-
-    $result = $stmt->execute([
-        ':rider_id' => $rider_id,
-        ':id_type' => $id_type,
-        ':id_number' => $id_number,
-        ':id_front_url' => $uploadedUrls['id_front'],
-        ':id_back_url' => $uploadedUrls['id_back'],
-        ':barangay_clearance_url' => $uploadedUrls['barangay_clearance']
-    ]);
-
-    if (!$result) {
-        throw new Exception('Failed to save verification data to database');
-    }
-
-    echo json_encode([
-        'status' => 'success',
-        'message' => 'Verification documents submitted successfully',
-        'urls' => $uploadedUrls
-    ]);
 
 } catch (ApiError $e) {
     http_response_code(502);

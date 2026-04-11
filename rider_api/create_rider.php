@@ -50,19 +50,19 @@ try {
     
     // Default values
     $status = 'offline';
-    $isConfirmed = false;
+    $verification_status = 'none';
 
     $stmt = $conn->prepare("
-        INSERT INTO riders (username, email, password_hash, status, is_confirmed, created_at) 
-        VALUES (:username, :email, :password_hash, :status, :is_confirmed, NOW())
+        INSERT INTO riders (username, email, password_hash, status, verification_status, created_at) 
+        VALUES (:username, :email, :password_hash, :status, :verification_status, NOW())
     ");
     
     $result = $stmt->execute([
         ':username' => $username,
         ':email' => $email,
         ':password_hash' => $hashedPassword,
-        ':status' => $status,
-        ':is_confirmed' => $isConfirmed ? 'true' : 'false'
+        ':status' => 'offline',
+        ':verification_status' => 'none'
     ]);
 
     if ($result) {
@@ -71,7 +71,7 @@ try {
             "status" => "success", 
             "message" => "Account created successfully",
             "rider_id" => $riderId,
-            "is_confirmed" => false
+            "verification_status" => "none"
         ]);
     } else {
         echo json_encode(["status" => "error", "message" => "Failed to create account"]);
