@@ -30,7 +30,7 @@ try {
                 o.payment_method,
                 o.subtotal,
                 o.shipping_fee,
-                o.discount,
+                o.platform_fee,
                 o.total_amount,
                 o.status,
                 o.created_at,
@@ -66,7 +66,7 @@ try {
             'paymentMethod' => $row['payment_method'],
             'subtotal' => (float)$row['subtotal'],
             'shippingFee' => (float)$row['shipping_fee'],
-            'discount' => (float)$row['discount'],
+            'discount' => (float)$row['platform_fee'], // Changed: Map platform_fee to discount
             'totalAmount' => (float)$row['total_amount'],
             'status' => $row['status'],
             'createdAt' => $row['created_at'],
