@@ -1,7 +1,7 @@
 <?php
 header("Content-Type: application/json");
 
-require_once "/var/www/html/connection/db_connection.php"; // Updated to match your path
+require_once "/var/www/html/connection/db_connection.php";
 
 try {
     // Handle both JSON and form-data input for GET parameters
@@ -41,11 +41,11 @@ try {
             b.email AS buyer_email,
             b.avatar_url AS buyer_avatar,
 
-            -- Buyer Address Info
+            -- Buyer Address Info (Updated fields)
             ba.recipient_name,
             ba.phone_number,
-            ba.barangay,
-            ba.street_address,
+            ba.full_address,
+            ba.gps_location,
             ba.is_default,
 
             -- Seller Info (from the first product in the order)
@@ -123,6 +123,4 @@ try {
         "message" => "Error: " . $e->getMessage()
     ]);
 }
-
-// No need to explicitly close the connection with PDO
 ?>
