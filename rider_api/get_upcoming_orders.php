@@ -36,8 +36,8 @@ try {
                 o.created_at,
                 ba.recipient_name,
                 ba.phone_number,
-                ba.barangay,
-                ba.street_address
+                ba.full_address,
+                ba.gps_location
             FROM orders o
             LEFT JOIN buyer_addresses ba ON o.address_id = ba.id
             WHERE o.status = 'shipped'
@@ -66,14 +66,14 @@ try {
             'paymentMethod' => $row['payment_method'],
             'subtotal' => (float)$row['subtotal'],
             'shippingFee' => (float)$row['shipping_fee'],
-            'discount' => (float)$row['platform_fee'], // Changed: Map platform_fee to discount
+            'platformFee' => (float)$row['platform_fee'], // Changed to platformFee
             'totalAmount' => (float)$row['total_amount'],
             'status' => $row['status'],
             'createdAt' => $row['created_at'],
             'recipientName' => $row['recipient_name'],
             'phoneNumber' => $row['phone_number'],
-            'barangay' => $row['barangay'],
-            'streetAddress' => $row['street_address']
+            'fullAddress' => $row['full_address'],
+            'gpsLocation' => $row['gps_location']
         ];
     }
 
