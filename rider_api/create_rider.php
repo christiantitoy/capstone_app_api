@@ -11,9 +11,21 @@ try {
         exit;
     }
 
-    $username = $data['username'];
-    $email = $data['email'];
+    $username = trim($data['username']);
+    $email = trim($data['email']);
     $password = $data['password'];
+
+    // Validate email format
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        echo json_encode(["status" => "error", "message" => "Invalid email format"]);
+        exit;
+    }
+
+    // Validate password length
+    if (strlen($password) < 8) {
+        echo json_encode(["status" => "error", "message" => "Password must be at least 8 characters"]);
+        exit;
+    }
 
     // Check if username/email exists
     $stmt = $conn->prepare("SELECT username, email FROM riders WHERE username = :username OR email = :email");
@@ -26,27 +38,43 @@ try {
 
     if ($row) {
         if ($row['username'] === $username) {
-            echo json_encode(["status" => "username_exists"]);
+            echo json_encode(["status" => "username_exists", "message" => "Username already in use"]);
         } else {
-            echo json_encode(["status" => "email_exists"]);
+            echo json_encode(["status" => "email_exists", "message" => "Email already in use"]);
         }
         exit;
     }
 
     // Insert new rider
     $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+    
+    // Default values
+    $status = 'offline';
+    $isConfirmed = false;
 
-    $stmt = $conn->prepare("INSERT INTO riders (username, email, password_hash) VALUES (:username, :email, :password_hash)");
+    $stmt = $conn->prepare("
+        INSERT INTO riders (username, email, password_hash, status, is_confirmed, created_at) 
+        VALUES (:username, :email, :password_hash, :status, :is_confirmed, NOW())
+    ");
+    
     $result = $stmt->execute([
         ':username' => $username,
         ':email' => $email,
-        ':password_hash' => $hashedPassword
+        ':password_hash' => $hashedPassword,
+        ':status' => $status,
+        ':is_confirmed' => $isConfirmed ? 'true' : 'false'
     ]);
 
     if ($result) {
-        echo json_encode(["status" => "success"]);
+        $riderId = $conn->lastInsertId();
+        echo json_encode([
+            "status" => "success", 
+            "message" => "Account created successfully",
+            "rider_id" => $riderId,
+            "is_confirmed" => false
+        ]);
     } else {
-        echo json_encode(["status" => "error", "message" => "Failed to insert rider"]);
+        echo json_encode(["status" => "error", "message" => "Failed to create account"]);
     }
 
 } catch (PDOException $e) {
