@@ -15,7 +15,7 @@ try {
     $email = $data['email'];
     $password = $data['password'];
 
-    // Fetch rider by email (includes is_confirmed)
+    // Fetch rider by email
     $stmt = $conn->prepare("SELECT id, password_hash, verification_status, status FROM riders WHERE email = :email");
     $stmt->execute([':email' => $email]);
 
@@ -29,13 +29,13 @@ try {
     // Verify password
     if (password_verify($password, $rider['password_hash'])) {
 
-        // Only update status to online if account is confirmed
-        if ($rider['is_confirmed']) {
+        // ✅ FIXED: Check verification_status instead of is_confirmed
+        if ($rider['verification_status'] === 'complete') {
             $updateStmt = $conn->prepare("UPDATE riders SET status = 'online' WHERE id = :id");
             $updateStmt->execute([':id' => $rider['id']]);
         }
 
-        // Always return success with is_confirmed data
+        // Always return success with verification_status data
         echo json_encode([
             "status" => "success",
             "rider_id" => (int)$rider['id'],
