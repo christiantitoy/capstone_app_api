@@ -41,23 +41,27 @@ try {
             b.email AS buyer_email,
             b.avatar_url AS buyer_avatar,
 
-            -- Buyer Address Info (Updated fields)
+            -- Buyer Address Info
             ba.recipient_name,
             ba.phone_number,
             ba.full_address,
             ba.gps_location,
             ba.is_default,
 
-            -- Seller Info (from the first product in the order)
-            sp.id AS seller_profile_id,
-            sp.buyer_id AS seller_buyer_id,
-            sp.shop_name,
-            sp.fullname AS seller_fullname,
-            sp.business_address AS seller_business_address,
-            sp.phone_number AS seller_phone,
-            sp.shop_category,
-            sp.business_type,
-            sp.is_approved AS seller_is_approved
+            -- Store Info (Updated to use stores table)
+            s.seller_id AS store_seller_id,
+            s.store_name,
+            s.category AS store_category,
+            s.description AS store_description,
+            s.contact_number AS store_contact_number,
+            s.open_time,
+            s.close_time,
+            s.latitude,
+            s.longitude,
+            s.plus_code,
+            s.logo_url,
+            s.banner_url,
+            s.owner_full_name
 
         FROM order_deliveries od
         INNER JOIN orders o ON o.id = od.order_id
@@ -69,7 +73,7 @@ try {
             LEFT JOIN products p ON p.id = oi.product_id
             WHERE p.seller_id IS NOT NULL
         ) AS order_sellers ON order_sellers.order_id = o.id
-        LEFT JOIN seller_profiles sp ON sp.id = order_sellers.seller_id
+        LEFT JOIN stores s ON s.seller_id = order_sellers.seller_id
         WHERE od.rider_id = ?
           AND od.status IN ('assigned','picked_up','delivering')
         ORDER BY od.created_at DESC
@@ -85,11 +89,13 @@ try {
         $order_id = $row['order_id'];
         $items_sql = "
             SELECT oi.*,
-                   p.product_name, p.category, p.main_image_url,
-                   sp.shop_name AS seller_shop_name
+                   p.product_name, 
+                   p.category, 
+                   p.main_image_url,
+                   s.store_name AS seller_store_name
             FROM order_items oi
             LEFT JOIN products p ON p.id = oi.product_id
-            LEFT JOIN seller_profiles sp ON sp.id = p.seller_id
+            LEFT JOIN stores s ON s.seller_id = p.seller_id
             WHERE oi.order_id = ?
         ";
 
