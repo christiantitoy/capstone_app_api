@@ -15,8 +15,8 @@ try {
     $email = $data['email'];
     $password = $data['password'];
 
-    // Fetch rider by email
-    $stmt = $conn->prepare("SELECT id, password_hash FROM riders WHERE email = :email");
+    // Fetch rider by email (now includes is_confirmed)
+    $stmt = $conn->prepare("SELECT id, password_hash, is_confirmed, status FROM riders WHERE email = :email");
     $stmt->execute([':email' => $email]);
 
     $rider = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -29,14 +29,27 @@ try {
     // Verify password
     if (password_verify($password, $rider['password_hash'])) {
 
+        // Check if account is confirmed
+        if (!$rider['is_confirmed']) {
+            echo json_encode([
+                "status" => "not_confirmed",
+                "rider_id" => (int)$rider['id'],
+                "is_confirmed" => false,
+                "message" => "Please verify your account before logging in"
+            ]);
+            exit;
+        }
+
         // ✅ Update rider status to ONLINE
         $updateStmt = $conn->prepare("UPDATE riders SET status = 'online' WHERE id = :id");
         $updateStmt->execute([':id' => $rider['id']]);
 
-        // ✅ Return rider_id
+        // ✅ Return rider_id and is_confirmed
         echo json_encode([
             "status" => "success",
-            "rider_id" => (int)$rider['id']
+            "rider_id" => (int)$rider['id'],
+            "is_confirmed" => (bool)$rider['is_confirmed'],
+            "current_status" => $rider['status']
         ]);
 
     } else {
