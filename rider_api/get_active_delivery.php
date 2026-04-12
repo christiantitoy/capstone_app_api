@@ -46,34 +46,12 @@ try {
             ba.phone_number,
             ba.full_address,
             ba.gps_location,
-            ba.is_default,
-
-            -- Store Info
-            s.seller_id AS store_seller_id,
-            s.store_name,
-            s.category AS store_category,
-            s.description AS store_description,
-            s.contact_number AS store_contact_number,
-            s.open_time,
-            s.close_time,
-            s.latitude,
-            s.longitude,
-            s.plus_code,
-            s.logo_url,
-            s.banner_url,
-            s.owner_full_name
+            ba.is_default
 
         FROM order_deliveries od
         INNER JOIN orders o ON o.id = od.order_id
         INNER JOIN buyers b ON b.id = o.buyer_id
         INNER JOIN buyer_addresses ba ON ba.id = o.address_id
-        LEFT JOIN (
-            SELECT DISTINCT oi.order_id, i.seller_id
-            FROM order_items oi
-            LEFT JOIN items i ON i.id = oi.product_id
-            WHERE i.seller_id IS NOT NULL
-        ) AS order_sellers ON order_sellers.order_id = o.id
-        LEFT JOIN stores s ON s.seller_id = order_sellers.seller_id
         WHERE od.rider_id = ?
           AND od.status IN ('assigned','picked_up','delivering')
         ORDER BY od.created_at DESC
@@ -85,7 +63,7 @@ try {
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($row) {
-        // Get order items from items table
+        // Get order items with their respective store information
         $order_id = $row['order_id'];
         $items_sql = "
             SELECT 
@@ -97,13 +75,30 @@ try {
                 oi.quantity,
                 oi.unit_price,
                 oi.total_price,
+                
+                -- Product Info
                 i.product_name,
                 i.product_description,
                 i.category,
                 i.main_image_url,
                 i.image_urls,
                 i.has_variations,
-                s.store_name AS seller_store_name
+                
+                -- Store/Seller Info - Now tied directly to each item
+                s.seller_id,
+                s.store_name,
+                s.category AS store_category,
+                s.description AS store_description,
+                s.contact_number AS store_contact_number,
+                s.open_time,
+                s.close_time,
+                s.latitude,
+                s.longitude,
+                s.plus_code,
+                s.logo_url,
+                s.banner_url,
+                s.owner_full_name
+                
             FROM order_items oi
             LEFT JOIN items i ON i.id = oi.product_id
             LEFT JOIN stores s ON s.seller_id = i.seller_id
