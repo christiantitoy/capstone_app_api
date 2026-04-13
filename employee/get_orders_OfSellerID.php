@@ -25,11 +25,13 @@ try {
 
     $seller_id = intval($seller_id);
 
-    // Prepare SQL with optional filters - ADAPTED TO YOUR ACTUAL TABLE STRUCTURES
+    // Prepare SQL with optional filters - FIXED TO MATCH YOUR ACTUAL TABLE STRUCTURE
     $sql = "SELECT
                 o.id AS order_id,
                 o.buyer_id,
-                o.discount,
+                o.subtotal,
+                o.shipping_fee,
+                o.platform_fee,
                 b.username AS buyer_name,
                 b.email AS buyer_email,
                 o.payment_method,
@@ -101,6 +103,9 @@ try {
             "buyer_name" => $row['buyer_name'],
             "buyer_email" => $row['buyer_email'],
             "payment_method" => $row['payment_method'],
+            "subtotal" => (float)$row['subtotal'],
+            "shipping_fee" => (float)$row['shipping_fee'],
+            "platform_fee" => (float)$row['platform_fee'],
             "total_amount" => (float)$row['total_amount'],
             "status" => $row['status'],
             "order_date" => $row['order_date'],
@@ -115,7 +120,6 @@ try {
                 "product_id" => (int)$row['product_id'],
                 "product_name" => $row['product_name'],
                 "product_description" => $row['product_description'],
-                "discount" => isset($row['discount']) ? (float)$row['discount'] : null,
                 "category" => $row['category'],
                 "quantity" => (int)$row['quantity'],
                 "unit_price" => (float)$row['unit_price'],
