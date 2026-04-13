@@ -104,7 +104,7 @@ try {
             throw new Exception("Delivery not found or already completed");
         }
 
-        // 2️⃣ Insert into delivery_proofs table (without recipient_name since it's not in the schema)
+        // 2️⃣ Insert into delivery_proofs table
         $sql2 = "
             INSERT INTO delivery_proofs (delivery_id, order_id, rider_id, proof_image_path)
             VALUES (?, ?, ?, ?)
@@ -127,11 +127,12 @@ try {
             throw new Exception("Rider not found");
         }
 
-        // 4️⃣ Update orders table to delivered
+        // 4️⃣ Update orders table to delivered AND get shipping_fee & total_amount
         $sql4 = "
             UPDATE orders
             SET status = 'delivered'
             WHERE id = ?
+            RETURNING shipping_fee, total_amount
         ";
 
         $stmt4 = $conn->prepare($sql4);
@@ -140,20 +141,35 @@ try {
         if ($stmt4->rowCount() === 0) {
             throw new Exception("Order not found");
         }
+        
+        // Fetch the returned values
+        $orderData = $stmt4->fetch(PDO::FETCH_ASSOC);
+        $shipping_fee = $orderData['shipping_fee'];
+        $total_amount = $orderData['total_amount'];
+
+        // 5️⃣ Insert into rider_earnings table
+        $sql5 = "
+            INSERT INTO rider_earnings (rider_id, order_id, delivery_id, shipping_fee, total_amount)
+            VALUES (?, ?, ?, ?, ?)
+        ";
+        
+        $stmt5 = $conn->prepare($sql5);
+        $stmt5->execute([$rider_id, $order_id, $delivery_id, $shipping_fee, $total_amount]);
 
         $conn->commit();
 
         echo json_encode([
             "success" => true,
             "message" => "Order marked as delivered successfully",
-            "proof_image_url" => $proof_image_path
+            "proof_image_url" => $proof_image_path,
+            "earnings_recorded" => [
+                "shipping_fee" => $shipping_fee,
+                "total_amount" => $total_amount
+            ]
         ]);
 
     } catch (Exception $e) {
         $conn->rollBack();
-        
-        // If database fails, we might want to delete the uploaded image
-        // But for now, just throw the error
         throw $e;
     }
 
