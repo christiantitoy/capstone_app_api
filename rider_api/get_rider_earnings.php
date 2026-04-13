@@ -39,14 +39,14 @@ try {
             COALESCE(SUM(o.total_amount), 0) as total_amount
         FROM order_deliveries od
         INNER JOIN orders o ON od.order_id = o.id
-        WHERE od.rider_id = ? AND od.status = 'completed'
+        WHERE od.rider_id = :rider_id AND od.status = 'completed'
     ";
     
     $stmt1 = $conn->prepare($sql1);
-    $stmt1->execute([$rider_id]);
+    $stmt1->execute([':rider_id' => $rider_id]);
     $allTimeTotals = $stmt1->fetch(PDO::FETCH_ASSOC);
 
-    // 2️⃣ Get TODAY's earnings
+    // 2️⃣ Get TODAY's earnings (PostgreSQL syntax)
     $sql2 = "
         SELECT 
             COUNT(*) as total_today_deliveries,
@@ -54,13 +54,13 @@ try {
             COALESCE(SUM(o.total_amount), 0) as today_total_amount
         FROM order_deliveries od
         INNER JOIN orders o ON od.order_id = o.id
-        WHERE od.rider_id = ? 
+        WHERE od.rider_id = :rider_id 
         AND od.status = 'completed'
-        AND DATE(od.completed_at) = CURDATE()
+        AND DATE(od.completed_at) = CURRENT_DATE
     ";
     
     $stmt2 = $conn->prepare($sql2);
-    $stmt2->execute([$rider_id]);
+    $stmt2->execute([':rider_id' => $rider_id]);
     $todayTotals = $stmt2->fetch(PDO::FETCH_ASSOC);
 
     // 3️⃣ Get TODAY's pending shipping_fee (from non-completed deliveries)
@@ -68,13 +68,13 @@ try {
         SELECT COALESCE(SUM(o.shipping_fee), 0) as today_pending_shipping_fee
         FROM order_deliveries od
         INNER JOIN orders o ON od.order_id = o.id
-        WHERE od.rider_id = ? 
+        WHERE od.rider_id = :rider_id 
         AND od.status IN ('assigned', 'picked_up', 'delivering')
-        AND DATE(od.created_at) = CURDATE()
+        AND DATE(od.created_at) = CURRENT_DATE
     ";
     
     $stmt3 = $conn->prepare($sql3);
-    $stmt3->execute([$rider_id]);
+    $stmt3->execute([':rider_id' => $rider_id]);
     $todayPending = $stmt3->fetch(PDO::FETCH_ASSOC);
 
     // 4️⃣ Get recent earnings history with buyer details
@@ -91,13 +91,13 @@ try {
         FROM order_deliveries od
         INNER JOIN orders o ON od.order_id = o.id
         LEFT JOIN address a ON o.address_id = a.id
-        WHERE od.rider_id = ? AND od.status = 'completed'
+        WHERE od.rider_id = :rider_id AND od.status = 'completed'
         ORDER BY od.completed_at DESC
         LIMIT 10
     ";
     
     $stmt4 = $conn->prepare($sql4);
-    $stmt4->execute([$rider_id]);
+    $stmt4->execute([':rider_id' => $rider_id]);
     $recentEarningsRaw = $stmt4->fetchAll(PDO::FETCH_ASSOC);
 
     // Format recent earnings
