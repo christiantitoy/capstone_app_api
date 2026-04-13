@@ -86,11 +86,11 @@ try {
             o.shipping_fee,
             o.total_amount,
             od.completed_at as earned_at,
-            a.recipient_name,
-            a.full_address as recipient_address
+            ba.recipient_name,
+            ba.full_address as recipient_address
         FROM order_deliveries od
         INNER JOIN orders o ON od.order_id = o.id
-        LEFT JOIN address a ON o.address_id = a.id
+        LEFT JOIN buyer_addresses ba ON o.address_id = ba.id
         WHERE od.rider_id = :rider_id AND od.status = 'completed'
         ORDER BY od.completed_at DESC
         LIMIT 10
