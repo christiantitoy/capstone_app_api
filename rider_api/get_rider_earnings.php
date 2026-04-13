@@ -31,9 +31,10 @@ try {
 
     $rider_id = intval($rider_id);
 
-    // 1️⃣ Get total shipping_fee and total_amount from ALL completed deliveries (All time)
+    // 1️⃣ Get ALL TIME totals
     $sql1 = "
         SELECT 
+            COUNT(*) as total_all_deliveries,
             COALESCE(SUM(o.shipping_fee), 0) as total_shipping_fee,
             COALESCE(SUM(o.total_amount), 0) as total_amount
         FROM order_deliveries od
@@ -79,7 +80,6 @@ try {
     // 4️⃣ Get recent earnings history with buyer details
     $sql4 = "
         SELECT 
-            (SELECT COUNT(*) FROM order_deliveries WHERE rider_id = ? AND status = 'completed') as total_all_deliveries,
             od.id as delivery_id,
             od.order_id,
             od.status as order_status,
@@ -97,30 +97,31 @@ try {
     ";
     
     $stmt4 = $conn->prepare($sql4);
-    $stmt4->execute([$rider_id, $rider_id]);
+    $stmt4->execute([$rider_id]);
     $recentEarningsRaw = $stmt4->fetchAll(PDO::FETCH_ASSOC);
 
-    // Format recent earnings with total deliveries count
-    $totalAllDeliveries = 0;
+    // Format recent earnings
     $recentEarnings = [];
     
-    if (!empty($recentEarningsRaw)) {
-        $totalAllDeliveries = intval($recentEarningsRaw[0]['total_all_deliveries']);
-        
-        foreach ($recentEarningsRaw as $row) {
-            $recentEarnings[] = [
-                "totalAllDeliveries" => $totalAllDeliveries,
-                "orderStatus" => $row['order_status'],
-                "recipientName" => $row['recipient_name'] ?? "Unknown",
-                "recipientAddress" => $row['recipient_address'] ?? "No address",
-                "delivery_id" => intval($row['delivery_id']),
-                "order_id" => intval($row['order_id']),
-                "shipping_fee" => $row['shipping_fee'],
-                "total_amount" => $row['total_amount'],
-                "earned_at" => $row['earned_at']
-            ];
-        }
+    foreach ($recentEarningsRaw as $row) {
+        $recentEarnings[] = [
+            "orderStatus" => $row['order_status'],
+            "recipientName" => $row['recipient_name'] ?? "Unknown",
+            "recipientAddress" => $row['recipient_address'] ?? "No address",
+            "delivery_id" => intval($row['delivery_id']),
+            "order_id" => intval($row['order_id']),
+            "shipping_fee" => $row['shipping_fee'],
+            "total_amount" => $row['total_amount'],
+            "earned_at" => $row['earned_at']
+        ];
     }
+
+    // Build earnings summary (all time)
+    $earningsSummary = [
+        "totalAllDeliveries" => intval($allTimeTotals['total_all_deliveries']),
+        "total_shipping_fee" => floatval($allTimeTotals['total_shipping_fee']),
+        "total_amount" => floatval($allTimeTotals['total_amount'])
+    ];
 
     // Build today's earnings object
     $todayEarnings = [
@@ -129,12 +130,6 @@ try {
         "todayTotalAmount" => $todayTotals['today_total_amount'],
         "todayPending_shipping_fee" => floatval($todayPending['today_pending_shipping_fee']),
         "earned_at" => date('Y-m-d')
-    ];
-
-    // Build earnings summary (all time)
-    $earningsSummary = [
-        "total_shipping_fee" => floatval($allTimeTotals['total_shipping_fee']),
-        "total_amount" => floatval($allTimeTotals['total_amount'])
     ];
 
     echo json_encode([
