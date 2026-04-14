@@ -57,18 +57,22 @@ try {
 
     // Calculate summary totals
     $total_unremitted = 0;
+    $total_cod_amount = 0;
     $total_orders = count($earnings);
     
     foreach ($earnings as $earning) {
         $total_unremitted += floatval($earning['total_amount']);
+        // Calculate COD amount (subtotal + platform_fee)
+        $total_cod_amount += floatval($earning['subtotal']) + floatval($earning['platform_fee']);
     }
 
     echo json_encode([
         "success" => true,
-        "rider_id" => $rider_id,
+        "rider_id" => (int)$rider_id,
         "summary" => [
             "total_unremitted_orders" => $total_orders,
-            "total_unremitted_amount" => round($total_unremitted, 2)
+            "total_unremitted_amount" => round($total_unremitted, 2),
+            "total_cod_amount" => round($total_cod_amount, 2)
         ],
         "earnings" => $earnings
     ]);
