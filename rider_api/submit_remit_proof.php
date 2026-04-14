@@ -1,47 +1,59 @@
 <?php
-header('Content-Type: application/json');
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST");
 header("Access-Control-Allow-Headers: Content-Type");
+header('Content-Type: application/json');
 
 require_once '/var/www/html/connection/db_connection.php';
+require_once '/var/www/html/vendor/autoload.php';
+
+use Cloudinary\Configuration\Configuration;
+use Cloudinary\Api\Upload\UploadApi;
+use Cloudinary\Api\Exception\ApiError;
 
 try {
-    $data = json_decode(file_get_contents("php://input"), true);
+    // Configure Cloudinary
+    Configuration::instance(getenv('CLOUDINARY_URL'));
     
-    if (!$data) {
+    if (!getenv('CLOUDINARY_URL')) {
+        throw new Exception('CLOUDINARY_URL environment variable is not set.');
+    }
+    
+    // Get form data
+    $rider_id = $_POST['rider_id'] ?? null;
+    $earning_ids = $_POST['earning_ids'] ?? null;
+    $gcash_number = $_POST['gcash_number'] ?? null;
+    $amount = $_POST['amount'] ?? null;
+    
+    // Validate required fields
+    if (!$rider_id || !$earning_ids || !$gcash_number || !$amount) {
         echo json_encode([
             "success" => false,
-            "message" => "Invalid JSON payload"
+            "message" => "Missing required fields"
         ]);
         exit;
     }
     
-    // Validate required fields
-    $required = ['rider_id', 'earning_ids', 'gcash_number', 'proof_image_url', 'amount'];
-    foreach ($required as $field) {
-        if (!isset($data[$field]) || empty($data[$field])) {
-            echo json_encode([
-                "success" => false,
-                "message" => "Missing field: $field"
-            ]);
-            exit;
-        }
+    // Check if image was uploaded
+    if (!isset($_FILES['proof_image']) || $_FILES['proof_image']['error'] !== UPLOAD_ERR_OK) {
+        echo json_encode([
+            "success" => false,
+            "message" => "Proof image is required"
+        ]);
+        exit;
     }
     
-    $rider_id = intval($data['rider_id']);
-    $gcash_number = $data['gcash_number'];
-    $proof_image_url = $data['proof_image_url'];
-    $amount = floatval($data['amount']);
+    $rider_id = intval($rider_id);
+    $gcash_number = trim($gcash_number);
+    $amount = floatval($amount);
     
-    // Parse earning_ids (can be array or comma-separated string)
-    if (is_array($data['earning_ids'])) {
-        $earning_ids = array_map('intval', $data['earning_ids']);
+    // Parse earning_ids (can be comma-separated string)
+    if (is_string($earning_ids)) {
+        $earning_ids = array_map('intval', explode(',', $earning_ids));
     } else {
-        $earning_ids = array_map('intval', explode(',', $data['earning_ids']));
+        $earning_ids = array_map('intval', $earning_ids);
     }
     
-    // Remove duplicates and empty values
     $earning_ids = array_unique(array_filter($earning_ids));
     
     if (empty($earning_ids)) {
@@ -52,7 +64,7 @@ try {
         exit;
     }
     
-    // Validate GCash number format (starts with 09 and 11 digits)
+    // Validate GCash number format
     if (!preg_match('/^09[0-9]{9}$/', $gcash_number)) {
         echo json_encode([
             "success" => false,
@@ -77,12 +89,13 @@ try {
     $placeholders = implode(',', array_fill(0, count($earning_ids), '?'));
     $checkEarnings = $conn->prepare("
         SELECT 
-            id, 
-            rider_id, 
-            is_remitted,
-            (SELECT subtotal + platform_fee FROM orders WHERE id = order_id) as cod_amount
-        FROM rider_earnings 
-        WHERE id IN ($placeholders)
+            re.id, 
+            re.rider_id, 
+            re.is_remitted,
+            (o.subtotal + o.platform_fee) as cod_amount
+        FROM rider_earnings re
+        INNER JOIN orders o ON re.order_id = o.id
+        WHERE re.id IN ($placeholders)
     ");
     $checkEarnings->execute($earning_ids);
     $earnings = $checkEarnings->fetchAll(PDO::FETCH_ASSOC);
@@ -118,7 +131,7 @@ try {
         $total_cod += floatval($earning['cod_amount']);
     }
     
-    // Verify amount matches total COD (within 0.01 tolerance)
+    // Verify amount matches total COD
     if (abs($total_cod - $amount) > 0.01) {
         echo json_encode([
             "success" => false,
@@ -127,17 +140,45 @@ try {
         exit;
     }
     
+    // Upload image to Cloudinary
+    $file = $_FILES['proof_image'];
+    
+    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if (!in_array($extension, $allowedExtensions)) {
+        echo json_encode([
+            "success" => false,
+            "message" => "Invalid file type. Allowed: " . implode(', ', $allowedExtensions)
+        ]);
+        exit;
+    }
+    
+    $uploadApi = new UploadApi();
+    $folder = 'capstone_app_images/remit_proofs';
+    $publicId = 'remit_' . $rider_id . '_' . uniqid();
+    
+    $result = $uploadApi->upload($file['tmp_name'], [
+        'folder' => $folder,
+        'public_id' => $publicId,
+        'overwrite' => true,
+        'resource_type' => 'image',
+        'quality' => 'auto',
+        'fetch_format' => 'auto',
+        'tags' => ['remit_proof', 'gcash', 'rider_' . $rider_id]
+    ]);
+    
+    $proof_image_url = $result['secure_url'];
+    
     // Begin transaction
     $conn->beginTransaction();
     
     try {
         // Insert remit proof
+        $earning_ids_pg = '{' . implode(',', $earning_ids) . '}';
+        
         $sql = "INSERT INTO remit_proofs (rider_id, earning_ids, gcash_number, amount, proof_image_url, status) 
                 VALUES (?, ?, ?, ?, ?, 'pending')";
         $stmt = $conn->prepare($sql);
-        
-        // Convert array to PostgreSQL array format
-        $earning_ids_pg = '{' . implode(',', $earning_ids) . '}';
         $stmt->execute([$rider_id, $earning_ids_pg, $gcash_number, $amount, $proof_image_url]);
         
         $proof_id = $conn->lastInsertId();
@@ -158,6 +199,7 @@ try {
             "proof_id" => $proof_id,
             "earning_ids" => $earning_ids,
             "amount" => $amount,
+            "proof_image_url" => $proof_image_url,
             "status" => "pending"
         ]);
         
@@ -166,6 +208,11 @@ try {
         throw $e;
     }
     
+} catch (ApiError $e) {
+    echo json_encode([
+        "success" => false,
+        "message" => "Cloudinary upload failed: " . $e->getMessage()
+    ]);
 } catch (PDOException $e) {
     echo json_encode([
         "success" => false,
