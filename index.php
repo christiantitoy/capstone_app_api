@@ -1,6 +1,5 @@
 <?php
-echo json_encode([
-    "status" => true,
-    "message" => "Palitora API Running, all thanks to Earl gwapo!!!"
-]);
+// Redirect to the seller UI
+header("Location: https://capstone-app-api-r1ux.onrender.com/seller/ui/");
+exit;
 ?>
