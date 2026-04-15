@@ -15,10 +15,9 @@ use Cloudinary\Api\Exception\ApiError;
 
 // Set PHP configuration for Cloudinary free tier (10MB limit)
 ini_set('upload_max_filesize', '10M');
-ini_set('post_max_size', '50M'); // 5 files total × 10MB
+ini_set('post_max_size', '35M'); // 3 files × 10MB
 ini_set('max_execution_time', '300');
 ini_set('max_input_time', '300');
-ini_set('max_file_uploads', '10');
 
 define('MAX_FILE_SIZE', 10 * 1024 * 1024); // 10MB limit
 
@@ -41,12 +40,11 @@ try {
     }
 
     // Check if files were uploaded
-    if (!isset($_FILES['id_front']) || !isset($_FILES['id_back'])) {
-        throw new Exception('Missing required files: id_front or id_back');
-    }
-
-    if (!isset($_FILES['barangay_clearance'])) {
-        throw new Exception('Missing required files: barangay_clearance');
+    $requiredFiles = ['id_front', 'id_back', 'barangay_clearance'];
+    foreach ($requiredFiles as $fileKey) {
+        if (!isset($_FILES[$fileKey]) || $_FILES[$fileKey]['error'] === UPLOAD_ERR_NO_FILE) {
+            throw new Exception("Missing required file: $fileKey");
+        }
     }
 
     // Check if rider exists
@@ -75,7 +73,7 @@ try {
         }
     }
 
-    // Allowed image extensions only (NO PDF)
+    // Allowed image extensions only
     $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
     $allowedMimeTypes = [
         'image/jpeg',
@@ -89,10 +87,10 @@ try {
     $folder = 'capstone_app_images/rider_verifications/rider_' . $rider_id;
     $uploadedUrls = [];
 
-    // Upload single files (id_front, id_back)
-    $singleFiles = ['id_front', 'id_back'];
+    // Upload all files
+    $files = ['id_front', 'id_back', 'barangay_clearance'];
     
-    foreach ($singleFiles as $fileKey) {
+    foreach ($files as $fileKey) {
         $file = $_FILES[$fileKey];
         $sizeInMB = round($file['size'] / (1024 * 1024), 2);
         
@@ -144,50 +142,6 @@ try {
         }
     }
 
-    // Handle barangay_clearance (multiple images)
-    $clearanceFiles = $_FILES['barangay_clearance'];
-    $clearanceUrls = [];
-    
-    // Check if multiple files
-    $isMultiple = is_array($clearanceFiles['name']);
-    
-    if ($isMultiple) {
-        $fileCount = count($clearanceFiles['name']);
-        
-        // Limit to 3 files
-        if ($fileCount > 3) {
-            throw new Exception('Maximum 3 files allowed for Barangay Clearance');
-        }
-        
-        for ($i = 0; $i < $fileCount; $i++) {
-            $fileInfo = [
-                'name' => $clearanceFiles['name'][$i],
-                'type' => $clearanceFiles['type'][$i],
-                'tmp_name' => $clearanceFiles['tmp_name'][$i],
-                'error' => $clearanceFiles['error'][$i],
-                'size' => $clearanceFiles['size'][$i]
-            ];
-            
-            $url = uploadClearanceImage($fileInfo, $i, $uploadApi, $folder, $rider_id, $allowedExtensions, $allowedMimeTypes);
-            if ($url) {
-                $clearanceUrls[] = $url;
-            }
-        }
-    } else {
-        // Single file
-        $url = uploadClearanceImage($clearanceFiles, 1, $uploadApi, $folder, $rider_id, $allowedExtensions, $allowedMimeTypes);
-        if ($url) {
-            $clearanceUrls[] = $url;
-        }
-    }
-    
-    if (empty($clearanceUrls)) {
-        throw new Exception('No valid Barangay Clearance images were uploaded');
-    }
-
-    // Store as JSON array
-    $barangayClearanceJson = json_encode($clearanceUrls);
-
     // Save to database
     $conn->beginTransaction();
 
@@ -220,7 +174,7 @@ try {
             ':id_number' => $id_number,
             ':id_front_url' => $uploadedUrls['id_front'],
             ':id_back_url' => $uploadedUrls['id_back'],
-            ':barangay_clearance_url' => $barangayClearanceJson
+            ':barangay_clearance_url' => $uploadedUrls['barangay_clearance']  // Single string
         ]);
 
         if (!$result) {
@@ -242,7 +196,7 @@ try {
             'urls' => [
                 'id_front' => $uploadedUrls['id_front'],
                 'id_back' => $uploadedUrls['id_back'],
-                'barangay_clearance' => $clearanceUrls
+                'barangay_clearance' => $uploadedUrls['barangay_clearance']  // Single string
             ]
         ]);
 
@@ -263,65 +217,6 @@ try {
 }
 
 $conn = null;
-
-/**
- * Upload a single clearance image
- */
-function uploadClearanceImage($file, $index, $uploadApi, $folder, $rider_id, $allowedExtensions, $allowedMimeTypes) {
-    $sizeInMB = round($file['size'] / (1024 * 1024), 2);
-    
-    if ($file['error'] !== UPLOAD_ERR_OK) {
-        error_log("Clearance image $index error: " . getUploadErrorMessage($file['error']));
-        return null;
-    }
-    
-    if ($file['size'] > MAX_FILE_SIZE) {
-        error_log("Clearance image $index exceeds 10MB");
-        return null;
-    }
-    
-    if (!is_uploaded_file($file['tmp_name'])) {
-        return null;
-    }
-
-    $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-    
-    if (!in_array($extension, $allowedExtensions)) {
-        error_log("Clearance image $index invalid extension: $extension");
-        return null;
-    }
-
-    $finfo = finfo_open(FILEINFO_MIME_TYPE);
-    $mimeType = finfo_file($finfo, $file['tmp_name']);
-    finfo_close($finfo);
-    
-    if (!in_array($mimeType, $allowedMimeTypes)) {
-        error_log("Clearance image $index invalid MIME: $mimeType");
-        return null;
-    }
-
-    $publicId = 'barangay_clearance_' . $index . '_' . uniqid();
-    
-    try {
-        $result = $uploadApi->upload($file['tmp_name'], [
-            'folder' => $folder,
-            'public_id' => $publicId,
-            'overwrite' => true,
-            'resource_type' => 'image',
-            'tags' => ['rider_verification', 'barangay_clearance', "rider_$rider_id"],
-            'timeout' => 120,
-            'transformation' => [
-                ['quality' => 'auto:good', 'fetch_format' => 'auto']
-            ]
-        ]);
-        
-        return $result['secure_url'];
-        
-    } catch (ApiError $e) {
-        error_log("Clearance image $index upload failed: " . $e->getMessage());
-        return null;
-    }
-}
 
 function getUploadErrorMessage($code) {
     switch ($code) {
