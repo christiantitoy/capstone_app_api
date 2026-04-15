@@ -13,14 +13,16 @@ use Cloudinary\Configuration\Configuration;
 use Cloudinary\Api\Upload\UploadApi;
 use Cloudinary\Api\Exception\ApiError;
 
-// Set PHP configuration for larger uploads
+// Set PHP configuration for Cloudinary free tier (10MB limit)
 ini_set('upload_max_filesize', '10M');
-ini_set('post_max_size', '40M'); // Allow for 3 files up to 10MB each + text data
-ini_set('max_execution_time', '300'); // 5 minutes for slow connections
+ini_set('post_max_size', '35M'); // 3 files × 10MB + overhead
+ini_set('max_execution_time', '300');
 ini_set('max_input_time', '300');
 
-// Maximum file size in bytes (10MB)
-define('MAX_FILE_SIZE', 10 * 1024 * 1024); // 10MB in bytes
+// Cloudinary Free Plan Limits
+define('CLOUDINARY_MAX_IMAGE_SIZE', 10 * 1024 * 1024); // 10MB for images
+define('CLOUDINARY_MAX_PDF_SIZE', 10 * 1024 * 1024);   // 10MB for PDFs
+define('MAX_FILE_SIZE', 10 * 1024 * 1024);             // Overall 10MB limit
 
 try {
     // Configure Cloudinary
@@ -59,7 +61,7 @@ try {
         throw new Exception('Your account is already verified');
     }
 
-    // Check if verification already exists in rider_verifications table
+    // Check if verification already exists
     $stmt = $conn->prepare("SELECT id, status FROM rider_verifications WHERE rider_id = :rider_id");
     $stmt->execute([':rider_id' => $rider_id]);
     $existing = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -70,11 +72,12 @@ try {
         } elseif ($existing['status'] === 'approved') {
             throw new Exception('Your account is already verified');
         }
-        // If rejected, allow resubmission (will update existing record)
     }
 
-    // Validate file uploads and check sizes
+    // Validate file uploads with Cloudinary free tier limits
     $files = ['id_front', 'id_back', 'barangay_clearance'];
+    $fileSizes = [];
+    
     foreach ($files as $fileKey) {
         $file = $_FILES[$fileKey];
         
@@ -84,10 +87,16 @@ try {
             throw new Exception("Upload error for $fileKey: " . $errorMessage);
         }
         
-        // Check file size (10MB limit)
+        // Get file size in MB for display
+        $sizeInMB = round($file['size'] / (1024 * 1024), 2);
+        $fileSizes[$fileKey] = $sizeInMB;
+        
+        // Check overall size limit
         if ($file['size'] > MAX_FILE_SIZE) {
-            $sizeInMB = round($file['size'] / (1024 * 1024), 2);
-            throw new Exception("File $fileKey exceeds maximum size of 10MB. Current size: {$sizeInMB}MB");
+            throw new Exception(
+                "File '$fileKey' is {$sizeInMB}MB which exceeds Cloudinary's free plan limit of 10MB. " .
+                "Please compress the file or reduce its size before uploading."
+            );
         }
         
         // Verify it's a valid uploaded file
@@ -96,7 +105,7 @@ try {
         }
     }
 
-    // Allowed file extensions (images and PDF)
+    // Allowed file extensions and MIME types
     $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'];
     $allowedMimeTypes = [
         'image/jpeg',
@@ -115,53 +124,77 @@ try {
     foreach ($files as $fileKey) {
         $file = $_FILES[$fileKey];
         $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $sizeInMB = $fileSizes[$fileKey];
         
         // Validate file extension
         if (!in_array($extension, $allowedExtensions)) {
-            throw new Exception("Invalid file type for $fileKey. Allowed: " . implode(', ', $allowedExtensions));
+            throw new Exception("Invalid file type for $fileKey. Allowed types: " . implode(', ', $allowedExtensions));
         }
 
-        // Validate MIME type (additional security)
+        // Validate MIME type
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mimeType = finfo_file($finfo, $file['tmp_name']);
         finfo_close($finfo);
         
         if (!in_array($mimeType, $allowedMimeTypes)) {
-            throw new Exception("Invalid MIME type for $fileKey: $mimeType");
+            throw new Exception("Invalid file format detected for $fileKey. Please upload a valid file.");
         }
 
         // Determine resource type
         $resourceType = ($extension === 'pdf') ? 'raw' : 'image';
-        
         $publicId = $fileKey . '_' . uniqid();
         
         try {
-            // Cloudinary upload options optimized for larger files
+            // Cloudinary upload options for free tier
             $uploadOptions = [
                 'folder' => $folder,
                 'public_id' => $publicId,
                 'overwrite' => true,
                 'resource_type' => $resourceType,
-                'quality' => 'auto',
-                'fetch_format' => 'auto',
                 'tags' => ['rider_verification', $fileKey, "rider_$rider_id"],
-                'chunk_size' => 6000000, // 6MB chunks for better large file handling
-                'timeout' => 120 // 2 minute timeout for upload
+                'timeout' => 120, // 2 minute timeout
+                'chunk_size' => 6000000 // 6MB chunks
             ];
             
-            // Add image-specific options for better optimization
+            // Add compression/optimization for images to stay under 10MB
             if ($resourceType === 'image') {
                 $uploadOptions['transformation'] = [
-                    ['quality' => 'auto:good'],
-                    ['fetch_format' => 'auto']
+                    [
+                        'quality' => 'auto:good',      // Auto-optimize quality
+                        'fetch_format' => 'auto',       // Best format for browser
+                        'flags' => 'progressive'        // Progressive loading
+                    ]
                 ];
+                
+                // Log the upload attempt
+                error_log("Uploading $fileKey ({$sizeInMB}MB) to Cloudinary free tier");
             }
             
             $result = $uploadApi->upload($file['tmp_name'], $uploadOptions);
             
             $uploadedUrls[$fileKey] = $result['secure_url'];
+            
+            // Log successful upload with final size
+            if (isset($result['bytes'])) {
+                $finalSizeMB = round($result['bytes'] / (1024 * 1024), 2);
+                error_log("Successfully uploaded $fileKey - Original: {$sizeInMB}MB, Final: {$finalSizeMB}MB");
+            }
+            
         } catch (ApiError $e) {
-            throw new Exception("Cloudinary upload failed for $fileKey: " . $e->getMessage());
+            // Handle Cloudinary-specific errors
+            $errorMsg = $e->getMessage();
+            
+            if (strpos($errorMsg, 'File size too large') !== false || 
+                strpos($errorMsg, 'exceeds the limit') !== false) {
+                throw new Exception(
+                    "Cloudinary rejected $fileKey: File size ({$sizeInMB}MB) exceeds free plan limit of 10MB. " .
+                    "Please compress the file and try again."
+                );
+            } elseif (strpos($errorMsg, 'Invalid image file') !== false) {
+                throw new Exception("$fileKey appears to be corrupted or invalid. Please upload a valid file.");
+            } else {
+                throw new Exception("Upload failed for $fileKey: " . $errorMsg);
+            }
         }
     }
 
@@ -169,9 +202,7 @@ try {
     $conn->beginTransaction();
 
     try {
-        // Save to rider_verifications table
         if ($existing) {
-            // Update existing rejected verification
             $stmt = $conn->prepare("
                 UPDATE rider_verifications 
                 SET id_type = :id_type,
@@ -185,7 +216,6 @@ try {
                 WHERE rider_id = :rider_id
             ");
         } else {
-            // Insert new verification
             $stmt = $conn->prepare("
                 INSERT INTO rider_verifications 
                 (rider_id, id_type, id_number, id_front_url, id_back_url, barangay_clearance_url, status, submitted_at)
@@ -207,7 +237,6 @@ try {
             throw new Exception('Failed to save verification data to database');
         }
 
-        // UPDATE RIDER'S verification_status TO 'pending'
         $updateRiderStmt = $conn->prepare("
             UPDATE riders 
             SET verification_status = 'pending' 
@@ -215,18 +244,17 @@ try {
         ");
         $updateRiderStmt->execute([':rider_id' => $rider_id]);
 
-        // Commit transaction
         $conn->commit();
 
         echo json_encode([
             'status' => 'success',
-            'message' => 'Verification documents submitted successfully',
+            'message' => 'Verification documents submitted successfully. Your documents are pending review.',
             'verification_status' => 'pending',
-            'urls' => $uploadedUrls
+            'file_sizes_mb' => $fileSizes,
+            'note' => 'Files have been optimized to meet Cloudinary free tier requirements.'
         ]);
 
     } catch (Exception $e) {
-        // Rollback on error
         $conn->rollBack();
         throw $e;
     }
@@ -235,19 +263,21 @@ try {
     http_response_code(502);
     echo json_encode([
         'status' => 'error',
-        'message' => 'Cloudinary API Error: ' . $e->getMessage()
+        'message' => 'Cloudinary service error. Please try again later.',
+        'technical_details' => $e->getMessage()
     ]);
 } catch (PDOException $e) {
     http_response_code(500);
     echo json_encode([
         'status' => 'error',
-        'message' => 'Database error: ' . $e->getMessage()
+        'message' => 'Database error occurred. Please try again.'
     ]);
 } catch (Exception $e) {
     http_response_code(400);
     echo json_encode([
         'status' => 'error',
-        'message' => $e->getMessage()
+        'message' => $e->getMessage(),
+        'help' => 'For files over 10MB, please compress them before uploading.'
     ]);
 }
 
@@ -259,21 +289,21 @@ $conn = null;
 function getUploadErrorMessage($code) {
     switch ($code) {
         case UPLOAD_ERR_INI_SIZE:
-            return 'The uploaded file exceeds the upload_max_filesize directive in php.ini';
+            return 'File exceeds maximum allowed size (10MB). Please compress the file.';
         case UPLOAD_ERR_FORM_SIZE:
-            return 'The uploaded file exceeds the MAX_FILE_SIZE directive specified in the HTML form';
+            return 'File exceeds form size limit (10MB).';
         case UPLOAD_ERR_PARTIAL:
-            return 'The uploaded file was only partially uploaded';
+            return 'File was only partially uploaded. Please try again.';
         case UPLOAD_ERR_NO_FILE:
-            return 'No file was uploaded';
+            return 'No file was uploaded.';
         case UPLOAD_ERR_NO_TMP_DIR:
-            return 'Missing a temporary folder';
+            return 'Server configuration error: Missing temporary folder.';
         case UPLOAD_ERR_CANT_WRITE:
-            return 'Failed to write file to disk';
+            return 'Server error: Failed to write file.';
         case UPLOAD_ERR_EXTENSION:
-            return 'File upload stopped by extension';
+            return 'Upload stopped by server extension.';
         default:
-            return 'Unknown upload error';
+            return 'Unknown upload error occurred.';
     }
 }
 ?>
