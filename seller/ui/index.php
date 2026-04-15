@@ -119,8 +119,6 @@
                             <ul class="feature-list">
                                 <li><i class="fas fa-check"></i> Up to 50 products</li>
                                 <li><i class="fas fa-check"></i> Standard product visibility</li>
-                                <li><i class="fas fa-check"></i> Basic promo tools</li>
-                                <li class="disabled"><i class="fas fa-times"></i> App coupons</li>
                                 <li class="disabled"><i class="fas fa-times"></i> Featured products</li>
                                 <li class="disabled"><i class="fas fa-times"></i> Priority in search</li>
                             </ul>
@@ -143,8 +141,6 @@
                             <ul class="feature-list">
                                 <li><i class="fas fa-check"></i> Up to 500 products</li>
                                 <li><i class="fas fa-check"></i> Products can be featured</li>
-                                <li><i class="fas fa-check"></i> App coupons</li>
-                                <li><i class="fas fa-check"></i> Basic promo tools</li>
                                 <li><i class="fas fa-check"></i> Top 10 best-selling products can be featured</li>
                                 <li><i class="fas fa-check"></i> Standard + improved visibility</li>
                             </ul>
@@ -166,7 +162,6 @@
                             <ul class="feature-list">
                                 <li><i class="fas fa-check"></i> Unlimited products</li>
                                 <li><i class="fas fa-check"></i> Product priority in search</li>
-                                <li><i class="fas fa-check"></i> Advanced coupons & promo tools</li>
                                 <li><i class="fas fa-check"></i> Top 100 best-selling products can be featured</li>
                                 <li><i class="fas fa-check"></i> Maximum visibility & exposure</li>
                             </ul>
