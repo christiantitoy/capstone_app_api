@@ -58,9 +58,10 @@ try {
             "success" => true,
             "rider_id" => (int)$rider_id,
             "rider_status" => $rider['status'],
+            "status_updated" => false,
             "message" => "Rider is currently delivering, status unchanged",
-            "unremitted_deliveries" => [],
-            "has_unremitted_deliveries" => null
+            "has_unremitted" => false,
+            "deliveries" => []
         ]);
         exit;
     }
@@ -70,17 +71,16 @@ try {
     $today = date('Y-m-d 00:00:00');
 
     // Query to get unremitted deliveries (yesterday and before, not today)
+    // FIXED: Using od.id as delivery_id since that's the actual delivery ID
     $unremittedSql = "
         SELECT DISTINCT
             od.id AS delivery_id,
             od.order_id,
-            od.status AS delivery_status,
+            od.status,
             od.completed_at,
-            re.is_remitted,
-            re.total_amount,
-            re.created_at AS earning_created_at
+            re.total_amount
         FROM public.order_deliveries od
-        INNER JOIN public.rider_earnings re ON od.delivery_id = re.delivery_id 
+        INNER JOIN public.rider_earnings re ON od.id = re.delivery_id 
             AND od.rider_id = re.rider_id
         WHERE od.rider_id = ? 
         AND re.is_remitted = false
@@ -122,32 +122,25 @@ try {
     // Commit transaction
     $conn->commit();
 
-    // Calculate summary
-    $totalUnremittedAmount = 0;
-    $deliveryCount = count($unremittedDeliveries);
-    
+    // Format deliveries for response
+    $formattedDeliveries = [];
     foreach ($unremittedDeliveries as $delivery) {
-        $totalUnremittedAmount += floatval($delivery['total_amount']);
+        $formattedDeliveries[] = [
+            "delivery_id" => (int)$delivery['delivery_id'],
+            "order_id" => (int)$delivery['order_id'],
+            "status" => $delivery['status'],
+            "completed_at" => $delivery['completed_at'],
+            "total_amount" => floatval($delivery['total_amount'])
+        ];
     }
 
     echo json_encode([
         "success" => true,
-        "rider_id" => (int)$rider_id,
-        "previous_status" => $rider['status'],
-        "current_status" => $newStatus,
-        "status_updated" => $statusUpdated,
         "message" => $message,
-        "has_unremitted_deliveries" => $hasUnremittedDeliveries,
-        "summary" => [
-            "total_unremitted_deliveries" => $deliveryCount,
-            "total_unremitted_amount" => round($totalUnremittedAmount, 2)
-        ],
-        "unremitted_deliveries" => $unremittedDeliveries,
-        "check_period" => [
-            "yesterday" => $yesterday,
-            "today_start" => $today,
-            "description" => "Checking deliveries completed before today"
-        ]
+        "rider_status" => $newStatus,
+        "status_updated" => $statusUpdated,
+        "has_unremitted" => $hasUnremittedDeliveries,
+        "deliveries" => $formattedDeliveries
     ]);
 
 } catch (PDOException $e) {
