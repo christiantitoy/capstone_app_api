@@ -68,24 +68,9 @@
                     <p>Role-based access for employees — perfect for growing stores.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-truck"></i></div>
-                    <h3>Local Delivery</h3>
-                    <p>Fast same-day/next-day delivery within Dumaguete and nearby.</p>
-                </div>
-                <div class="feature-card">
                     <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
                     <h3>Mobile Ready</h3>
                     <p>Manage everything from your phone — anytime, anywhere.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
-                    <h3>Advanced Analytics</h3>
-                    <p>Understand your customers and sales performance deeply.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-headset"></i></div>
-                    <h3>Priority Support</h3>
-                    <p>24/7 help for premium members — we're here when you need us.</p>
                 </div>
             </div>
         </div>
@@ -208,8 +193,6 @@
                             <ul class="feature-list">
                                 <li><i class="fas fa-check"></i> Up to 50 products</li>
                                 <li><i class="fas fa-check"></i> Standard visibility</li>
-                                <li><i class="fas fa-check"></i> Basic promo tools</li>
-                                <li class="disabled"><i class="fas fa-times"></i> App coupons</li>
                                 <li class="disabled"><i class="fas fa-times"></i> Featured products</li>
                             </ul>
                             <a href="signup.html?plan=bronze&billing=yearly" class="pricing-btn">Start Free</a>
@@ -228,10 +211,8 @@
                                 <i class="fas fa-users"></i> Up to 10 employees
                             </div>
                             <ul class="feature-list">
-                                <li><i class="fas fa-check"></i> Up to 500 products</li>
+                                <li><i class="fas fa-check"></i> Up to 100 products</li>
                                 <li><i class="fas fa-check"></i> Products can be featured</li>
-                                <li><i class="fas fa-check"></i> App coupons</li>
-                                <li><i class="fas fa-check"></i> Basic promo tools</li>
                                 <li><i class="fas fa-check"></i> Top 10 best sellers featured</li>
                             </ul>
                             <a href="signup.html?plan=silver&billing=yearly" class="pricing-btn">Get Silver Yearly</a>
@@ -251,8 +232,7 @@
                             <ul class="feature-list">
                                 <li><i class="fas fa-check"></i> Unlimited products</li>
                                 <li><i class="fas fa-check"></i> Priority in search</li>
-                                <li><i class="fas fa-check"></i> Advanced coupons & promo tools</li>
-                                <li><i class="fas fa-check"></i> Top 100 best sellers featured</li>
+                                <li><i class="fas fa-check"></i> Top 50 best sellers featured</li>
                             </ul>
                             <a href="signup.html?plan=gold&billing=yearly" class="pricing-btn">Get Gold Yearly</a>
                         </div>
