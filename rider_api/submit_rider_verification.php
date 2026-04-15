@@ -13,6 +13,15 @@ use Cloudinary\Configuration\Configuration;
 use Cloudinary\Api\Upload\UploadApi;
 use Cloudinary\Api\Exception\ApiError;
 
+// Set PHP configuration for larger uploads
+ini_set('upload_max_filesize', '10M');
+ini_set('post_max_size', '40M'); // Allow for 3 files up to 10MB each + text data
+ini_set('max_execution_time', '300'); // 5 minutes for slow connections
+ini_set('max_input_time', '300');
+
+// Maximum file size in bytes (10MB)
+define('MAX_FILE_SIZE', 10 * 1024 * 1024); // 10MB in bytes
+
 try {
     // Configure Cloudinary
     Configuration::instance(getenv('CLOUDINARY_URL'));
@@ -64,17 +73,39 @@ try {
         // If rejected, allow resubmission (will update existing record)
     }
 
-    // Validate file uploads
+    // Validate file uploads and check sizes
     $files = ['id_front', 'id_back', 'barangay_clearance'];
     foreach ($files as $fileKey) {
         $file = $_FILES[$fileKey];
+        
+        // Check for upload errors
         if ($file['error'] !== UPLOAD_ERR_OK) {
-            throw new Exception("Upload error for $fileKey: " . $file['error']);
+            $errorMessage = getUploadErrorMessage($file['error']);
+            throw new Exception("Upload error for $fileKey: " . $errorMessage);
+        }
+        
+        // Check file size (10MB limit)
+        if ($file['size'] > MAX_FILE_SIZE) {
+            $sizeInMB = round($file['size'] / (1024 * 1024), 2);
+            throw new Exception("File $fileKey exceeds maximum size of 10MB. Current size: {$sizeInMB}MB");
+        }
+        
+        // Verify it's a valid uploaded file
+        if (!is_uploaded_file($file['tmp_name'])) {
+            throw new Exception("Security violation for $fileKey: Possible file upload attack");
         }
     }
 
     // Allowed file extensions (images and PDF)
     $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'];
+    $allowedMimeTypes = [
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'application/pdf'
+    ];
     
     // Upload files to Cloudinary
     $uploadApi = new UploadApi();
@@ -85,8 +116,18 @@ try {
         $file = $_FILES[$fileKey];
         $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         
+        // Validate file extension
         if (!in_array($extension, $allowedExtensions)) {
             throw new Exception("Invalid file type for $fileKey. Allowed: " . implode(', ', $allowedExtensions));
+        }
+
+        // Validate MIME type (additional security)
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+        
+        if (!in_array($mimeType, $allowedMimeTypes)) {
+            throw new Exception("Invalid MIME type for $fileKey: $mimeType");
         }
 
         // Determine resource type
@@ -95,15 +136,28 @@ try {
         $publicId = $fileKey . '_' . uniqid();
         
         try {
-            $result = $uploadApi->upload($file['tmp_name'], [
+            // Cloudinary upload options optimized for larger files
+            $uploadOptions = [
                 'folder' => $folder,
                 'public_id' => $publicId,
                 'overwrite' => true,
                 'resource_type' => $resourceType,
                 'quality' => 'auto',
                 'fetch_format' => 'auto',
-                'tags' => ['rider_verification', $fileKey, "rider_$rider_id"]
-            ]);
+                'tags' => ['rider_verification', $fileKey, "rider_$rider_id"],
+                'chunk_size' => 6000000, // 6MB chunks for better large file handling
+                'timeout' => 120 // 2 minute timeout for upload
+            ];
+            
+            // Add image-specific options for better optimization
+            if ($resourceType === 'image') {
+                $uploadOptions['transformation'] = [
+                    ['quality' => 'auto:good'],
+                    ['fetch_format' => 'auto']
+                ];
+            }
+            
+            $result = $uploadApi->upload($file['tmp_name'], $uploadOptions);
             
             $uploadedUrls[$fileKey] = $result['secure_url'];
         } catch (ApiError $e) {
@@ -153,7 +207,7 @@ try {
             throw new Exception('Failed to save verification data to database');
         }
 
-        // ✅ UPDATE RIDER'S verification_status TO 'pending'
+        // UPDATE RIDER'S verification_status TO 'pending'
         $updateRiderStmt = $conn->prepare("
             UPDATE riders 
             SET verification_status = 'pending' 
@@ -198,4 +252,28 @@ try {
 }
 
 $conn = null;
+
+/**
+ * Get human-readable upload error message
+ */
+function getUploadErrorMessage($code) {
+    switch ($code) {
+        case UPLOAD_ERR_INI_SIZE:
+            return 'The uploaded file exceeds the upload_max_filesize directive in php.ini';
+        case UPLOAD_ERR_FORM_SIZE:
+            return 'The uploaded file exceeds the MAX_FILE_SIZE directive specified in the HTML form';
+        case UPLOAD_ERR_PARTIAL:
+            return 'The uploaded file was only partially uploaded';
+        case UPLOAD_ERR_NO_FILE:
+            return 'No file was uploaded';
+        case UPLOAD_ERR_NO_TMP_DIR:
+            return 'Missing a temporary folder';
+        case UPLOAD_ERR_CANT_WRITE:
+            return 'Failed to write file to disk';
+        case UPLOAD_ERR_EXTENSION:
+            return 'File upload stopped by extension';
+        default:
+            return 'Unknown upload error';
+    }
+}
 ?>
