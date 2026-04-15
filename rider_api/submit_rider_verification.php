@@ -15,9 +15,10 @@ use Cloudinary\Api\Exception\ApiError;
 
 // Set PHP configuration for Cloudinary free tier (10MB limit)
 ini_set('upload_max_filesize', '10M');
-ini_set('post_max_size', '35M'); // 3 files × 10MB + overhead
+ini_set('post_max_size', '50M'); // Increased for multiple files
 ini_set('max_execution_time', '300');
 ini_set('max_input_time', '300');
+ini_set('max_file_uploads', '10'); // Allow multiple file uploads
 
 // Cloudinary Free Plan Limits
 define('CLOUDINARY_MAX_IMAGE_SIZE', 10 * 1024 * 1024); // 10MB for images
@@ -43,8 +44,18 @@ try {
     }
 
     // Check if files were uploaded
-    if (!isset($_FILES['id_front']) || !isset($_FILES['id_back']) || !isset($_FILES['barangay_clearance'])) {
-        throw new Exception('Missing required files: id_front, id_back, or barangay_clearance');
+    if (!isset($_FILES['id_front']) || !isset($_FILES['id_back'])) {
+        throw new Exception('Missing required files: id_front or id_back');
+    }
+
+    // Check if barangay_clearance files exist (could be single or multiple)
+    $hasClearanceFiles = false;
+    if (isset($_FILES['barangay_clearance'])) {
+        $hasClearanceFiles = true;
+    }
+
+    if (!$hasClearanceFiles) {
+        throw new Exception('Missing required files: barangay_clearance');
     }
 
     // Check if rider exists and get current verification_status
@@ -74,37 +85,6 @@ try {
         }
     }
 
-    // Validate file uploads with Cloudinary free tier limits
-    $files = ['id_front', 'id_back', 'barangay_clearance'];
-    $fileSizes = [];
-    
-    foreach ($files as $fileKey) {
-        $file = $_FILES[$fileKey];
-        
-        // Check for upload errors
-        if ($file['error'] !== UPLOAD_ERR_OK) {
-            $errorMessage = getUploadErrorMessage($file['error']);
-            throw new Exception("Upload error for $fileKey: " . $errorMessage);
-        }
-        
-        // Get file size in MB for display
-        $sizeInMB = round($file['size'] / (1024 * 1024), 2);
-        $fileSizes[$fileKey] = $sizeInMB;
-        
-        // Check overall size limit
-        if ($file['size'] > MAX_FILE_SIZE) {
-            throw new Exception(
-                "File '$fileKey' is {$sizeInMB}MB which exceeds Cloudinary's free plan limit of 10MB. " .
-                "Please compress the file or reduce its size before uploading."
-            );
-        }
-        
-        // Verify it's a valid uploaded file
-        if (!is_uploaded_file($file['tmp_name'])) {
-            throw new Exception("Security violation for $fileKey: Possible file upload attack");
-        }
-    }
-
     // Allowed file extensions and MIME types
     $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'];
     $allowedMimeTypes = [
@@ -121,10 +101,32 @@ try {
     $folder = 'capstone_app_images/rider_verifications/rider_' . $rider_id;
     $uploadedUrls = [];
 
-    foreach ($files as $fileKey) {
+    // Handle single file uploads (id_front, id_back)
+    $singleFiles = ['id_front', 'id_back'];
+    
+    foreach ($singleFiles as $fileKey) {
         $file = $_FILES[$fileKey];
+        $sizeInMB = round($file['size'] / (1024 * 1024), 2);
+        
+        // Check for upload errors
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            $errorMessage = getUploadErrorMessage($file['error']);
+            throw new Exception("Upload error for $fileKey: " . $errorMessage);
+        }
+        
+        // Check overall size limit
+        if ($file['size'] > MAX_FILE_SIZE) {
+            throw new Exception(
+                "File '$fileKey' is {$sizeInMB}MB which exceeds Cloudinary's free plan limit of 10MB."
+            );
+        }
+        
+        // Verify it's a valid uploaded file
+        if (!is_uploaded_file($file['tmp_name'])) {
+            throw new Exception("Security violation for $fileKey: Possible file upload attack");
+        }
+
         $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        $sizeInMB = $fileSizes[$fileKey];
         
         // Validate file extension
         if (!in_array($extension, $allowedExtensions)) {
@@ -137,7 +139,7 @@ try {
         finfo_close($finfo);
         
         if (!in_array($mimeType, $allowedMimeTypes)) {
-            throw new Exception("Invalid file format detected for $fileKey. Please upload a valid file.");
+            throw new Exception("Invalid file format detected for $fileKey.");
         }
 
         // Determine resource type
@@ -145,58 +147,82 @@ try {
         $publicId = $fileKey . '_' . uniqid();
         
         try {
-            // Cloudinary upload options for free tier
             $uploadOptions = [
                 'folder' => $folder,
                 'public_id' => $publicId,
                 'overwrite' => true,
                 'resource_type' => $resourceType,
                 'tags' => ['rider_verification', $fileKey, "rider_$rider_id"],
-                'timeout' => 120, // 2 minute timeout
-                'chunk_size' => 6000000 // 6MB chunks
+                'timeout' => 120,
+                'chunk_size' => 6000000
             ];
             
-            // Add compression/optimization for images to stay under 10MB
             if ($resourceType === 'image') {
                 $uploadOptions['transformation'] = [
                     [
-                        'quality' => 'auto:good',      // Auto-optimize quality
-                        'fetch_format' => 'auto',       // Best format for browser
-                        'flags' => 'progressive'        // Progressive loading
+                        'quality' => 'auto:good',
+                        'fetch_format' => 'auto',
+                        'flags' => 'progressive'
                     ]
                 ];
-                
-                // Log the upload attempt
-                error_log("Uploading $fileKey ({$sizeInMB}MB) to Cloudinary free tier");
             }
             
             $result = $uploadApi->upload($file['tmp_name'], $uploadOptions);
-            
             $uploadedUrls[$fileKey] = $result['secure_url'];
             
-            // Log successful upload with final size
-            if (isset($result['bytes'])) {
-                $finalSizeMB = round($result['bytes'] / (1024 * 1024), 2);
-                error_log("Successfully uploaded $fileKey - Original: {$sizeInMB}MB, Final: {$finalSizeMB}MB");
-            }
-            
         } catch (ApiError $e) {
-            // Handle Cloudinary-specific errors
             $errorMsg = $e->getMessage();
             
             if (strpos($errorMsg, 'File size too large') !== false || 
                 strpos($errorMsg, 'exceeds the limit') !== false) {
                 throw new Exception(
-                    "Cloudinary rejected $fileKey: File size ({$sizeInMB}MB) exceeds free plan limit of 10MB. " .
-                    "Please compress the file and try again."
+                    "Cloudinary rejected $fileKey: File size ({$sizeInMB}MB) exceeds free plan limit of 10MB."
                 );
-            } elseif (strpos($errorMsg, 'Invalid image file') !== false) {
-                throw new Exception("$fileKey appears to be corrupted or invalid. Please upload a valid file.");
             } else {
                 throw new Exception("Upload failed for $fileKey: " . $errorMsg);
             }
         }
     }
+
+    // Handle multiple barangay_clearance files
+    $clearanceUrls = [];
+    $clearanceFiles = $_FILES['barangay_clearance'];
+    
+    // Check if multiple files were uploaded
+    $isMultiple = is_array($clearanceFiles['name']);
+    
+    if ($isMultiple) {
+        // Multiple files uploaded
+        $fileCount = count($clearanceFiles['name']);
+        
+        for ($i = 0; $i < $fileCount; $i++) {
+            $fileInfo = [
+                'name' => $clearanceFiles['name'][$i],
+                'type' => $clearanceFiles['type'][$i],
+                'tmp_name' => $clearanceFiles['tmp_name'][$i],
+                'error' => $clearanceFiles['error'][$i],
+                'size' => $clearanceFiles['size'][$i]
+            ];
+            
+            $clearanceUrl = uploadClearanceFile($fileInfo, $i, $uploadApi, $folder, $rider_id, $allowedExtensions, $allowedMimeTypes);
+            if ($clearanceUrl) {
+                $clearanceUrls[] = $clearanceUrl;
+            }
+        }
+    } else {
+        // Single file uploaded
+        $clearanceUrl = uploadClearanceFile($clearanceFiles, 0, $uploadApi, $folder, $rider_id, $allowedExtensions, $allowedMimeTypes);
+        if ($clearanceUrl) {
+            $clearanceUrls[] = $clearanceUrl;
+        }
+    }
+    
+    if (empty($clearanceUrls)) {
+        throw new Exception('No valid barangay clearance files were uploaded.');
+    }
+
+    // Convert clearance URLs to JSON string for storage
+    $barangayClearanceJson = json_encode($clearanceUrls);
 
     // Begin transaction
     $conn->beginTransaction();
@@ -230,7 +256,7 @@ try {
             ':id_number' => $id_number,
             ':id_front_url' => $uploadedUrls['id_front'],
             ':id_back_url' => $uploadedUrls['id_back'],
-            ':barangay_clearance_url' => $uploadedUrls['barangay_clearance']
+            ':barangay_clearance_url' => $barangayClearanceJson
         ]);
 
         if (!$result) {
@@ -250,7 +276,11 @@ try {
             'status' => 'success',
             'message' => 'Verification documents submitted successfully. Your documents are pending review.',
             'verification_status' => 'pending',
-            'file_sizes_mb' => $fileSizes,
+            'urls' => [
+                'id_front' => $uploadedUrls['id_front'],
+                'id_back' => $uploadedUrls['id_back'],
+                'barangay_clearance' => $clearanceUrls
+            ],
             'note' => 'Files have been optimized to meet Cloudinary free tier requirements.'
         ]);
 
@@ -263,8 +293,7 @@ try {
     http_response_code(502);
     echo json_encode([
         'status' => 'error',
-        'message' => 'Cloudinary service error. Please try again later.',
-        'technical_details' => $e->getMessage()
+        'message' => 'Cloudinary service error. Please try again later.'
     ]);
 } catch (PDOException $e) {
     http_response_code(500);
@@ -284,26 +313,105 @@ try {
 $conn = null;
 
 /**
+ * Upload a single clearance file to Cloudinary
+ */
+function uploadClearanceFile($file, $index, $uploadApi, $folder, $rider_id, $allowedExtensions, $allowedMimeTypes) {
+    $sizeInMB = round($file['size'] / (1024 * 1024), 2);
+    
+    // Check for upload errors
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        error_log("Upload error for clearance file $index: " . getUploadErrorMessage($file['error']));
+        return null;
+    }
+    
+    // Check size limit
+    if ($file['size'] > MAX_FILE_SIZE) {
+        error_log("Clearance file $index exceeds 10MB limit");
+        return null;
+    }
+    
+    // Verify it's a valid uploaded file
+    if (!is_uploaded_file($file['tmp_name'])) {
+        error_log("Security violation for clearance file $index");
+        return null;
+    }
+
+    $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    
+    // Validate file extension
+    if (!in_array($extension, $allowedExtensions)) {
+        error_log("Invalid file type for clearance file $index");
+        return null;
+    }
+
+    // Validate MIME type
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mimeType = finfo_file($finfo, $file['tmp_name']);
+    finfo_close($finfo);
+    
+    if (!in_array($mimeType, $allowedMimeTypes)) {
+        error_log("Invalid MIME type for clearance file $index");
+        return null;
+    }
+
+    // Determine resource type
+    $resourceType = ($extension === 'pdf') ? 'raw' : 'image';
+    $publicId = 'barangay_clearance_' . $index . '_' . uniqid();
+    
+    try {
+        $uploadOptions = [
+            'folder' => $folder,
+            'public_id' => $publicId,
+            'overwrite' => true,
+            'resource_type' => $resourceType,
+            'tags' => ['rider_verification', 'barangay_clearance', "rider_$rider_id"],
+            'timeout' => 120,
+            'chunk_size' => 6000000
+        ];
+        
+        if ($resourceType === 'image') {
+            $uploadOptions['transformation'] = [
+                [
+                    'quality' => 'auto:good',
+                    'fetch_format' => 'auto',
+                    'flags' => 'progressive'
+                ]
+            ];
+        }
+        
+        $result = $uploadApi->upload($file['tmp_name'], $uploadOptions);
+        
+        error_log("Successfully uploaded clearance file $index - Size: {$sizeInMB}MB");
+        
+        return $result['secure_url'];
+        
+    } catch (ApiError $e) {
+        error_log("Cloudinary upload failed for clearance file $index: " . $e->getMessage());
+        return null;
+    }
+}
+
+/**
  * Get human-readable upload error message
  */
 function getUploadErrorMessage($code) {
     switch ($code) {
         case UPLOAD_ERR_INI_SIZE:
-            return 'File exceeds maximum allowed size (10MB). Please compress the file.';
+            return 'File exceeds maximum allowed size (10MB).';
         case UPLOAD_ERR_FORM_SIZE:
             return 'File exceeds form size limit (10MB).';
         case UPLOAD_ERR_PARTIAL:
-            return 'File was only partially uploaded. Please try again.';
+            return 'File was only partially uploaded.';
         case UPLOAD_ERR_NO_FILE:
             return 'No file was uploaded.';
         case UPLOAD_ERR_NO_TMP_DIR:
-            return 'Server configuration error: Missing temporary folder.';
+            return 'Missing temporary folder.';
         case UPLOAD_ERR_CANT_WRITE:
-            return 'Server error: Failed to write file.';
+            return 'Failed to write file.';
         case UPLOAD_ERR_EXTENSION:
-            return 'Upload stopped by server extension.';
+            return 'Upload stopped by extension.';
         default:
-            return 'Unknown upload error occurred.';
+            return 'Unknown upload error.';
     }
 }
 ?>
