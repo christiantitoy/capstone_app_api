@@ -264,7 +264,13 @@ if (!$seller_id) {
                                 <td>${order.customer_name || 'Guest'}</td>
                                 <td>${order.products}</td>
                                 <td>$${parseFloat(order.total_amount).toFixed(2)}</td>
-                                <td><span class="${statusClass}">${order.status.charAt(0).toUpperCase() + order.status.slice(1)}</span></td>
+                                <td><span class="${statusClass}">
+                                    ${order.status
+                                        .split('_')
+                                        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                        .join(' ')}
+                                    </span>
+                                </td>
                             </tr>
                         `;
                     });

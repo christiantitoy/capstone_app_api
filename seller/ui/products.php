@@ -122,6 +122,15 @@ function displayProducts(products) {
             stockText = `Low Stock (${product.stock})`;
         }
         
+        // Variations display
+        let variationsHtml = '';
+        if (product.has_variations == 1 && product.variations_count > 0) {
+            variationsHtml = `<div class="product-variations">
+                <i class="fas fa-code-branch"></i>
+                <span>${product.variations_count} variation${product.variations_count !== 1 ? 's' : ''}</span>
+            </div>`;
+        }
+        
         html += `
             <div class="product-card" data-product-id="${product.id}">
                 <div class="product-image">
@@ -138,14 +147,15 @@ function displayProducts(products) {
                         <span>Stock:</span>
                         <span class="stock-badge ${stockClass}">${stockText}</span>
                     </div>
-                    <div class="product-actions">
-                        <button class="action-btn edit-btn" onclick="editProduct(${product.id})">
-                            <i class="fas fa-edit"></i> Edit
-                        </button>
-                        <button class="action-btn delete-btn" onclick="deleteProduct(${product.id})">
-                            <i class="fas fa-trash"></i> Delete
-                        </button>
-                    </div>
+                    ${variationsHtml}
+                    // <div class="product-actions">
+                    //     <button class="action-btn edit-btn" onclick="editProduct(${product.id})">
+                    //         <i class="fas fa-edit"></i> Edit
+                    //     </button>
+                    //     <button class="action-btn delete-btn" onclick="deleteProduct(${product.id})">
+                    //         <i class="fas fa-trash"></i> Delete
+                    //     </button>
+                    // </div>
                 </div>
             </div>
         `;

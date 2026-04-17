@@ -13,21 +13,25 @@ try {
         exit;
     }
     
-    // Simple query - just get all products for this seller
+    // Query to get products with variation count
     $stmt = $conn->prepare("
         SELECT 
-            id,
-            product_name,
-            product_description,
-            category,
-            price,
-            stock,
-            main_image_url,
-            status,
-            created_at
-        FROM items
-        WHERE seller_id = ?
-        ORDER BY created_at DESC
+            i.id,
+            i.product_name,
+            i.product_description,
+            i.category,
+            i.price,
+            i.stock,
+            i.main_image_url,
+            i.status,
+            i.created_at,
+            i.has_variations,
+            COUNT(iv.id) as variations_count
+        FROM items i
+        LEFT JOIN item_variants iv ON i.id = iv.item_id
+        WHERE i.seller_id = ?
+        GROUP BY i.id, i.product_name, i.product_description, i.category, i.price, i.stock, i.main_image_url, i.status, i.created_at, i.has_variations
+        ORDER BY i.created_at DESC
     ");
     
     $stmt->execute([$seller_id]);
@@ -37,6 +41,9 @@ try {
     foreach ($products as &$product) {
         $product['price_formatted'] = '₱' . number_format($product['price'], 2);
         $product['stock_status'] = $product['stock'] <= 0 ? 'out_of_stock' : ($product['stock'] <= 10 ? 'low_stock' : 'in_stock');
+        
+        // Ensure variations_count is set (0 if no variations)
+        $product['variations_count'] = (int)($product['variations_count'] ?? 0);
     }
     
     echo json_encode(['success' => true, 'products' => $products]);
