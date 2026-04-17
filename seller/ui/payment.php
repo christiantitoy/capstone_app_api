@@ -390,6 +390,8 @@
         }
 
         .modal-content {
+            display: flex;
+            flex-direction: column;
             background: white;
             border-radius: 16px;
             padding: 1rem;
@@ -401,8 +403,8 @@
         }
 
         .modal-content img {
-            max-width: 70vw;
-            max-height: 60vh;
+            max-width: 100vw;
+            max-height: 85vh;
             width: auto;
             height: auto;
             border-radius: 10px;
@@ -670,7 +672,6 @@
 <div id="qrModal" class="modal" onclick="closeQRModal()">
     <div class="modal-content" onclick="event.stopPropagation()">
         <img src="/seller/image/qr.jpg" alt="QR Code" onerror="this.src='https://placehold.co/300x300?text=QR+Code'">
-        <button class="modal-close" onclick="closeQRModal()">Close</button>
     </div>
 </div>
 

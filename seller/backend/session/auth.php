@@ -7,7 +7,7 @@ session_start();
 
 // ── 1. Basic auth check ───────────────────────────────────────
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header("Location: /var/www/html/seller/ui/login.php");
+    header("Location: /seller/ui/login.php");
     exit;
 }
 
@@ -16,7 +16,7 @@ $timeout = 30 * 60; // seconds
 if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $timeout)) {
     session_unset();
     session_destroy();
-    header("Location: /var/www/html/seller/ui/login.php?msg=session_expired");
+    header("Location: /seller/ui/login.php?msg=session_expired");
     exit;
 }
 $_SESSION['last_activity'] = time();
@@ -36,7 +36,6 @@ $seller_plan  = $_SESSION['seller_plan'] ?? 'free'; // Default to 'free' if not 
 // ── 5. Paranoid check: critical data must exist ──────────────
 if ($seller_id === null || $seller_id <= 0) {
     session_destroy();
-    header("Location: /var/www/html/seller/ui/login.php?error=invalid_session");
-
+    header("Location: /seller/ui/login.php?error=invalid_session");
     exit;
 }
