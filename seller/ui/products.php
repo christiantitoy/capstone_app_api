@@ -356,10 +356,10 @@ function displayProducts(products) {
                     </div>
                     ${variationsHtml}
                     <div class="product-actions">
-                        <button class="action-btn edit-btn" onclick="editProduct(${product.id})">
+                        <button class="action-btn edit-btn" onclick="event.stopPropagation(); editProduct(${product.id})">
                             <i class="fas fa-edit"></i> Edit
                         </button>
-                        <button class="action-btn delete-btn" onclick="showDeleteModal(${product.id}, '${escapeHtml(product.product_name)}')">
+                        <button class="action-btn delete-btn" onclick="event.stopPropagation(); showDeleteModal(${product.id}, '${escapeHtml(product.product_name)}')">
                             <i class="fas fa-trash"></i> Remove
                         </button>
                     </div>
