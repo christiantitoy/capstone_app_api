@@ -354,7 +354,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
                                 <i class="fas fa-spinner fa-spin" style="font-size: 2rem;"></i>
                                 <p>Loading orders...</p>
                             </div>
-                        </td>
+                        <\/td>
                     </tr>
                 </tbody>
             </table>
@@ -380,6 +380,9 @@ require_once __DIR__ . '/../backend/session/auth.php';
 </div>
 
 <script>
+// Store orders data globally
+let ordersData = [];
+
 // Set current date
 document.getElementById('dateDisplay').textContent = new Date().toLocaleDateString('en-US', { 
     year: 'numeric', month: 'long', day: 'numeric' 
@@ -414,7 +417,8 @@ function loadOrders() {
         .then(response => response.json())
         .then(data => {
             if (data.success && data.orders.length > 0) {
-                displayOrders(data.orders);
+                ordersData = data.orders;
+                displayOrders(ordersData);
                 document.getElementById('ordersCount').innerHTML = `Customer Orders (${data.orders.length})`;
             } else {
                 showNoOrders();
@@ -440,7 +444,7 @@ function displayOrders(orders) {
                 <td><span class="badge badge-info">${order.item_count} item(s)</span></td>
                 <td><strong>${order.subtotal_formatted}</strong></td>
                 <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-            </tr>
+             </tr>
         `;
     });
     
@@ -448,66 +452,57 @@ function displayOrders(orders) {
 }
 
 function viewOrderDetails(orderId) {
+    // Find the order from stored data
+    const order = ordersData.find(o => o.id == orderId);
+    
+    if (!order) {
+        showErrorInModal('Order not found');
+        return;
+    }
+    
     const modal = document.getElementById('orderModal');
     const modalBody = document.getElementById('orderModalBody');
     
-    modalBody.innerHTML = '<div class="loading-state"><i class="fas fa-spinner fa-spin"></i> Loading order details...</div>';
-    modal.classList.add('active');
-    
-    fetch(`/seller/backend/orders/get_order_details.php?id=${orderId}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                displayOrderDetails(data.order);
-            } else {
-                modalBody.innerHTML = `<div class="error-state">${escapeHtml(data.message)}</div>`;
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            modalBody.innerHTML = '<div class="error-state">Error loading order details</div>';
-        });
-}
-
-function displayOrderDetails(order) {
-    const modalBody = document.getElementById('orderModalBody');
-    
-    // Generate items HTML
+    // Generate items HTML from the order's items
     let itemsHtml = '';
-    order.items.forEach(item => {
-        let variantHtml = '';
-        if (item.variant_options && item.variant_options !== '[]') {
-            try {
-                const options = JSON.parse(item.variant_options);
-                if (Array.isArray(options) && options.length > 0) {
-                    variantHtml = `<div class="order-item-variant">${escapeHtml(options.join(', '))}</div>`;
-                } else if (typeof options === 'object') {
-                    const opts = Object.entries(options).map(([k,v]) => `${k}: ${v}`).join(', ');
-                    variantHtml = `<div class="order-item-variant">${escapeHtml(opts)}</div>`;
-                }
-            } catch(e) {}
-        }
-        
-        itemsHtml += `
-            <div class="order-item">
-                <div class="order-item-image">
-                    ${item.main_image_url ? 
-                        `<img src="${item.main_image_url}" alt="${escapeHtml(item.product_name)}">` : 
-                        `<i class="fas fa-box"></i>`
+    if (order.items && order.items.length > 0) {
+        order.items.forEach(item => {
+            let variantHtml = '';
+            if (item.variant_options && item.variant_options !== '[]' && item.variant_options !== null) {
+                try {
+                    const options = typeof item.variant_options === 'string' ? JSON.parse(item.variant_options) : item.variant_options;
+                    if (Array.isArray(options) && options.length > 0) {
+                        variantHtml = `<div class="order-item-variant">${escapeHtml(options.join(', '))}</div>`;
+                    } else if (typeof options === 'object') {
+                        const opts = Object.entries(options).map(([k,v]) => `${k}: ${v}`).join(', ');
+                        variantHtml = `<div class="order-item-variant">${escapeHtml(opts)}</div>`;
                     }
+                } catch(e) {}
+            }
+            
+            itemsHtml += `
+                <div class="order-item">
+                    <div class="order-item-image">
+                        ${item.main_image_url ? 
+                            `<img src="${item.main_image_url}" alt="${escapeHtml(item.product_name)}">` : 
+                            `<i class="fas fa-box"></i>`
+                        }
+                    </div>
+                    <div class="order-item-details">
+                        <div class="order-item-name">${escapeHtml(item.product_name)}</div>
+                        ${variantHtml}
+                        <div class="order-item-price">₱${parseFloat(item.price).toFixed(2)} each</div>
+                    </div>
+                    <div class="order-item-quantity">
+                        <div class="quantity">Qty: ${item.quantity}</div>
+                        <div class="total">₱${parseFloat(item.total_price).toFixed(2)}</div>
+                    </div>
                 </div>
-                <div class="order-item-details">
-                    <div class="order-item-name">${escapeHtml(item.product_name)}</div>
-                    ${variantHtml}
-                    <div class="order-item-price">₱${parseFloat(item.price).toFixed(2)} each</div>
-                </div>
-                <div class="order-item-quantity">
-                    <div class="quantity">Qty: ${item.quantity}</div>
-                    <div class="total">₱${parseFloat(item.total_price).toFixed(2)}</div>
-                </div>
-            </div>
-        `;
-    });
+            `;
+        });
+    } else {
+        itemsHtml = '<p>No items found for this order.</p>';
+    }
     
     const html = `
         <div class="order-info-grid">
@@ -526,31 +521,21 @@ function displayOrderDetails(order) {
                 </div>
             </div>
             <div class="order-info-item">
-                <div class="order-info-label">Payment Method</div>
-                <div class="order-info-value">${escapeHtml(order.payment_method)}</div>
-            </div>
-            <div class="order-info-item">
                 <div class="order-info-label">Customer Name</div>
                 <div class="order-info-value">${escapeHtml(order.customer_name)}</div>
             </div>
             <div class="order-info-item">
                 <div class="order-info-label">Phone Number</div>
-                <div class="order-info-value">${escapeHtml(order.phone_number)}</div>
+                <div class="order-info-value">${escapeHtml(order.phone_number || 'N/A')}</div>
             </div>
             <div class="order-info-item">
                 <div class="order-info-label">Shipping Address</div>
-                <div class="order-info-value">${escapeHtml(order.shipping_address)}</div>
+                <div class="order-info-value">${escapeHtml(order.shipping_address || 'N/A')}</div>
             </div>
-            ${order.gps_location ? `
-            <div class="order-info-item">
-                <div class="order-info-label">GPS Location</div>
-                <div class="order-info-value">${escapeHtml(order.gps_location)}</div>
-            </div>
-            ` : ''}
         </div>
         
         <div class="items-list">
-            <h4>Order Items (${order.items.length})</h4>
+            <h4>Order Items (${order.items ? order.items.length : 0})</h4>
             ${itemsHtml}
         </div>
         
@@ -561,20 +546,26 @@ function displayOrderDetails(order) {
             </div>
             <div class="summary-row">
                 <span>Shipping Fee</span>
-                <span>${order.shipping_fee_formatted}</span>
+                <span>₱${parseFloat(order.shipping_fee || 0).toFixed(2)}</span>
             </div>
             <div class="summary-row">
                 <span>Platform Fee</span>
-                <span>${order.platform_fee_formatted}</span>
+                <span>₱${parseFloat(order.platform_fee || 0).toFixed(2)}</span>
             </div>
             <div class="summary-row total">
                 <span>Total Amount</span>
-                <span>${order.total_amount_formatted}</span>
+                <span>₱${parseFloat(order.total_amount || order.subtotal).toFixed(2)}</span>
             </div>
         </div>
     `;
     
     modalBody.innerHTML = html;
+    modal.classList.add('active');
+}
+
+function showErrorInModal(message) {
+    const modalBody = document.getElementById('orderModalBody');
+    modalBody.innerHTML = `<div class="error-state">${escapeHtml(message)}</div>`;
 }
 
 function getStatusClass(status) {
@@ -592,6 +583,7 @@ function getStatusClass(status) {
 }
 
 function formatStatus(status) {
+    if (!status) return 'Unknown';
     return status.split('_').map(word => 
         word.charAt(0).toUpperCase() + word.slice(1)
     ).join(' ');
@@ -606,8 +598,8 @@ function showNoOrders() {
                     <h3>No Orders Found</h3>
                     <p>No orders match your search criteria.</p>
                 </div>
-            </td>
-        </tr>
+             </td>
+         </tr>
     `;
     document.getElementById('ordersCount').innerHTML = `Customer Orders (0)`;
 }
@@ -621,8 +613,8 @@ function showError() {
                     <h3>Error Loading Orders</h3>
                     <p>Please refresh the page to try again.</p>
                 </div>
-            </td>
-        </tr>
+             </td>
+         </tr>
     `;
 }
 
