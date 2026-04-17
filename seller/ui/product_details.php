@@ -403,6 +403,85 @@ $product_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
             color: var(--gray);
         }
 
+        /* Variant Images Styles */
+    .variant-images {
+        margin: 1rem 0;
+        padding: 0.75rem;
+        background: white;
+        border-radius: 8px;
+    }
+
+    .variant-images-label {
+        font-size: 0.8rem;
+        color: var(--gray);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .variant-thumbnails {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .variant-thumb {
+        width: 50px;
+        height: 50px;
+        border-radius: 6px;
+        object-fit: cover;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 1px solid #e2e8f0;
+    }
+
+    .variant-thumb:hover {
+        transform: scale(1.05);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        border-color: var(--primary);
+    }
+
+    /* Image Modal for Lightbox */
+    .image-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+
+    .image-modal.active {
+        display: flex;
+    }
+
+    .image-modal img {
+        max-width: 90%;
+        max-height: 90%;
+        object-fit: contain;
+        border-radius: 8px;
+    }
+
+    .image-modal-close {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        color: white;
+        font-size: 2rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .image-modal-close:hover {
+        color: var(--danger);
+    }
+
         @media (max-width: 768px) {
             body { padding: 1rem; }
             .product-header { flex-direction: column; }
@@ -461,6 +540,41 @@ function loadProductData() {
             console.error('Error:', error);
             showError('Error loading product details');
         });
+}
+
+function openImageModal(imageUrl) {
+    // Check if modal already exists
+    let modal = document.getElementById('imageModal');
+    if (!modal) {
+        // Create modal
+        modal = document.createElement('div');
+        modal.id = 'imageModal';
+        modal.className = 'image-modal';
+        modal.innerHTML = `
+            <span class="image-modal-close">&times;</span>
+            <img id="modalImage" src="" alt="Full size image">
+        `;
+        document.body.appendChild(modal);
+        
+        // Close modal when clicking on background or close button
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal || e.target.className === 'image-modal-close') {
+                modal.classList.remove('active');
+            }
+        });
+        
+        // Close with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+                modal.classList.remove('active');
+            }
+        });
+    }
+    
+    // Set image and show modal
+    const modalImg = document.getElementById('modalImage');
+    modalImg.src = imageUrl;
+    modal.classList.add('active');
 }
 
 function displayProductDetails(product, variations) {
@@ -558,6 +672,33 @@ function displayProductDetails(product, variations) {
                             variantStockText = `${variant.stock} units (Low)`;
                         }
                         
+                        // Parse variant images from image_urls (comma-separated string)
+                        let variantImages = [];
+                        if (variant.image_urls) {
+                            // Split by comma and trim each URL
+                            const urls = variant.image_urls.split(',').map(url => url.trim());
+                            variantImages.push(...urls);
+                        }
+                        // Remove duplicates and filter out empty strings
+                        variantImages = [...new Set(variantImages.filter(img => img && img.trim() !== ''))];
+                        
+                        // Generate variant images HTML
+                        let variantImagesHtml = '';
+                        if (variantImages.length > 0) {
+                            variantImagesHtml = `
+                                <div class="variant-images">
+                                    <div class="variant-images-label">
+                                        <i class="fas fa-images"></i> Images (${variantImages.length})
+                                    </div>
+                                    <div class="variant-thumbnails">
+                                        ${variantImages.map(img => `
+                                            <img src="${img}" alt="Variant image" class="variant-thumb" onclick="event.stopPropagation(); openImageModal('${img.replace(/'/g, "\\'")}')">
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        
                         return `
                             <div class="variant-card">
                                 <div class="variant-options">
@@ -566,6 +707,7 @@ function displayProductDetails(product, variations) {
                                 <div class="variant-sku">
                                     <i class="fas fa-barcode"></i> SKU: ${escapeHtml(variant.sku)}
                                 </div>
+                                ${variantImagesHtml}
                                 <div class="variant-stats">
                                     <div class="variant-stat">
                                         <div class="variant-stat-label">Price</div>
