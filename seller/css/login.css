@@ -55,6 +55,11 @@ body {
     line-height: 1.1;
 }
 
+.brand-title a {
+    color: white;
+    text-decoration: none;
+}
+
 .brand-title span {
     opacity: 0.92;
 }

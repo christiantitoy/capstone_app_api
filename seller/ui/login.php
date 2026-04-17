@@ -28,7 +28,7 @@ unset($_SESSION['login_email']);
             <!-- Left: Brand -->
             <div class="brand-section">
                 <div class="brand-title">
-                    Palit<span>Ora</span>
+                    <a href="../index.php">Palit<span>Ora</span></a>
                 </div>
                 <div class="brand-description">
                     Start selling in Dumaguete City — simple, fast, and powerful.<br>
