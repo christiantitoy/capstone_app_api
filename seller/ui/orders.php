@@ -1,7 +1,6 @@
 <?php
-// /seller/ui/dashboard.php
+// /seller/ui/orders.php
 require_once __DIR__ . '/../backend/session/auth.php';
-
 ?>
 
 <!DOCTYPE html>
@@ -13,13 +12,275 @@ require_once __DIR__ . '/../backend/session/auth.php';
     <link rel="icon" type="image/png" href="/seller/image/app_icon.png">
     <link rel="stylesheet" href="../css/orders.css?v=<?= time() ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+    <style>
+        /* Additional styles for clickable rows and modal */
+        .clickable-row {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .clickable-row:hover {
+            background: #f0f7ff !important;
+        }
+        
+        /* Order Details Modal */
+        .order-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .order-modal.active {
+            display: flex;
+        }
+        
+        .order-modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .order-modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #ebedf0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 1;
+        }
+        
+        .order-modal-header h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray);
+            transition: color 0.2s;
+        }
+        
+        .close-modal:hover {
+            color: var(--danger);
+        }
+        
+        .order-modal-body {
+            padding: 1.5rem;
+        }
+        
+        .order-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #ebedf0;
+        }
+        
+        .order-info-item {
+            background: #f8fafc;
+            padding: 0.75rem;
+            border-radius: 8px;
+        }
+        
+        .order-info-label {
+            font-size: 0.75rem;
+            color: var(--gray);
+            margin-bottom: 0.25rem;
+        }
+        
+        .order-info-value {
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .items-list {
+            margin: 1.5rem 0;
+        }
+        
+        .items-list h4 {
+            margin-bottom: 1rem;
+            color: var(--dark);
+        }
+        
+        .order-item {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        }
+        
+        .order-item-image {
+            width: 60px;
+            height: 60px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        
+        .order-item-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .order-item-image i {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #d1d9e0;
+        }
+        
+        .order-item-details {
+            flex: 1;
+        }
+        
+        .order-item-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .order-item-variant {
+            font-size: 0.75rem;
+            color: var(--gray);
+            margin-bottom: 0.25rem;
+        }
+        
+        .order-item-price {
+            font-size: 0.85rem;
+            color: var(--primary);
+        }
+        
+        .order-item-quantity {
+            text-align: right;
+            min-width: 80px;
+        }
+        
+        .order-item-quantity .quantity {
+            font-weight: 600;
+        }
+        
+        .order-item-quantity .total {
+            font-size: 0.85rem;
+            color: var(--primary);
+        }
+        
+        .order-summary {
+            background: #f8fafc;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+        }
+        
+        .summary-row.total {
+            font-weight: 700;
+            font-size: 1.1rem;
+            border-top: 1px solid #e2e8f0;
+            margin-top: 0.5rem;
+            padding-top: 0.75rem;
+        }
+        
+        .status-badge {
+            padding: 0.35rem 0.9rem;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            display: inline-block;
+        }
+        
+        .status-pending { background: #fff3e0; color: #ef6c00; }
+        .status-pending_payment { background: #fff3e0; color: #ef6c00; }
+        .status-packed { background: #e3f2fd; color: #1565c0; }
+        .status-shipped { background: #e3f2fd; color: #1565c0; }
+        .status-delivered { background: #e8f5e9; color: #2e7d32; }
+        .status-cancelled { background: #ffebee; color: #c62828; }
+        .status-complete { background: #e8f5e9; color: #2e7d32; }
+        .status-locked { background: #f3e5f5; color: #6a1b9a; }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        
+        .badge-info {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+        
+        .loading-state {
+            text-align: center;
+            padding: 3rem;
+        }
+        
+        .no-orders {
+            text-align: center;
+            padding: 4rem;
+        }
+        
+        .no-orders i {
+            font-size: 4rem;
+            color: #d1d9e0;
+            margin-bottom: 1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .order-item {
+                flex-direction: column;
+            }
+            .order-item-quantity {
+                text-align: left;
+                margin-top: 0.5rem;
+            }
+        }
+    </style>
 </head>
 <body>
 
 <div class="dashboard-container">
-
-    <!-- Sidebar ── identical to your other pages -->
+    <!-- Sidebar -->
     <aside class="sidebar">
         <div class="sidebar-header">
             <h2>Seller<span>Dashboard</span></h2>
@@ -47,7 +308,6 @@ require_once __DIR__ . '/../backend/session/auth.php';
 
     <!-- Main Content -->
     <main class="main-content">
-
         <header class="main-header">
             <div class="header-left">
                 <h1>Orders Management</h1>
@@ -56,158 +316,344 @@ require_once __DIR__ . '/../backend/session/auth.php';
             <div class="header-right">
                 <div class="search-box">
                     <i class="fas fa-search"></i>
-                    <input type="text" placeholder="Search orders...">
+                    <input type="text" id="searchInput" placeholder="Search orders...">
                 </div>
-                <div class="date-display">March 9, 2026</div>
+                <div class="date-display" id="dateDisplay"></div>
             </div>
         </header>
 
         <div class="orders-header">
-            <h2>Customer Orders (12)</h2>
-            <select class="status-select">
+            <h2 id="ordersCount">Customer Orders (0)</h2>
+            <select class="status-select" id="statusFilter">
                 <option value="">All Status</option>
                 <option value="pending">Pending</option>
+                <option value="pending_payment">Pending Payment</option>
+                <option value="packed">Packed</option>
                 <option value="shipped">Shipped</option>
                 <option value="delivered">Delivered</option>
+                <option value="complete">Complete</option>
                 <option value="cancelled">Cancelled</option>
             </select>
         </div>
 
         <div class="table-container">
-            <table>
+            <table id="ordersTable">
                 <thead>
                     <tr>
                         <th>Order #</th>
                         <th>Customer</th>
-                        <th>Product</th>
-                        <th>Qty</th>
+                        <th>Items</th>
                         <th>Total</th>
-                        <th>Date</th>
                         <th>Status</th>
-                        <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="ordersBody">
                     <tr>
-                        <td>
-                            <strong>#ORD-00456</strong>
-                            <button class="toggle-details"><i class="fas fa-chevron-down"></i> Details</button>
-                        </td>
-                        <td>Maria Santos</td>
-                        <td>Wireless Earbuds Pro</td>
-                        <td>2</td>
-                        <td>₱2,598.00</td>
-                        <td>Mar 8, 2026</td>
-                        <td><span class="status-badge status-delivered">Delivered</span></td>
-                        <td>
-                            <select>
-                                <option selected>Delivered</option>
-                                <option>Shipped</option>
-                                <option>Pending</option>
-                                <option>Cancelled</option>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr class="order-details">
-                        <td colspan="8">
-                            <div class="order-details active">
-                                <div class="details-grid">
-                                    <div class="detail-item">
-                                        <div class="detail-label">Order Number</div>
-                                        <div class="detail-value">#ORD-00456</div>
-                                    </div>
-                                    <div class="detail-item">
-                                        <div class="detail-label">Customer</div>
-                                        <div class="detail-value">Maria Santos</div>
-                                    </div>
-                                    <div class="detail-item">
-                                        <div class="detail-label">Product</div>
-                                        <div class="detail-value">Wireless Earbuds Pro</div>
-                                    </div>
-                                    <div class="detail-item">
-                                        <div class="detail-label">Unit Price</div>
-                                        <div class="detail-value">₱1,299.00</div>
-                                    </div>
-                                    <div class="detail-item">
-                                        <div class="detail-label">Quantity</div>
-                                        <div class="detail-value">2 pcs</div>
-                                    </div>
-                                    <div class="detail-item">
-                                        <div class="detail-label">Total</div>
-                                        <div class="detail-value">₱2,598.00</div>
-                                    </div>
-                                    <div class="detail-item">
-                                        <div class="detail-label">Order Date</div>
-                                        <div class="detail-value">March 8, 2026 2:45 PM</div>
-                                    </div>
-                                    <div class="detail-item">
-                                        <div class="detail-label">Status</div>
-                                        <div class="detail-value"><span class="status-badge status-delivered">Delivered</span></div>
-                                    </div>
-                                </div>
+                        <td colspan="5">
+                            <div class="loading-state">
+                                <i class="fas fa-spinner fa-spin" style="font-size: 2rem;"></i>
+                                <p>Loading orders...</p>
                             </div>
                         </td>
                     </tr>
-
-                    <!-- More demo rows -->
-                    <tr>
-                        <td><strong>#ORD-00455</strong><button class="toggle-details"><i class="fas fa-chevron-down"></i> Details</button></td>
-                        <td>Juan Dela Cruz</td>
-                        <td>Smart LED Bulb (4-pack)</td>
-                        <td>1</td>
-                        <td>₱899.00</td>
-                        <td>Mar 7, 2026</td>
-                        <td><span class="status-badge status-shipped">Shipped</span></td>
-                        <td>
-                            <select>
-                                <option selected>Shipped</option>
-                                <option>Delivered</option>
-                                <option>Pending</option>
-                                <option>Cancelled</option>
-                            </select>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td><strong>#ORD-00454</strong><button class="toggle-details"><i class="fas fa-chevron-down"></i> Details</button></td>
-                        <td>Ana Reyes</td>
-                        <td>65W Fast Charger</td>
-                        <td>3</td>
-                        <td>₱1,797.00</td>
-                        <td>Mar 6, 2026</td>
-                        <td><span class="status-badge status-pending">Pending</span></td>
-                        <td>
-                            <select>
-                                <option selected>Pending</option>
-                                <option>Shipped</option>
-                                <option>Delivered</option>
-                                <option>Cancelled</option>
-                            </select>
-                        </td>
-                    </tr>
-
-                    <!-- You can add more static rows if needed -->
                 </tbody>
             </table>
         </div>
 
-        <!-- No orders placeholder (uncomment if needed) -->
-        <!--
-        <div class="no-orders">
-            <i class="fas fa-shopping-cart"></i>
-            <h3>No Orders Yet</h3>
-            <p>You haven't received any orders yet. Start selling your products!</p>
-        </div>
-        -->
-
         <footer style="margin-top: 3rem; text-align: center; padding: 2rem 0; color: #95a5a6; font-size: 0.9rem; border-top: 1px solid #ebedf0;">
             © 2026 Seller Dashboard. All rights reserved.
         </footer>
-
     </main>
 </div>
 
+<!-- Order Details Modal -->
+<div id="orderModal" class="order-modal">
+    <div class="order-modal-content">
+        <div class="order-modal-header">
+            <h2>Order Details</h2>
+            <button class="close-modal" onclick="closeOrderModal()">&times;</button>
+        </div>
+        <div class="order-modal-body" id="orderModalBody">
+            <div class="loading-state">Loading...</div>
+        </div>
+    </div>
+</div>
 
+<script>
+// Set current date
+document.getElementById('dateDisplay').textContent = new Date().toLocaleDateString('en-US', { 
+    year: 'numeric', month: 'long', day: 'numeric' 
+});
+
+// Load orders when page loads
+loadOrders();
+
+// Search functionality
+let searchTimeout;
+document.getElementById('searchInput').addEventListener('keyup', function() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        loadOrders();
+    }, 500);
+});
+
+// Status filter
+document.getElementById('statusFilter').addEventListener('change', function() {
+    loadOrders();
+});
+
+function loadOrders() {
+    const search = document.getElementById('searchInput').value;
+    const status = document.getElementById('statusFilter').value;
+    
+    let url = `/seller/backend/orders/get_orders.php?`;
+    if (search) url += `search=${encodeURIComponent(search)}&`;
+    if (status) url += `status=${encodeURIComponent(status)}`;
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.orders.length > 0) {
+                displayOrders(data.orders);
+                document.getElementById('ordersCount').innerHTML = `Customer Orders (${data.orders.length})`;
+            } else {
+                showNoOrders();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showError();
+        });
+}
+
+function displayOrders(orders) {
+    let html = '';
+    
+    orders.forEach(order => {
+        let statusClass = getStatusClass(order.status);
+        let statusText = formatStatus(order.status);
+        
+        html += `
+            <tr class="clickable-row" onclick="viewOrderDetails(${order.id})">
+                <td><strong>${escapeHtml(order.order_number)}</strong></td>
+                <td>${escapeHtml(order.customer_name)}</td>
+                <td><span class="badge badge-info">${order.item_count} item(s)</span></td>
+                <td><strong>${order.subtotal_formatted}</strong></td>
+                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+            </tr>
+        `;
+    });
+    
+    document.getElementById('ordersBody').innerHTML = html;
+}
+
+function viewOrderDetails(orderId) {
+    const modal = document.getElementById('orderModal');
+    const modalBody = document.getElementById('orderModalBody');
+    
+    modalBody.innerHTML = '<div class="loading-state"><i class="fas fa-spinner fa-spin"></i> Loading order details...</div>';
+    modal.classList.add('active');
+    
+    fetch(`/seller/backend/orders/get_order_details.php?id=${orderId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayOrderDetails(data.order);
+            } else {
+                modalBody.innerHTML = `<div class="error-state">${escapeHtml(data.message)}</div>`;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            modalBody.innerHTML = '<div class="error-state">Error loading order details</div>';
+        });
+}
+
+function displayOrderDetails(order) {
+    const modalBody = document.getElementById('orderModalBody');
+    
+    // Generate items HTML
+    let itemsHtml = '';
+    order.items.forEach(item => {
+        let variantHtml = '';
+        if (item.variant_options && item.variant_options !== '[]') {
+            try {
+                const options = JSON.parse(item.variant_options);
+                if (Array.isArray(options) && options.length > 0) {
+                    variantHtml = `<div class="order-item-variant">${escapeHtml(options.join(', '))}</div>`;
+                } else if (typeof options === 'object') {
+                    const opts = Object.entries(options).map(([k,v]) => `${k}: ${v}`).join(', ');
+                    variantHtml = `<div class="order-item-variant">${escapeHtml(opts)}</div>`;
+                }
+            } catch(e) {}
+        }
+        
+        itemsHtml += `
+            <div class="order-item">
+                <div class="order-item-image">
+                    ${item.main_image_url ? 
+                        `<img src="${item.main_image_url}" alt="${escapeHtml(item.product_name)}">` : 
+                        `<i class="fas fa-box"></i>`
+                    }
+                </div>
+                <div class="order-item-details">
+                    <div class="order-item-name">${escapeHtml(item.product_name)}</div>
+                    ${variantHtml}
+                    <div class="order-item-price">₱${parseFloat(item.price).toFixed(2)} each</div>
+                </div>
+                <div class="order-item-quantity">
+                    <div class="quantity">Qty: ${item.quantity}</div>
+                    <div class="total">₱${parseFloat(item.total_price).toFixed(2)}</div>
+                </div>
+            </div>
+        `;
+    });
+    
+    const html = `
+        <div class="order-info-grid">
+            <div class="order-info-item">
+                <div class="order-info-label">Order Number</div>
+                <div class="order-info-value">${escapeHtml(order.order_number)}</div>
+            </div>
+            <div class="order-info-item">
+                <div class="order-info-label">Order Date</div>
+                <div class="order-info-value">${escapeHtml(order.created_datetime)}</div>
+            </div>
+            <div class="order-info-item">
+                <div class="order-info-label">Order Status</div>
+                <div class="order-info-value">
+                    <span class="status-badge ${getStatusClass(order.status)}">${formatStatus(order.status)}</span>
+                </div>
+            </div>
+            <div class="order-info-item">
+                <div class="order-info-label">Payment Method</div>
+                <div class="order-info-value">${escapeHtml(order.payment_method)}</div>
+            </div>
+            <div class="order-info-item">
+                <div class="order-info-label">Customer Name</div>
+                <div class="order-info-value">${escapeHtml(order.customer_name)}</div>
+            </div>
+            <div class="order-info-item">
+                <div class="order-info-label">Phone Number</div>
+                <div class="order-info-value">${escapeHtml(order.phone_number)}</div>
+            </div>
+            <div class="order-info-item">
+                <div class="order-info-label">Shipping Address</div>
+                <div class="order-info-value">${escapeHtml(order.shipping_address)}</div>
+            </div>
+            ${order.gps_location ? `
+            <div class="order-info-item">
+                <div class="order-info-label">GPS Location</div>
+                <div class="order-info-value">${escapeHtml(order.gps_location)}</div>
+            </div>
+            ` : ''}
+        </div>
+        
+        <div class="items-list">
+            <h4>Order Items (${order.items.length})</h4>
+            ${itemsHtml}
+        </div>
+        
+        <div class="order-summary">
+            <div class="summary-row">
+                <span>Subtotal</span>
+                <span>${order.subtotal_formatted}</span>
+            </div>
+            <div class="summary-row">
+                <span>Shipping Fee</span>
+                <span>${order.shipping_fee_formatted}</span>
+            </div>
+            <div class="summary-row">
+                <span>Platform Fee</span>
+                <span>${order.platform_fee_formatted}</span>
+            </div>
+            <div class="summary-row total">
+                <span>Total Amount</span>
+                <span>${order.total_amount_formatted}</span>
+            </div>
+        </div>
+    `;
+    
+    modalBody.innerHTML = html;
+}
+
+function getStatusClass(status) {
+    const classes = {
+        'pending': 'status-pending',
+        'pending_payment': 'status-pending_payment',
+        'packed': 'status-packed',
+        'shipped': 'status-shipped',
+        'delivered': 'status-delivered',
+        'complete': 'status-complete',
+        'cancelled': 'status-cancelled',
+        'locked': 'status-locked'
+    };
+    return classes[status] || 'status-pending';
+}
+
+function formatStatus(status) {
+    return status.split('_').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
+}
+
+function showNoOrders() {
+    document.getElementById('ordersBody').innerHTML = `
+        <tr>
+            <td colspan="5">
+                <div class="no-orders">
+                    <i class="fas fa-shopping-cart"></i>
+                    <h3>No Orders Found</h3>
+                    <p>No orders match your search criteria.</p>
+                </div>
+            </td>
+        </tr>
+    `;
+    document.getElementById('ordersCount').innerHTML = `Customer Orders (0)`;
+}
+
+function showError() {
+    document.getElementById('ordersBody').innerHTML = `
+        <tr>
+            <td colspan="5">
+                <div class="no-orders">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>Error Loading Orders</h3>
+                    <p>Please refresh the page to try again.</p>
+                </div>
+            </td>
+        </tr>
+    `;
+}
+
+function closeOrderModal() {
+    document.getElementById('orderModal').classList.remove('active');
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
+}
+
+// Close modal when clicking outside
+document.getElementById('orderModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeOrderModal();
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeOrderModal();
+    }
+});
+</script>
 
 </body>
 </html>
