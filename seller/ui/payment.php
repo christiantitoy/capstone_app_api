@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Payment - Seller Dashboard</title>
     <link rel="icon" type="image/png" href="/seller/image/app_icon.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -36,24 +36,24 @@
         .page-header {
             background: white;
             border-bottom: 1px solid var(--border);
-            padding: 1.25rem 2rem;
+            padding: 0.875rem 1.5rem;
             position: sticky;
             top: 0;
             z-index: 100;
         }
 
         .header-container {
-            max-width: 1200px;
+            max-width: 1100px;
             margin: 0 auto;
             display: flex;
             align-items: center;
-            gap: 1.5rem;
+            gap: 1.25rem;
         }
 
         .back-btn {
             background: none;
             border: none;
-            font-size: 1.2rem;
+            font-size: 1rem;
             cursor: pointer;
             color: var(--gray);
             padding: 0.5rem;
@@ -71,41 +71,41 @@
         }
 
         .page-header h1 {
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             font-weight: 600;
         }
 
         /* Main Container */
         .payment-container {
-            max-width: 1000px;
-            margin: 2rem auto;
-            padding: 0 2rem;
+            max-width: 1100px;
+            margin: 1.5rem auto;
+            padding: 0 1.5rem;
         }
 
         /* Two Column Layout */
         .payment-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 2rem;
+            gap: 1.5rem;
         }
 
         /* Cards */
         .card {
             background: white;
-            border-radius: 16px;
+            border-radius: 12px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.08);
             overflow: hidden;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
         }
 
         .card-header {
-            padding: 1.25rem 1.5rem;
+            padding: 1rem 1.25rem;
             border-bottom: 1px solid var(--border);
             background: #fafbfc;
         }
 
         .card-header h2 {
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 600;
             display: flex;
             align-items: center;
@@ -114,40 +114,40 @@
 
         .card-header h2 i {
             color: var(--primary);
+            font-size: 0.9rem;
         }
 
         .card-body {
-            padding: 1.5rem;
+            padding: 1.25rem;
         }
 
         /* Amount Card */
         .amount-card {
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            border-radius: 16px;
-            padding: 2rem;
+            border-radius: 12px;
+            padding: 1.5rem;
             text-align: center;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-bottom: 1.25rem;
         }
 
         .amount-label {
             color: rgba(255,255,255,0.7);
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             letter-spacing: 1px;
             text-transform: uppercase;
-            margin-bottom: 0.75rem;
+            margin-bottom: 0.5rem;
         }
 
         .amount-value {
             color: white;
-            font-size: 3rem;
+            font-size: 2.5rem;
             font-weight: 700;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.25rem;
         }
 
         .amount-sub {
             color: rgba(255,255,255,0.6);
-            font-size: 0.8rem;
+            font-size: 0.7rem;
         }
 
         /* QR Section */
@@ -156,11 +156,11 @@
         }
 
         .qr-image {
-            width: 200px;
-            height: 200px;
-            margin: 0 auto 1rem;
+            width: 160px;
+            height: 160px;
+            margin: 0 auto 0.75rem;
             background: white;
-            border-radius: 16px;
+            border-radius: 12px;
             padding: 0.5rem;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             cursor: pointer;
@@ -178,7 +178,7 @@
         }
 
         .qr-hint {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: var(--gray);
             margin-top: 0.5rem;
         }
@@ -191,7 +191,7 @@
         .instruction-item {
             display: flex;
             gap: 0.75rem;
-            padding: 0.75rem 0;
+            padding: 0.6rem 0;
             border-bottom: 1px solid var(--border);
         }
 
@@ -200,21 +200,21 @@
         }
 
         .step-number {
-            width: 26px;
-            height: 26px;
+            width: 22px;
+            height: 22px;
             background: var(--primary);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.75rem;
+            font-size: 0.65rem;
             font-weight: 700;
             color: white;
             flex-shrink: 0;
         }
 
         .step-text {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: #4a5568;
             line-height: 1.4;
         }
@@ -222,8 +222,8 @@
         /* Upload Area */
         .upload-area {
             border: 2px dashed var(--border);
-            border-radius: 12px;
-            padding: 2rem;
+            border-radius: 10px;
+            padding: 1.25rem;
             text-align: center;
             cursor: pointer;
             transition: all 0.2s;
@@ -240,52 +240,53 @@
             background: #f0fdf4;
             padding: 0;
             position: relative;
-            min-height: 200px;
+            min-height: 150px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
         .upload-icon {
-            font-size: 2.5rem;
+            font-size: 2rem;
             color: var(--gray);
-            margin-bottom: 0.75rem;
+            margin-bottom: 0.5rem;
         }
 
         .upload-text {
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             color: var(--dark);
         }
 
         .upload-hint {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             color: var(--gray);
-            margin-top: 0.5rem;
+            margin-top: 0.25rem;
         }
 
         .preview-image {
             width: 100%;
             height: 100%;
             object-fit: contain;
-            border-radius: 12px;
-            max-height: 200px;
+            border-radius: 10px;
+            max-height: 150px;
         }
 
         .remove-image {
             position: absolute;
-            top: 0.5rem;
-            right: 0.5rem;
+            top: 0.25rem;
+            right: 0.25rem;
             background: rgba(0,0,0,0.6);
             color: white;
             border: none;
             border-radius: 50%;
-            width: 28px;
-            height: 28px;
+            width: 24px;
+            height: 24px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.2s;
+            font-size: 0.7rem;
         }
 
         .remove-image:hover {
@@ -294,23 +295,23 @@
 
         /* Form Inputs */
         .form-group {
-            margin-top: 1.25rem;
+            margin-top: 1rem;
         }
 
         .form-label {
             display: block;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 600;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.4rem;
             color: var(--dark);
         }
 
         .form-input {
             width: 100%;
-            padding: 0.75rem 1rem;
+            padding: 0.6rem 0.875rem;
             border: 1px solid var(--border);
-            border-radius: 10px;
-            font-size: 0.9rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
             transition: all 0.2s;
             outline: none;
         }
@@ -325,8 +326,8 @@
         }
 
         .input-hint {
-            font-size: 0.7rem;
-            margin-top: 0.4rem;
+            font-size: 0.65rem;
+            margin-top: 0.3rem;
         }
 
         .input-hint.error {
@@ -339,7 +340,7 @@
 
         /* Submit Button */
         .submit-section {
-            margin-top: 2rem;
+            margin-top: 1.5rem;
             text-align: center;
         }
 
@@ -347,20 +348,20 @@
             background: var(--success);
             color: white;
             border: none;
-            padding: 1rem 2rem;
-            border-radius: 12px;
-            font-size: 1rem;
+            padding: 0.875rem 2rem;
+            border-radius: 10px;
+            font-size: 0.9rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
             display: inline-flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0.5rem;
         }
 
         .submit-btn:hover:not(:disabled) {
             background: #27ae60;
-            transform: translateY(-2px);
+            transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(46,204,113,0.3);
         }
 
@@ -369,7 +370,7 @@
             cursor: not-allowed;
         }
 
-        /* Modal */
+        /* Modal - Optimized for small laptops */
         .modal {
             display: none;
             position: fixed;
@@ -377,7 +378,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0, 0, 0, 0.85);
             z-index: 1000;
             align-items: center;
             justify-content: center;
@@ -390,40 +391,63 @@
 
         .modal-content {
             background: white;
-            border-radius: 20px;
-            padding: 1.5rem;
-            max-width: 400px;
-            width: 90%;
+            border-radius: 16px;
+            padding: 1rem;
+            max-width: 90vw;
+            max-height: 90vh;
             text-align: center;
             cursor: default;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
         }
 
         .modal-content img {
-            width: 100%;
-            border-radius: 12px;
+            max-width: 70vw;
+            max-height: 60vh;
+            width: auto;
+            height: auto;
+            border-radius: 10px;
+            background: white;
+            padding: 0.5rem;
         }
 
         .modal-close {
             margin-top: 1rem;
-            padding: 0.5rem 1.5rem;
+            padding: 0.5rem 1.25rem;
             background: var(--primary);
             color: white;
             border: none;
             border-radius: 8px;
             cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Footer */
+        .page-footer {
+            text-align: center;
+            padding: 1.5rem;
+            color: var(--gray);
+            font-size: 0.7rem;
+            border-top: 1px solid var(--border);
+            margin-top: 1.5rem;
         }
 
         /* Toast */
         .toast {
             position: fixed;
-            bottom: 2rem;
+            bottom: 1.5rem;
             left: 50%;
             transform: translateX(-50%) translateY(100px);
             background: var(--dark);
             color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 50px;
-            font-size: 0.85rem;
+            padding: 0.6rem 1.25rem;
+            border-radius: 40px;
+            font-size: 0.8rem;
             z-index: 1100;
             transition: transform 0.3s;
             white-space: nowrap;
@@ -441,14 +465,25 @@
             background: var(--danger);
         }
 
-        /* Footer */
-        .page-footer {
-            text-align: center;
-            padding: 2rem;
-            color: var(--gray);
-            font-size: 0.8rem;
-            border-top: 1px solid var(--border);
-            margin-top: 2rem;
+        /* Responsive - Small Laptops (1366x768 and below) */
+        @media (max-width: 1024px) {
+            .payment-container {
+                max-width: 100%;
+                padding: 0 1rem;
+            }
+            
+            .payment-grid {
+                gap: 1rem;
+            }
+            
+            .amount-value {
+                font-size: 2rem;
+            }
+            
+            .qr-image {
+                width: 130px;
+                height: 130px;
+            }
         }
 
         @media (max-width: 768px) {
@@ -457,23 +492,53 @@
                 gap: 1rem;
             }
             
+            .page-header {
+                padding: 0.75rem 1rem;
+            }
+            
             .payment-container {
-                padding: 0 1rem;
+                margin: 1rem auto;
             }
             
             .amount-value {
-                font-size: 2rem;
+                font-size: 1.8rem;
             }
             
             .qr-image {
-                width: 160px;
-                height: 160px;
+                width: 140px;
+                height: 140px;
             }
             
             .toast {
                 white-space: normal;
                 text-align: center;
                 max-width: 80%;
+                font-size: 0.75rem;
+            }
+            
+            .modal-content img {
+                max-width: 85vw;
+                max-height: 70vh;
+            }
+        }
+
+        /* For very small screens (mobile) */
+        @media (max-width: 480px) {
+            .card-body {
+                padding: 1rem;
+            }
+            
+            .instruction-item {
+                gap: 0.5rem;
+            }
+            
+            .step-text {
+                font-size: 0.75rem;
+            }
+            
+            .submit-btn {
+                width: 100%;
+                justify-content: center;
             }
         }
     </style>
@@ -601,7 +666,7 @@
     <p>&copy; 2026 PalitOra Seller Dashboard. All rights reserved.</p>
 </footer>
 
-<!-- QR Modal -->
+<!-- QR Modal - Optimized for all screen sizes -->
 <div id="qrModal" class="modal" onclick="closeQRModal()">
     <div class="modal-content" onclick="event.stopPropagation()">
         <img src="/seller/image/qr.jpg" alt="QR Code" onerror="this.src='https://placehold.co/300x300?text=QR+Code'">
@@ -629,6 +694,11 @@
     function handleImageUpload(event) {
         const file = event.target.files[0];
         if (file && file.type.startsWith('image/')) {
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('File too large. Max 5MB', 'error');
+                return;
+            }
+            
             const reader = new FileReader();
             reader.onload = function(e) {
                 selectedImage = e.target.result;
@@ -767,7 +837,6 @@
         
         // Simulate API call
         setTimeout(() => {
-            // Here you would actually send to your backend
             console.log('Payment submitted:', {
                 amount: amount,
                 gcash_number: gcashNumber,
