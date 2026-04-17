@@ -471,26 +471,23 @@ function displayProductDetails(product, variations) {
         document.getElementById('editBtn').style.display = 'inline-flex';
     }
     
-    // Parse image URLs
+    // Parse images from image_urls (comma-separated string)
     let images = [];
-    if (product.main_image_url) {
+    
+    // First, try to parse image_urls as comma-separated string
+    if (product.image_urls) {
+        // Split by comma and trim each URL
+        const urls = product.image_urls.split(',').map(url => url.trim());
+        images.push(...urls);
+    }
+    
+    // If no images found in image_urls, fallback to main_image_url
+    if (images.length === 0 && product.main_image_url) {
         images.push(product.main_image_url);
     }
-    if (product.image_urls) {
-        try {
-            const parsedImages = JSON.parse(product.image_urls);
-            if (Array.isArray(parsedImages)) {
-                images = [...images, ...parsedImages];
-            }
-        } catch(e) {
-            // If not JSON, treat as single image
-            if (product.image_urls !== product.main_image_url) {
-                images.push(product.image_urls);
-            }
-        }
-    }
-    // Remove duplicates
-    images = [...new Set(images)];
+    
+    // Remove duplicates and filter out empty strings
+    images = [...new Set(images.filter(img => img && img.trim() !== ''))];
     
     // Status badge class
     let statusClass = '';
@@ -529,9 +526,11 @@ function displayProductDetails(product, variations) {
     if (images.length > 0) {
         thumbnailsHtml = '<div class="thumbnail-images">';
         images.forEach((img, index) => {
+            // Escape single quotes in image URL to prevent JavaScript errors
+            const escapedImg = img.replace(/'/g, "\\'");
             thumbnailsHtml += `
-                <div class="thumbnail ${index === 0 ? 'active' : ''}" onclick="changeMainImage(this, '${img}')">
-                    <img src="${img}" alt="Thumbnail ${index + 1}">
+                <div class="thumbnail ${index === 0 ? 'active' : ''}" onclick="changeMainImage(this, '${escapedImg}')">
+                    <img src="${img}" alt="Thumbnail ${index + 1}" onerror="this.src='/seller/image/placeholder.png'">
                 </div>
             `;
         });
@@ -614,7 +613,7 @@ function displayProductDetails(product, variations) {
                 <div class="product-gallery">
                     <div class="main-image" id="mainImage">
                         ${images.length > 0 ? 
-                            `<img src="${images[0]}" alt="${escapeHtml(product.product_name)}">` : 
+                            `<img src="${images[0]}" alt="${escapeHtml(product.product_name)}" onerror="this.src='/seller/image/placeholder.png'">` : 
                             `<i class="fas fa-box"></i>`
                         }
                     </div>
@@ -697,7 +696,7 @@ function getVariantOptionsHtml(optionsJson) {
 function changeMainImage(thumbnailElement, imageUrl) {
     // Update main image
     const mainImageDiv = document.getElementById('mainImage');
-    mainImageDiv.innerHTML = `<img src="${imageUrl}" alt="Product Image">`;
+    mainImageDiv.innerHTML = `<img src="${imageUrl}" alt="Product Image" onerror="this.src='/seller/image/placeholder.png'">`;
     
     // Update active state on thumbnails
     document.querySelectorAll('.thumbnail').forEach(thumb => {
