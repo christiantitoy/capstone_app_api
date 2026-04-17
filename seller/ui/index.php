@@ -38,7 +38,7 @@
     </section>
 
     <!-- Stats -->
-    <section class="stats">
+    <!-- <section class="stats">
         <div class="container">
             <div class="stats-container">
                 <div class="stat-item"><h3>500+</h3><p>Local Sellers</p></div>
@@ -47,7 +47,7 @@
                 <div class="stat-item"><h3>4.8/5</h3><p>Seller Rating</p></div>
             </div>
         </div>
-    </section>
+    </section> -->
 
     <!-- Features -->
     <section id="features" class="features-section">
