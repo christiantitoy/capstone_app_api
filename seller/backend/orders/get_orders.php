@@ -33,7 +33,7 @@ try {
             SUM(oi.quantity) as total_quantity
         FROM orders o
         INNER JOIN order_items oi ON o.id = oi.order_id
-        INNER JOIN items i ON oi.item_id = i.id
+        INNER JOIN items i ON oi.product_id = i.id
         INNER JOIN buyer_addresses ba ON o.address_id = ba.id
         WHERE i.seller_id = ?
     ";
@@ -72,15 +72,17 @@ try {
             SELECT 
                 oi.id,
                 oi.quantity,
-                oi.price,
+                oi.unit_price as price,
                 oi.total_price,
                 i.product_name,
                 i.main_image_url,
                 v.options_json as variant_options,
-                v.sku as variant_sku
+                v.sku as variant_sku,
+                oi.selected_options,
+                oi.variation_id
             FROM order_items oi
-            INNER JOIN items i ON oi.item_id = i.id
-            LEFT JOIN item_variants v ON oi.variant_id = v.id
+            INNER JOIN items i ON oi.product_id = i.id
+            LEFT JOIN item_variants v ON oi.variation_id = v.id
             WHERE oi.order_id = ?
         ");
         $items_stmt->execute([$order['id']]);
