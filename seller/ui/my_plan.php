@@ -601,7 +601,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
                                 <i class="fas fa-users"></i> Up to 10 employees
                             </div>
                             <ul class="feature-list">
-                                <li><i class="fas fa-check"></i> Up to 500 products</li>
+                                <li><i class="fas fa-check"></i> Up to 100 products</li>
                                 <li><i class="fas fa-check"></i> Products can be featured</li>
                                 <li><i class="fas fa-check"></i> Top 10 best-selling products can be featured</li>
                                 <li><i class="fas fa-check"></i> Standard + improved visibility</li>
@@ -669,7 +669,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
                                 <i class="fas fa-users"></i> Up to 10 employees
                             </div>
                             <ul class="feature-list">
-                                <li><i class="fas fa-check"></i> Up to 500 products</li>
+                                <li><i class="fas fa-check"></i> Up to 100 products</li>
                                 <li><i class="fas fa-check"></i> Products can be featured</li>
                                 <li><i class="fas fa-check"></i> Top 10 best-selling products can be featured</li>
                                 <li><i class="fas fa-check"></i> Standard + improved visibility</li>
