@@ -110,12 +110,14 @@ $product_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
             align-items: center;
             justify-content: center;
             margin-bottom: 1rem;
+            position: relative;
         }
 
         .main-image img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            cursor: pointer;
         }
 
         .main-image i {
@@ -404,83 +406,83 @@ $product_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
         }
 
         /* Variant Images Styles */
-    .variant-images {
-        margin: 1rem 0;
-        padding: 0.75rem;
-        background: white;
-        border-radius: 8px;
-    }
+        .variant-images {
+            margin: 1rem 0;
+            padding: 0.75rem;
+            background: white;
+            border-radius: 8px;
+        }
 
-    .variant-images-label {
-        font-size: 0.8rem;
-        color: var(--gray);
-        margin-bottom: 0.5rem;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    }
+        .variant-images-label {
+            font-size: 0.8rem;
+            color: var(--gray);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
 
-    .variant-thumbnails {
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-    }
+        .variant-thumbnails {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
 
-    .variant-thumb {
-        width: 50px;
-        height: 50px;
-        border-radius: 6px;
-        object-fit: cover;
-        cursor: pointer;
-        transition: all 0.2s;
-        border: 1px solid #e2e8f0;
-    }
+        .variant-thumb {
+            width: 50px;
+            height: 50px;
+            border-radius: 6px;
+            object-fit: cover;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #e2e8f0;
+        }
 
-    .variant-thumb:hover {
-        transform: scale(1.05);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        border-color: var(--primary);
-    }
+        .variant-thumb:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            border-color: var(--primary);
+        }
 
-    /* Image Modal for Lightbox */
-    .image-modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.9);
-        z-index: 2000;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-    }
+        /* Image Modal for Lightbox */
+        .image-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
 
-    .image-modal.active {
-        display: flex;
-    }
+        .image-modal.active {
+            display: flex;
+        }
 
-    .image-modal img {
-        max-width: 90%;
-        max-height: 90%;
-        object-fit: contain;
-        border-radius: 8px;
-    }
+        .image-modal img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
 
-    .image-modal-close {
-        position: absolute;
-        top: 20px;
-        right: 30px;
-        color: white;
-        font-size: 2rem;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
+        .image-modal-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
 
-    .image-modal-close:hover {
-        color: var(--danger);
-    }
+        .image-modal-close:hover {
+            color: var(--danger);
+        }
 
         @media (max-width: 768px) {
             body { padding: 1rem; }
@@ -543,10 +545,8 @@ function loadProductData() {
 }
 
 function openImageModal(imageUrl) {
-    // Check if modal already exists
     let modal = document.getElementById('imageModal');
     if (!modal) {
-        // Create modal
         modal = document.createElement('div');
         modal.id = 'imageModal';
         modal.className = 'image-modal';
@@ -556,14 +556,12 @@ function openImageModal(imageUrl) {
         `;
         document.body.appendChild(modal);
         
-        // Close modal when clicking on background or close button
         modal.addEventListener('click', function(e) {
             if (e.target === modal || e.target.className === 'image-modal-close') {
                 modal.classList.remove('active');
             }
         });
         
-        // Close with Escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape' && modal.classList.contains('active')) {
                 modal.classList.remove('active');
@@ -571,10 +569,73 @@ function openImageModal(imageUrl) {
         });
     }
     
-    // Set image and show modal
     const modalImg = document.getElementById('modalImage');
     modalImg.src = imageUrl;
     modal.classList.add('active');
+}
+
+function getVariantOptionsHtml(optionsJson) {
+    if (!optionsJson) return '<span class="variant-option">No options</span>';
+    try {
+        const options = typeof optionsJson === 'string' ? JSON.parse(optionsJson) : optionsJson;
+        if (Array.isArray(options)) {
+            return options.map(opt => `<span class="variant-option">${escapeHtml(opt)}</span>`).join('');
+        } else if (typeof options === 'object') {
+            return Object.entries(options).map(([key, value]) => 
+                `<span class="variant-option">${escapeHtml(key)}: ${escapeHtml(value)}</span>`
+            ).join('');
+        }
+        return `<span class="variant-option">${escapeHtml(String(options))}</span>`;
+    } catch(e) {
+        return `<span class="variant-option">${escapeHtml(String(optionsJson))}</span>`;
+    }
+}
+
+function changeMainImage(thumbnailElement, imageUrl) {
+    const mainImageDiv = document.getElementById('mainImage');
+    const escapedImg = imageUrl.replace(/'/g, "\\'");
+    mainImageDiv.innerHTML = `<img src="${imageUrl}" alt="Product Image" onclick="openImageModal('${escapedImg}')" style="cursor: pointer;" onerror="this.src='/seller/image/placeholder.png'">`;
+    
+    document.querySelectorAll('.thumbnail').forEach(thumb => {
+        thumb.classList.remove('active');
+    });
+    thumbnailElement.classList.add('active');
+}
+
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function showError(message) {
+    const container = document.getElementById('productContainer');
+    container.innerHTML = `
+        <div class="error-state">
+            <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: var(--danger);"></i>
+            <h3>Error</h3>
+            <p>${escapeHtml(message)}</p>
+            <a href="/seller/ui/products.php" class="back-btn" style="margin-top: 1rem;">
+                <i class="fas fa-arrow-left"></i> Back to Products
+            </a>
+        </div>
+    `;
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
 }
 
 function displayProductDetails(product, variations) {
@@ -587,20 +648,13 @@ function displayProductDetails(product, variations) {
     
     // Parse images from image_urls (comma-separated string)
     let images = [];
-    
-    // First, try to parse image_urls as comma-separated string
     if (product.image_urls) {
-        // Split by comma and trim each URL
         const urls = product.image_urls.split(',').map(url => url.trim());
         images.push(...urls);
     }
-    
-    // If no images found in image_urls, fallback to main_image_url
     if (images.length === 0 && product.main_image_url) {
         images.push(product.main_image_url);
     }
-    
-    // Remove duplicates and filter out empty strings
     images = [...new Set(images.filter(img => img && img.trim() !== ''))];
     
     // Status badge class
@@ -640,7 +694,6 @@ function displayProductDetails(product, variations) {
     if (images.length > 0) {
         thumbnailsHtml = '<div class="thumbnail-images">';
         images.forEach((img, index) => {
-            // Escape single quotes in image URL to prevent JavaScript errors
             const escapedImg = img.replace(/'/g, "\\'");
             thumbnailsHtml += `
                 <div class="thumbnail ${index === 0 ? 'active' : ''}" onclick="changeMainImage(this, '${escapedImg}')">
@@ -650,76 +703,8 @@ function displayProductDetails(product, variations) {
         });
         thumbnailsHtml += '</div>';
     }
-
-    const html = `
-        <div class="product-main-card">
-            <div class="product-header">
-                <div class="product-gallery">
-                    <div class="main-image" id="mainImage">
-                        ${images.length > 0 ? 
-                            `<img src="${images[0]}" alt="${escapeHtml(product.product_name)}" onclick="openImageModal('${images[0].replace(/'/g, "\\'")}')" style="cursor: pointer;" onerror="this.src='/seller/image/placeholder.png'">` : 
-                            `<i class="fas fa-box"></i>`
-                        }
-                    </div>
-                    ${thumbnailsHtml}
-                </div>
-                <div class="product-info">
-                    <h1 class="product-title">${escapeHtml(product.product_name)}</h1>
-                    <div class="product-meta">
-                        <span class="category-badge"><i class="fas fa-tag"></i> ${escapeHtml(product.category)}</span>
-                        <span class="status-badge ${statusClass}"><i class="fas fa-circle"></i> ${statusText}</span>
-                    </div>
-                    <div class="product-description">
-                        <i class="fas fa-align-left" style="margin-right: 8px; color: var(--gray);"></i>
-                        ${escapeHtml(product.product_description)}
-                    </div>
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <span class="info-label"><i class="fas fa-tag"></i> Price:</span>
-                            <span class="info-value price-value">₱${parseFloat(product.price).toFixed(2)}</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label"><i class="fas fa-boxes"></i> Stock:</span>
-                            <span class="info-value ${stockClass}">${stockText}</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label"><i class="fas fa-code-branch"></i> Type:</span>
-                            <span class="info-value">${product.has_variations == 1 ? 'With Variations' : 'Simple Product'}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        ${variationsHtml}
-        
-        <div class="additional-section">
-            <div class="section-title">
-                <i class="fas fa-info-circle"></i>
-                <span>Additional Information</span>
-            </div>
-            <div class="info-row">
-                <div class="info-row-label">Product ID:</div>
-                <div class="info-row-value">#${product.id}</div>
-            </div>
-            <div class="info-row">
-                <div class="info-row-label">Created Date:</div>
-                <div class="info-row-value">${formatDate(product.created_at)}</div>
-            </div>
-            <div class="info-row">
-                <div class="info-row-label">Last Updated:</div>
-                <div class="info-row-value">${formatDate(product.updated_at)}</div>
-            </div>
-            <div class="info-row">
-                <div class="info-row-label">Assigned Employee:</div>
-                <div class="info-row-value">${employeeHtml}</div>
-            </div>
-        </div>
-    `;
-
-    container.innerHTML = html;
     
-    // Variations HTML
+    // Build variations HTML
     let variationsHtml = '';
     if (product.has_variations == 1 && variations.length > 0) {
         variationsHtml = `
@@ -740,17 +725,13 @@ function displayProductDetails(product, variations) {
                             variantStockText = `${variant.stock} units (Low)`;
                         }
                         
-                        // Parse variant images from image_urls (comma-separated string)
                         let variantImages = [];
                         if (variant.image_urls) {
-                            // Split by comma and trim each URL
                             const urls = variant.image_urls.split(',').map(url => url.trim());
                             variantImages.push(...urls);
                         }
-                        // Remove duplicates and filter out empty strings
                         variantImages = [...new Set(variantImages.filter(img => img && img.trim() !== ''))];
                         
-                        // Generate variant images HTML
                         let variantImagesHtml = '';
                         if (variantImages.length > 0) {
                             variantImagesHtml = `
@@ -817,13 +798,14 @@ function displayProductDetails(product, variations) {
         `;
     }
     
+    // Final HTML assembly
     const html = `
         <div class="product-main-card">
             <div class="product-header">
                 <div class="product-gallery">
                     <div class="main-image" id="mainImage">
                         ${images.length > 0 ? 
-                            `<img src="${images[0]}" alt="${escapeHtml(product.product_name)}" onerror="this.src='/seller/image/placeholder.png'">` : 
+                            `<img src="${images[0]}" alt="${escapeHtml(product.product_name)}" onclick="openImageModal('${images[0].replace(/'/g, "\\'")}')" style="cursor: pointer;" onerror="this.src='/seller/image/placeholder.png'">` : 
                             `<i class="fas fa-box"></i>`
                         }
                     </div>
@@ -884,72 +866,6 @@ function displayProductDetails(product, variations) {
     `;
     
     container.innerHTML = html;
-}
-
-function getVariantOptionsHtml(optionsJson) {
-    if (!optionsJson) return '<span class="variant-option">No options</span>';
-    try {
-        const options = typeof optionsJson === 'string' ? JSON.parse(optionsJson) : optionsJson;
-        if (Array.isArray(options)) {
-            return options.map(opt => `<span class="variant-option">${escapeHtml(opt)}</span>`).join('');
-        } else if (typeof options === 'object') {
-            return Object.entries(options).map(([key, value]) => 
-                `<span class="variant-option">${escapeHtml(key)}: ${escapeHtml(value)}</span>`
-            ).join('');
-        }
-        return `<span class="variant-option">${escapeHtml(String(options))}</span>`;
-    } catch(e) {
-        return `<span class="variant-option">${escapeHtml(String(optionsJson))}</span>`;
-    }
-}
-
-function changeMainImage(thumbnailElement, imageUrl) {
-    // Update main image
-    const mainImageDiv = document.getElementById('mainImage');
-    const escapedImg = imageUrl.replace(/'/g, "\\'");
-    mainImageDiv.innerHTML = `<img src="${imageUrl}" alt="Product Image" onclick="openImageModal('${escapedImg}')" style="cursor: pointer;" onerror="this.src='/seller/image/placeholder.png'">`;
-    
-    // Update active state on thumbnails
-    document.querySelectorAll('.thumbnail').forEach(thumb => {
-        thumb.classList.remove('active');
-    });
-    thumbnailElement.classList.add('active');
-}
-
-function formatDate(dateString) {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-}
-
-function showError(message) {
-    const container = document.getElementById('productContainer');
-    container.innerHTML = `
-        <div class="error-state">
-            <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: var(--danger);"></i>
-            <h3>Error</h3>
-            <p>${escapeHtml(message)}</p>
-            <a href="/seller/ui/products.php" class="back-btn" style="margin-top: 1rem;">
-                <i class="fas fa-arrow-left"></i> Back to Products
-            </a>
-        </div>
-    `;
-}
-
-function escapeHtml(str) {
-    if (!str) return '';
-    return String(str).replace(/[&<>]/g, function(m) {
-        if (m === '&') return '&amp;';
-        if (m === '<') return '&lt;';
-        if (m === '>') return '&gt;';
-        return m;
-    });
 }
 
 // Load data on page load
