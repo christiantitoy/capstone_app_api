@@ -19,7 +19,6 @@ try {
     $sql = "
         SELECT DISTINCT
             o.id,
-            o.order_number,
             o.status,
             o.subtotal,
             o.shipping_fee,
@@ -47,14 +46,14 @@ try {
         $params[] = $status_filter;
     }
     
-    // Add search filter
+    // Add search filter - search by order ID or customer name
     if (!empty($search)) {
-        $sql .= " AND (o.order_number ILIKE ? OR ba.recipient_name ILIKE ?)";
+        $sql .= " AND (CAST(o.id AS TEXT) LIKE ? OR ba.recipient_name ILIKE ?)";
         $params[] = "%{$search}%";
         $params[] = "%{$search}%";
     }
     
-    $sql .= " GROUP BY o.id, o.order_number, o.status, o.subtotal, o.shipping_fee, o.platform_fee, o.total_amount, o.created_at, o.updated_at, ba.recipient_name, ba.full_address, ba.phone_number
+    $sql .= " GROUP BY o.id, o.status, o.subtotal, o.shipping_fee, o.platform_fee, o.total_amount, o.created_at, o.updated_at, ba.recipient_name, ba.full_address, ba.phone_number
               ORDER BY o.created_at DESC";
     
     $stmt = $conn->prepare($sql);
@@ -77,7 +76,8 @@ try {
                 oi.total_price,
                 i.product_name,
                 i.main_image_url,
-                COALESCE(v.options_json, '[]') as variant_options
+                v.options_json as variant_options,
+                v.sku as variant_sku
             FROM order_items oi
             INNER JOIN items i ON oi.item_id = i.id
             LEFT JOIN item_variants v ON oi.variant_id = v.id
@@ -92,7 +92,7 @@ try {
     
 } catch (PDOException $e) {
     error_log("Error: " . $e->getMessage());
-    echo json_encode(['success' => false, 'orders' => []]);
+    echo json_encode(['success' => false, 'orders' => [], 'error' => $e->getMessage()]);
     exit;
 }
 ?>
