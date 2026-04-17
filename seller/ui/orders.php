@@ -11,6 +11,8 @@ require_once __DIR__ . '/../backend/session/auth.php';
     <title>Orders - Seller Dashboard</title>
     <link rel="icon" type="image/png" href="/seller/image/app_icon.png">
     <link rel="stylesheet" href="../css/orders.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../css/error.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../css/logout.css?v=<?= time() ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* Additional styles for clickable rows and modal */
@@ -290,7 +292,8 @@ require_once __DIR__ . '/../backend/session/auth.php';
             <a href="/seller/ui/products.php" class="nav-item"><i class="fas fa-box"></i><span>Products</span></a>
             <a href="/seller/ui/orders.php" class="nav-item active"><i class="fas fa-shopping-cart"></i><span>Orders</span></a>
             <a href="/seller/ui/employees.php" class="nav-item"><i class="fas fa-users"></i><span>Employees</span></a>
-            <a href="#" class="nav-item"><i class="fas fa-cog"></i><span>Settings</span></a>
+            <a href="#" class="nav-item"><i class="fas fa-cog"></i><span>My Plan</span></a>
+            <a href="#" class="nav-item"><i class="fas fa-cog"></i><span>Sales</span></a>
         </nav>
         <div class="sidebar-footer">
             <div class="user-profile" id="userProfile">
@@ -378,6 +381,26 @@ require_once __DIR__ . '/../backend/session/auth.php';
         </div>
     </div>
 </div>
+
+<!-- ── LOGOUT CONFIRMATION MODAL ── -->
+<div class="modal-overlay" id="logoutModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Sign Out</h3>
+            <button class="modal-close" id="closeModal">×</button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to sign out?</p>
+            <p class="text-secondary">You will need to log in again to access your dashboard.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="cancelLogout">Cancel</button>
+            <a href="/seller/backend/auth/logout.php" class="btn btn-danger">Sign Out</a>
+        </div>
+    </div>
+</div>
+
+<script src="/seller/js/logout.js"></script>
 
 <script>
 // Store orders data globally

@@ -32,7 +32,8 @@ require_once __DIR__ . '/../backend/session/auth.php';
             <a href="/seller/ui/products.php" class="nav-item active"><i class="fas fa-box"></i><span>Products</span></a>
             <a href="/seller/ui/orders.php" class="nav-item"><i class="fas fa-shopping-cart"></i><span>Orders</span></a>
             <a href="/seller/ui/employees.php" class="nav-item"><i class="fas fa-users"></i><span>Employees</span></a>
-            <a href="#" class="nav-item"><i class="fas fa-cog"></i><span>Settings</span></a>
+            <a href="#" class="nav-item"><i class="fas fa-cog"></i><span>My Plan</span></a>
+            <a href="#" class="nav-item"><i class="fas fa-cog"></i><span>Sales</span></a>
         </nav>
         <div class="sidebar-footer">
             <div class="user-profile">
