@@ -1,3 +1,4 @@
+// /seller/js/products.js
 
 let currentProductId = null;
 let currentProductName = null;
