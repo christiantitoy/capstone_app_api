@@ -13,13 +13,27 @@ try {
         exit;
     }
     
-    // Get product details and verify it belongs to seller
+    // Get product details with employee info
     $stmt = $conn->prepare("
         SELECT 
-            id, product_name, product_description, category, price, stock, 
-            main_image_url, image_urls, status, has_variations, created_at
-        FROM items
-        WHERE id = ? AND seller_id = ?
+            i.id,
+            i.product_name,
+            i.product_description,
+            i.category,
+            i.price,
+            i.stock,
+            i.main_image_url,
+            i.image_urls,
+            i.status,
+            i.has_variations,
+            i.created_at,
+            i.updated_at,
+            i.employee_id,
+            e.full_name as employee_name,
+            e.status as employee_status
+        FROM items i
+        LEFT JOIN employees e ON i.employee_id = e.id AND e.is_removed = false
+        WHERE i.id = ? AND i.seller_id = ?
     ");
     $stmt->execute([$product_id, $seller_id]);
     $product = $stmt->fetch(PDO::FETCH_ASSOC);

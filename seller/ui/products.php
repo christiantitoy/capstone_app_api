@@ -306,6 +306,10 @@ function loadProducts() {
         });
 }
 
+function viewProductDetails(productId) {
+    window.location.href = `/seller/ui/product_details.php?id=${productId}`;
+}
+
 function displayProducts(products) {
     let html = '';
     
@@ -335,7 +339,7 @@ function displayProducts(products) {
         }
         
         html += `
-            <div class="product-card" data-product-id="${product.id}">
+            <div class="product-card" data-product-id="${product.id}" style="cursor: pointer;" onclick="viewProductDetails(${product.id})">
                 <div class="product-image">
                     ${product.main_image_url ? 
                         `<img src="${product.main_image_url}" alt="${escapeHtml(product.product_name)}">` : 
