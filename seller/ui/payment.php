@@ -2,11 +2,23 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Payment - Seller Dashboard</title>
     <link rel="icon" type="image/png" href="/seller/image/app_icon.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        :root {
+            --primary: #3498db;
+            --primary-dark: #2980b9;
+            --secondary: #e67e22;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --dark: #2c3e50;
+            --gray: #7f8c8d;
+            --light: #ecf0f1;
+            --border: #e2e8f0;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -14,122 +26,144 @@
         }
 
         body {
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-            background: #fafafa;
-            color: #2c3e50;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #f5f7fa;
+            color: var(--dark);
             min-height: 100vh;
         }
 
         /* Header */
-        .payment-header {
+        .page-header {
             background: white;
-            border-bottom: 1px solid #ebedf0;
-            padding: 1rem 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
+            border-bottom: 1px solid var(--border);
+            padding: 1.25rem 2rem;
             position: sticky;
             top: 0;
             z-index: 100;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+        }
+
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
         }
 
         .back-btn {
             background: none;
             border: none;
-            font-size: 1.4rem;
+            font-size: 1.2rem;
             cursor: pointer;
-            color: #5f6b7a;
+            color: var(--gray);
             padding: 0.5rem;
             border-radius: 8px;
             transition: all 0.2s;
-            display: flex;
+            text-decoration: none;
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
+            gap: 0.5rem;
         }
 
         .back-btn:hover {
-            background: #f0f2f5;
+            background: var(--light);
             color: var(--primary);
         }
 
-        .payment-header h1 {
-            font-size: 1.3rem;
+        .page-header h1 {
+            font-size: 1.5rem;
             font-weight: 600;
-            margin: 0;
         }
 
         /* Main Container */
         .payment-container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 1rem 1rem 5rem 1rem;
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        /* Two Column Layout */
+        .payment-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            background: #fafbfc;
+        }
+
+        .card-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-header h2 i {
+            color: var(--primary);
+        }
+
+        .card-body {
+            padding: 1.5rem;
         }
 
         /* Amount Card */
         .amount-card {
-            background: linear-gradient(135deg, #001433 0%, #001a4d 100%);
-            border-radius: 20px;
-            padding: 1.8rem;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 16px;
+            padding: 2rem;
             text-align: center;
             margin-bottom: 1.5rem;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
 
         .amount-label {
-            color: rgba(255,255,255,0.8);
+            color: rgba(255,255,255,0.7);
             font-size: 0.85rem;
-            letter-spacing: 0.5px;
-            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 0.75rem;
         }
 
         .amount-value {
             color: white;
             font-size: 3rem;
             font-weight: 700;
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.5rem;
         }
 
         .amount-sub {
-            color: rgba(255,255,255,0.7);
-            font-size: 0.75rem;
-        }
-
-        /* QR Card */
-        .qr-card {
-            background: white;
-            border-radius: 20px;
-            padding: 1.5rem;
-            text-align: center;
-            margin-bottom: 1rem;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-            transition: transform 0.2s;
-        }
-
-        .qr-card h3 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-            color: #333;
-        }
-
-        .qr-card p {
+            color: rgba(255,255,255,0.6);
             font-size: 0.8rem;
-            color: #7f8c8d;
-            margin-bottom: 1rem;
+        }
+
+        /* QR Section */
+        .qr-section {
+            text-align: center;
         }
 
         .qr-image {
-            width: 180px;
-            height: 180px;
-            margin: 0 auto;
-            background: #f5f5f5;
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 1rem;
+            background: white;
             border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            padding: 0.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             cursor: pointer;
-            overflow: hidden;
             transition: transform 0.2s;
         }
 
@@ -144,328 +178,248 @@
         }
 
         .qr-hint {
-            font-size: 0.7rem;
-            color: #95a5a6;
-            margin-top: 0.75rem;
+            font-size: 0.75rem;
+            color: var(--gray);
+            margin-top: 0.5rem;
         }
 
-        /* Instruction Card */
-        .instruction-card {
-            background: #e8f4fd;
-            border-radius: 16px;
-            padding: 1.2rem;
-            margin-bottom: 1rem;
+        /* Instructions */
+        .instruction-list {
+            list-style: none;
         }
 
-        .instruction-header {
+        .instruction-item {
             display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .instruction-header i {
-            color: #001433;
-            font-size: 1.1rem;
-        }
-
-        .instruction-header span {
-            font-weight: 700;
-            font-size: 0.9rem;
-            color: #001433;
-        }
-
-        .instruction-step {
-            display: flex;
-            align-items: flex-start;
             gap: 0.75rem;
-            margin-bottom: 0.75rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .instruction-item:last-child {
+            border-bottom: none;
         }
 
         .step-number {
-            width: 22px;
-            height: 22px;
-            background: #001433;
+            width: 26px;
+            height: 26px;
+            background: var(--primary);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             font-weight: 700;
             color: white;
             flex-shrink: 0;
-            margin-top: 1px;
         }
 
         .step-text {
-            font-size: 0.8rem;
-            color: #333;
+            font-size: 0.85rem;
+            color: #4a5568;
             line-height: 1.4;
-        }
-
-        .divider {
-            height: 1px;
-            background: rgba(0,20,51,0.1);
-            margin: 0.75rem 0;
-        }
-
-        .gcash-note {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.7rem;
-            color: #7f8c8d;
-            margin-top: 0.5rem;
-        }
-
-        /* Pay with GCash Button */
-        .gcash-btn {
-            width: 100%;
-            background: linear-gradient(135deg, #00b4db, #0083b0);
-            color: white;
-            border: none;
-            padding: 0.9rem;
-            border-radius: 50px;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.75rem;
-            margin-bottom: 1rem;
-            transition: all 0.2s;
-            box-shadow: 0 2px 8px rgba(0,180,219,0.3);
-        }
-
-        .gcash-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,180,219,0.4);
-        }
-
-        /* Proof of Payment Card */
-        .proof-card {
-            background: white;
-            border-radius: 20px;
-            padding: 1.2rem;
-            margin-bottom: 1rem;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-        }
-
-        .proof-title {
-            font-weight: 600;
-            font-size: 1rem;
-            margin-bottom: 0.25rem;
-            color: #333;
-        }
-
-        .proof-sub {
-            font-size: 0.7rem;
-            color: #7f8c8d;
-            margin-bottom: 1rem;
         }
 
         /* Upload Area */
         .upload-area {
-            width: 100%;
-            height: 160px;
-            background: #f9f9f9;
-            border: 1.5px dashed #ddd;
-            border-radius: 16px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
             cursor: pointer;
             transition: all 0.2s;
-            margin-bottom: 1rem;
-            position: relative;
-            overflow: hidden;
+            background: #fafbfc;
         }
 
         .upload-area:hover {
-            border-color: #001433;
-            background: #f5f5f5;
+            border-color: var(--primary);
+            background: #f0f7ff;
         }
 
         .upload-area.has-image {
-            border: 1.5px solid #4CAF50;
-            background: #f0f9f0;
+            border-color: var(--success);
+            background: #f0fdf4;
+            padding: 0;
+            position: relative;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .upload-icon {
             font-size: 2.5rem;
-            color: #001433;
-            margin-bottom: 0.5rem;
+            color: var(--gray);
+            margin-bottom: 0.75rem;
         }
 
         .upload-text {
-            font-size: 0.8rem;
-            color: #666;
+            font-size: 0.9rem;
+            color: var(--dark);
         }
 
         .upload-hint {
-            font-size: 0.65rem;
-            color: #999;
-            margin-top: 0.25rem;
+            font-size: 0.7rem;
+            color: var(--gray);
+            margin-top: 0.5rem;
         }
 
         .preview-image {
             width: 100%;
             height: 100%;
-            object-fit: cover;
-            position: absolute;
-            top: 0;
-            left: 0;
+            object-fit: contain;
+            border-radius: 12px;
+            max-height: 200px;
         }
 
-        .preview-overlay {
+        .remove-image {
             position: absolute;
-            bottom: 0;
-            right: 0;
-            background: rgba(0,0,0,0.5);
-            padding: 0.25rem 0.5rem;
-            border-radius: 20px 0 0 0;
-            font-size: 0.7rem;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: rgba(0,0,0,0.6);
             color: white;
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
         }
 
-        /* Input Field */
-        .input-group {
-            margin-top: 0.5rem;
+        .remove-image:hover {
+            background: var(--danger);
         }
 
-        .input-label {
-            font-size: 0.8rem;
-            font-weight: 500;
-            margin-bottom: 0.4rem;
+        /* Form Inputs */
+        .form-group {
+            margin-top: 1.25rem;
+        }
+
+        .form-label {
             display: block;
-            color: #333;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
         }
 
-        .gcash-input {
+        .form-input {
             width: 100%;
-            padding: 0.85rem 1rem;
-            border: 1.5px solid #e0e0e0;
-            border-radius: 14px;
-            font-size: 1rem;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 0.9rem;
             transition: all 0.2s;
             outline: none;
-            font-family: monospace;
-            font-size: 1rem;
         }
 
-        .gcash-input:focus {
-            border-color: #001433;
-            box-shadow: 0 0 0 3px rgba(0,20,51,0.1);
+        .form-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(52,152,219,0.1);
         }
 
-        .gcash-input.error {
-            border-color: #e74c3c;
+        .form-input.error {
+            border-color: var(--danger);
         }
 
         .input-hint {
             font-size: 0.7rem;
-            margin-top: 0.3rem;
+            margin-top: 0.4rem;
         }
 
         .input-hint.error {
-            color: #e74c3c;
+            color: var(--danger);
         }
 
-        .input-hint.valid {
-            color: #4CAF50;
+        .input-hint.success {
+            color: var(--success);
         }
 
         /* Submit Button */
-        .submit-btn {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: white;
-            padding: 0.75rem 1rem;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.08);
-            border-top: 1px solid #ebedf0;
-            z-index: 99;
+        .submit-section {
+            margin-top: 2rem;
+            text-align: center;
         }
 
-        .submit-btn button {
-            width: 100%;
-            background: #4CAF50;
+        .submit-btn {
+            background: var(--success);
             color: white;
             border: none;
-            padding: 1rem;
-            border-radius: 14px;
-            font-weight: 700;
+            padding: 1rem 2rem;
+            border-radius: 12px;
             font-size: 1rem;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
+            gap: 0.75rem;
         }
 
-        .submit-btn button:hover:not(:disabled) {
+        .submit-btn:hover:not(:disabled) {
+            background: #27ae60;
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(76,175,80,0.3);
+            box-shadow: 0 4px 12px rgba(46,204,113,0.3);
         }
 
-        .submit-btn button:disabled {
-            background: #ccc;
+        .submit-btn:disabled {
+            background: #bdc3c7;
             cursor: not-allowed;
-            transform: none;
         }
 
         /* Modal */
-        .qr-modal {
+        .modal {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.95);
+            background: rgba(0,0,0,0.8);
             z-index: 1000;
             align-items: center;
             justify-content: center;
             cursor: pointer;
         }
 
-        .qr-modal.active {
+        .modal.active {
             display: flex;
         }
 
-        .qr-modal-content {
-            text-align: center;
-            padding: 1rem;
-        }
-
-        .qr-modal img {
-            width: 85%;
-            max-width: 350px;
-            border-radius: 20px;
+        .modal-content {
             background: white;
-            padding: 1rem;
+            border-radius: 20px;
+            padding: 1.5rem;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            cursor: default;
         }
 
-        .qr-modal-text {
-            color: white;
+        .modal-content img {
+            width: 100%;
+            border-radius: 12px;
+        }
+
+        .modal-close {
             margin-top: 1rem;
-        }
-
-        .qr-modal-text p {
-            margin: 0.25rem 0;
+            padding: 0.5rem 1.5rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
         }
 
         /* Toast */
         .toast {
             position: fixed;
-            bottom: 100px;
+            bottom: 2rem;
             left: 50%;
             transform: translateX(-50%) translateY(100px);
-            background: #333;
+            background: var(--dark);
             color: white;
             padding: 0.75rem 1.5rem;
             border-radius: 50px;
@@ -480,162 +434,178 @@
         }
 
         .toast.success {
-            background: #4CAF50;
+            background: var(--success);
         }
 
         .toast.error {
-            background: #e74c3c;
+            background: var(--danger);
         }
 
-        /* Loading Spinner */
-        .spinner {
-            width: 20px;
-            height: 20px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+        /* Footer */
+        .page-footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--gray);
+            font-size: 0.8rem;
+            border-top: 1px solid var(--border);
+            margin-top: 2rem;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        @media (max-width: 480px) {
-            .amount-value { font-size: 2.5rem; }
-            .qr-image { width: 150px; height: 150px; }
-            .toast { white-space: normal; text-align: center; max-width: 80%; }
+        @media (max-width: 768px) {
+            .payment-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .payment-container {
+                padding: 0 1rem;
+            }
+            
+            .amount-value {
+                font-size: 2rem;
+            }
+            
+            .qr-image {
+                width: 160px;
+                height: 160px;
+            }
+            
+            .toast {
+                white-space: normal;
+                text-align: center;
+                max-width: 80%;
+            }
         }
     </style>
 </head>
 <body>
 
-<div class="payment-header">
-    <button class="back-btn" onclick="history.back()">
-        <i class="fas fa-arrow-left"></i>
-    </button>
-    <h1>Payment</h1>
-</div>
+<header class="page-header">
+    <div class="header-container">
+        <a href="javascript:history.back()" class="back-btn">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+        <h1>Make a Payment</h1>
+    </div>
+</header>
 
 <div class="payment-container">
-    <!-- Amount Card -->
-    <div class="amount-card">
-        <div class="amount-label">TOTAL AMOUNT DUE</div>
-        <div class="amount-value" id="amountDisplay">₱0.00</div>
-        <div class="amount-sub">PalitOra Payment</div>
-    </div>
+    <div class="payment-grid">
+        <!-- Left Column -->
+        <div>
+            <!-- Amount Card -->
+            <div class="amount-card">
+                <div class="amount-label">Total Amount Due</div>
+                <div class="amount-value" id="amountDisplay">₱0.00</div>
+                <div class="amount-sub">PalitOra Payment</div>
+            </div>
 
-    <!-- QR Code Section -->
-    <div class="qr-card">
-        <h3>Scan QR Code</h3>
-        <p>Open GCash and scan this code</p>
-        <div class="qr-image" onclick="openQRModal()">
-            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%23001433'/%3E%3Crect x='30' y='30' width='60' height='60' fill='white'/%3E%3Crect x='110' y='30' width='60' height='60' fill='white'/%3E%3Crect x='30' y='110' width='60' height='60' fill='white'/%3E%3Crect x='110' y='110' width='25' height='25' fill='white'/%3E%3Crect x='145' y='110' width='25' height='25' fill='white'/%3E%3Crect x='110' y='145' width='25' height='25' fill='white'/%3E%3Crect x='145' y='145' width='25' height='25' fill='white'/%3E%3C/svg%3E" alt="QR Code">
-        </div>
-        <div class="qr-hint">
-            <i class="fas fa-expand"></i> Tap QR code to enlarge
-        </div>
-    </div>
-
-    <!-- Instructions -->
-    <div class="instruction-card">
-        <div class="instruction-header">
-            <i class="fas fa-info-circle"></i>
-            <span>How to Pay</span>
-        </div>
-        
-        <div class="instruction-step">
-            <div class="step-number">1</div>
-            <div class="step-text">Click 'Open GCash App' button below</div>
-        </div>
-        <div class="instruction-step">
-            <div class="step-number">2</div>
-            <div class="step-text">Scan QR code above</div>
-        </div>
-        <div class="instruction-step">
-            <div class="step-number">3</div>
-            <div class="step-text">Complete the payment</div>
-        </div>
-        <div class="instruction-step">
-            <div class="step-number">4</div>
-            <div class="step-text">Take a screenshot of successful payment confirmation</div>
-        </div>
-        <div class="instruction-step">
-            <div class="step-number">5</div>
-            <div class="step-text">Return and upload the screenshot</div>
-        </div>
-        <div class="instruction-step">
-            <div class="step-number">6</div>
-            <div class="step-text">Enter GCash number used</div>
-        </div>
-        <div class="instruction-step">
-            <div class="step-number">7</div>
-            <div class="step-text">Click 'Submit Payment Proof'</div>
-        </div>
-
-        <div class="divider"></div>
-        
-        <div class="gcash-note">
-            <i class="fab fa-google-play"></i>
-            <span>No GCash app? Download it from Google Play Store first.</span>
-        </div>
-    </div>
-
-    <!-- Pay with GCash Button -->
-    <button class="gcash-btn" onclick="openGCashApp()">
-        <i class="fab fa-gcash" style="font-size: 1.2rem;"></i>
-        Open GCash App
-    </button>
-
-    <!-- Proof of Payment -->
-    <div class="proof-card">
-        <div class="proof-title">Proof of Payment</div>
-        <div class="proof-sub">Upload screenshot and enter GCash number used</div>
-
-        <!-- Upload Area -->
-        <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
-            <i class="fas fa-camera upload-icon"></i>
-            <div class="upload-text">Tap to upload payment screenshot</div>
-            <div class="upload-hint">Show successful payment confirmation</div>
-            <img id="previewImg" class="preview-image" style="display: none;">
-            <div id="previewOverlay" class="preview-overlay" style="display: none;">
-                <i class="fas fa-check-circle"></i> Selected
+            <!-- QR Code Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-qrcode"></i> Scan QR Code</h2>
+                </div>
+                <div class="card-body">
+                    <div class="qr-section">
+                        <div class="qr-image" onclick="openQRModal()">
+                            <img src="/seller/image/qr.jpg" alt="QR Code" onerror="this.src='https://placehold.co/200x200?text=QR+Code'">
+                        </div>
+                        <p class="qr-hint">
+                            <i class="fas fa-expand-alt"></i> Click QR code to enlarge
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
-        <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
 
-        <!-- GCash Number Input -->
-        <div class="input-group">
-            <label class="input-label">GCash Number Used</label>
-            <input type="tel" 
-                   id="gcashNumber" 
-                   class="gcash-input" 
-                   placeholder="09*********"
-                   maxlength="11"
-                   pattern="[0-9]{11}"
-                   oninput="validateGCashNumber()">
-            <div id="gcashHint" class="input-hint"></div>
+        <!-- Right Column -->
+        <div>
+            <!-- Instructions Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-info-circle"></i> How to Pay</h2>
+                </div>
+                <div class="card-body">
+                    <ul class="instruction-list">
+                        <li class="instruction-item">
+                            <span class="step-number">1</span>
+                            <span class="step-text">Scan the QR code using GCash or any QR-enabled payment app</span>
+                        </li>
+                        <li class="instruction-item">
+                            <span class="step-number">2</span>
+                            <span class="step-text">Enter the exact amount: <strong id="instructionAmount">₱0.00</strong></span>
+                        </li>
+                        <li class="instruction-item">
+                            <span class="step-number">3</span>
+                            <span class="step-text">Complete the payment and take a screenshot of the confirmation</span>
+                        </li>
+                        <li class="instruction-item">
+                            <span class="step-number">4</span>
+                            <span class="step-text">Upload the screenshot below and enter your GCash number</span>
+                        </li>
+                        <li class="instruction-item">
+                            <span class="step-number">5</span>
+                            <span class="step-text">Click "Submit Payment Proof" to complete your transaction</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Proof of Payment Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-receipt"></i> Proof of Payment</h2>
+                </div>
+                <div class="card-body">
+                    <!-- Upload Area -->
+                    <div>
+                        <div class="form-label">Payment Screenshot</div>
+                        <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                            <div class="upload-text">Click to upload screenshot</div>
+                            <div class="upload-hint">PNG, JPG up to 5MB</div>
+                            <img id="previewImg" class="preview-image" style="display: none;">
+                            <button id="removeImageBtn" class="remove-image" style="display: none;" onclick="event.stopPropagation(); removeImage()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
+                    </div>
+
+                    <!-- GCash Number Input -->
+                    <div class="form-group">
+                        <label class="form-label">GCash Number Used</label>
+                        <input type="tel" 
+                               id="gcashNumber" 
+                               class="form-input" 
+                               placeholder="09XXXXXXXXX"
+                               maxlength="11"
+                               oninput="validateGCashNumber()">
+                        <div id="gcashHint" class="input-hint"></div>
+                    </div>
+                </div>
+            </div>
         </div>
+    </div>
+
+    <!-- Submit Button -->
+    <div class="submit-section">
+        <button class="submit-btn" id="submitBtn" onclick="submitPayment()" disabled>
+            <i class="fas fa-check-circle"></i>
+            <span id="submitText">Submit Payment Proof</span>
+        </button>
     </div>
 </div>
 
-<!-- Submit Button -->
-<div class="submit-btn">
-    <button id="submitBtn" onclick="submitPayment()" disabled>
-        <i class="fas fa-check-circle"></i>
-        <span id="submitText">Submit Payment Proof</span>
-    </button>
-</div>
+<footer class="page-footer">
+    <p>&copy; 2026 PalitOra Seller Dashboard. All rights reserved.</p>
+</footer>
 
 <!-- QR Modal -->
-<div id="qrModal" class="qr-modal" onclick="closeQRModal()">
-    <div class="qr-modal-content">
-        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%23001433'/%3E%3Crect x='30' y='30' width='60' height='60' fill='white'/%3E%3Crect x='110' y='30' width='60' height='60' fill='white'/%3E%3Crect x='30' y='110' width='60' height='60' fill='white'/%3E%3Crect x='110' y='110' width='25' height='25' fill='white'/%3E%3Crect x='145' y='110' width='25' height='25' fill='white'/%3E%3Crect x='110' y='145' width='25' height='25' fill='white'/%3E%3Crect x='145' y='145' width='25' height='25' fill='white'/%3E%3C/svg%3E" alt="QR Code">
-        <div class="qr-modal-text">
-            <p>Scan this QR code using GCash</p>
-            <p style="font-size: 0.8rem; opacity: 0.7;">Open GCash → Tap QR → Scan</p>
-            <p style="font-size: 0.7rem; opacity: 0.5; margin-top: 0.5rem;">Tap anywhere to close</p>
-        </div>
+<div id="qrModal" class="modal" onclick="closeQRModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <img src="/seller/image/qr.jpg" alt="QR Code" onerror="this.src='https://placehold.co/300x300?text=QR+Code'">
+        <button class="modal-close" onclick="closeQRModal()">Close</button>
     </div>
 </div>
 
@@ -653,27 +623,63 @@
     
     // Display amount
     document.getElementById('amountDisplay').innerText = `₱${amount.toFixed(2)}`;
+    document.getElementById('instructionAmount').innerText = `₱${amount.toFixed(2)}`;
     
     // Handle image upload
     function handleImageUpload(event) {
         const file = event.target.files[0];
-        if (file) {
+        if (file && file.type.startsWith('image/')) {
             const reader = new FileReader();
             reader.onload = function(e) {
                 selectedImage = e.target.result;
                 const previewImg = document.getElementById('previewImg');
-                const previewOverlay = document.getElementById('previewOverlay');
+                const removeBtn = document.getElementById('removeImageBtn');
                 const uploadArea = document.getElementById('uploadArea');
                 
                 previewImg.src = selectedImage;
                 previewImg.style.display = 'block';
-                previewOverlay.style.display = 'block';
+                removeBtn.style.display = 'flex';
                 uploadArea.classList.add('has-image');
+                
+                // Hide upload text
+                const uploadIcon = uploadArea.querySelector('.upload-icon');
+                const uploadText = uploadArea.querySelector('.upload-text');
+                const uploadHint = uploadArea.querySelector('.upload-hint');
+                if (uploadIcon) uploadIcon.style.display = 'none';
+                if (uploadText) uploadText.style.display = 'none';
+                if (uploadHint) uploadHint.style.display = 'none';
                 
                 checkFormComplete();
             };
             reader.readAsDataURL(file);
+        } else {
+            showToast('Please select a valid image file', 'error');
         }
+    }
+    
+    // Remove uploaded image
+    function removeImage() {
+        selectedImage = null;
+        const previewImg = document.getElementById('previewImg');
+        const removeBtn = document.getElementById('removeImageBtn');
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        
+        previewImg.style.display = 'none';
+        removeBtn.style.display = 'none';
+        uploadArea.classList.remove('has-image');
+        
+        // Show upload text again
+        const uploadIcon = uploadArea.querySelector('.upload-icon');
+        const uploadText = uploadArea.querySelector('.upload-text');
+        const uploadHint = uploadArea.querySelector('.upload-hint');
+        if (uploadIcon) uploadIcon.style.display = 'block';
+        if (uploadText) uploadText.style.display = 'block';
+        if (uploadHint) uploadHint.style.display = 'block';
+        
+        fileInput.value = '';
+        
+        checkFormComplete();
     }
     
     // Validate GCash number
@@ -682,23 +688,32 @@
         const hint = document.getElementById('gcashHint');
         const value = input.value;
         
-        if (value.length === 0) {
+        // Allow only digits
+        if (value && !/^\d+$/.test(value)) {
+            input.value = value.replace(/\D/g, '');
+        }
+        
+        const cleanValue = input.value;
+        
+        if (cleanValue.length === 0) {
             hint.innerHTML = '';
+            hint.className = 'input-hint';
             input.classList.remove('error');
-        } else if (value.length < 11) {
+        } else if (cleanValue.length < 11) {
             hint.innerHTML = 'Please enter a complete 11-digit GCash number';
             hint.className = 'input-hint error';
             input.classList.add('error');
-        } else if (value.length === 11 && !value.startsWith('09')) {
+        } else if (cleanValue.length === 11 && !cleanValue.startsWith('09')) {
             hint.innerHTML = 'GCash number must start with "09"';
             hint.className = 'input-hint error';
             input.classList.add('error');
-        } else if (value.length === 11 && value.startsWith('09')) {
-            hint.innerHTML = '✓ Valid GCash number';
-            hint.className = 'input-hint valid';
+        } else if (cleanValue.length === 11 && cleanValue.startsWith('09')) {
+            hint.innerHTML = '<i class="fas fa-check-circle"></i> Valid GCash number';
+            hint.className = 'input-hint success';
             input.classList.remove('error');
         } else {
             hint.innerHTML = '';
+            hint.className = 'input-hint';
             input.classList.remove('error');
         }
         
@@ -714,33 +729,6 @@
         
         const submitBtn = document.getElementById('submitBtn');
         submitBtn.disabled = !isComplete;
-        
-        if (!isComplete) {
-            let reason = '';
-            if (!isImageSelected) reason = 'Upload payment screenshot';
-            else if (!isGcashValid) reason = 'Enter valid GCash number';
-            if (reason) submitBtn.title = reason;
-        } else {
-            submitBtn.title = '';
-        }
-    }
-    
-    // Open GCash app (mobile) or show message (desktop)
-    function openGCashApp() {
-        // For mobile: try to open GCash app
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        
-        if (isMobile) {
-            // Try to open GCash app
-            window.location.href = 'gcash://';
-            
-            // Fallback: show toast if app doesn't open
-            setTimeout(() => {
-                showToast('If GCash doesn\'t open, please open it manually', 'info');
-            }, 1000);
-        } else {
-            showToast('Please open GCash on your mobile device', 'info');
-        }
     }
     
     // Open QR modal
@@ -775,7 +763,7 @@
         
         isSubmitting = true;
         submitBtn.disabled = true;
-        submitText.innerHTML = '<div class="spinner" style="margin-right: 8px;"></div> Processing...';
+        submitText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
         
         // Simulate API call
         setTimeout(() => {
@@ -789,7 +777,6 @@
             showToast('Payment proof submitted successfully!', 'success');
             
             setTimeout(() => {
-                // Redirect back to orders or dashboard
                 window.location.href = '/seller/ui/orders.php';
             }, 1500);
         }, 2000);
@@ -797,13 +784,6 @@
     
     // Add input event listener for GCash number
     document.getElementById('gcashNumber').addEventListener('input', validateGCashNumber);
-    
-    // Prevent modal close when clicking on content
-    document.getElementById('qrModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeQRModal();
-        }
-    });
     
     // Close modal with Escape key
     document.addEventListener('keydown', function(e) {
