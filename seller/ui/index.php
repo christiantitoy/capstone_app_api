@@ -122,7 +122,7 @@
                                 <li class="disabled"><i class="fas fa-times"></i> Featured products</li>
                                 <li class="disabled"><i class="fas fa-times"></i> Priority in search</li>
                             </ul>
-                            <a href="signup.html?plan=bronze&billing=monthly" class="pricing-btn">Start Free</a>
+                            <a href="login.php" class="pricing-btn">Start Free</a>
                         </div>
                     </div>
 
@@ -144,7 +144,7 @@
                                 <li><i class="fas fa-check"></i> Top 10 best-selling products can be featured</li>
                                 <li><i class="fas fa-check"></i> Standard + improved visibility</li>
                             </ul>
-                            <a href="signup.html?plan=silver&billing=monthly" class="pricing-btn">Get Silver</a>
+                            <a href="login.php" class="pricing-btn">Get Silver</a>
                         </div>
                     </div>
 
@@ -165,7 +165,7 @@
                                 <li><i class="fas fa-check"></i> Top 100 best-selling products can be featured</li>
                                 <li><i class="fas fa-check"></i> Maximum visibility & exposure</li>
                             </ul>
-                            <a href="signup.html?plan=gold&billing=monthly" class="pricing-btn">Get Gold</a>
+                            <a href="login.php" class="pricing-btn">Get Gold</a>
                         </div>
                     </div>
                 </div>
@@ -190,7 +190,7 @@
                                 <li><i class="fas fa-check"></i> Standard visibility</li>
                                 <li class="disabled"><i class="fas fa-times"></i> Featured products</li>
                             </ul>
-                            <a href="signup.html?plan=bronze&billing=yearly" class="pricing-btn">Start Free</a>
+                            <a href="login.php" class="pricing-btn">Start Free</a>
                         </div>
                     </div>
 
@@ -210,7 +210,7 @@
                                 <li><i class="fas fa-check"></i> Products can be featured</li>
                                 <li><i class="fas fa-check"></i> Top 10 best sellers featured</li>
                             </ul>
-                            <a href="signup.html?plan=silver&billing=yearly" class="pricing-btn">Get Silver Yearly</a>
+                            <a href="login.php" class="pricing-btn">Get Silver Yearly</a>
                         </div>
                     </div>
 
@@ -229,7 +229,7 @@
                                 <li><i class="fas fa-check"></i> Priority in search</li>
                                 <li><i class="fas fa-check"></i> Top 50 best sellers featured</li>
                             </ul>
-                            <a href="signup.html?plan=gold&billing=yearly" class="pricing-btn">Get Gold Yearly</a>
+                            <a href="login.php" class="pricing-btn">Get Gold Yearly</a>
                         </div>
                     </div>
                 </div>
