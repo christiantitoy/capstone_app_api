@@ -650,6 +650,74 @@ function displayProductDetails(product, variations) {
         });
         thumbnailsHtml += '</div>';
     }
+
+    const html = `
+        <div class="product-main-card">
+            <div class="product-header">
+                <div class="product-gallery">
+                    <div class="main-image" id="mainImage">
+                        ${images.length > 0 ? 
+                            `<img src="${images[0]}" alt="${escapeHtml(product.product_name)}" onclick="openImageModal('${images[0].replace(/'/g, "\\'")}')" style="cursor: pointer;" onerror="this.src='/seller/image/placeholder.png'">` : 
+                            `<i class="fas fa-box"></i>`
+                        }
+                    </div>
+                    ${thumbnailsHtml}
+                </div>
+                <div class="product-info">
+                    <h1 class="product-title">${escapeHtml(product.product_name)}</h1>
+                    <div class="product-meta">
+                        <span class="category-badge"><i class="fas fa-tag"></i> ${escapeHtml(product.category)}</span>
+                        <span class="status-badge ${statusClass}"><i class="fas fa-circle"></i> ${statusText}</span>
+                    </div>
+                    <div class="product-description">
+                        <i class="fas fa-align-left" style="margin-right: 8px; color: var(--gray);"></i>
+                        ${escapeHtml(product.product_description)}
+                    </div>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label"><i class="fas fa-tag"></i> Price:</span>
+                            <span class="info-value price-value">₱${parseFloat(product.price).toFixed(2)}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label"><i class="fas fa-boxes"></i> Stock:</span>
+                            <span class="info-value ${stockClass}">${stockText}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label"><i class="fas fa-code-branch"></i> Type:</span>
+                            <span class="info-value">${product.has_variations == 1 ? 'With Variations' : 'Simple Product'}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        ${variationsHtml}
+        
+        <div class="additional-section">
+            <div class="section-title">
+                <i class="fas fa-info-circle"></i>
+                <span>Additional Information</span>
+            </div>
+            <div class="info-row">
+                <div class="info-row-label">Product ID:</div>
+                <div class="info-row-value">#${product.id}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-row-label">Created Date:</div>
+                <div class="info-row-value">${formatDate(product.created_at)}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-row-label">Last Updated:</div>
+                <div class="info-row-value">${formatDate(product.updated_at)}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-row-label">Assigned Employee:</div>
+                <div class="info-row-value">${employeeHtml}</div>
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = html;
     
     // Variations HTML
     let variationsHtml = '';
@@ -838,7 +906,8 @@ function getVariantOptionsHtml(optionsJson) {
 function changeMainImage(thumbnailElement, imageUrl) {
     // Update main image
     const mainImageDiv = document.getElementById('mainImage');
-    mainImageDiv.innerHTML = `<img src="${imageUrl}" alt="Product Image" onerror="this.src='/seller/image/placeholder.png'">`;
+    const escapedImg = imageUrl.replace(/'/g, "\\'");
+    mainImageDiv.innerHTML = `<img src="${imageUrl}" alt="Product Image" onclick="openImageModal('${escapedImg}')" style="cursor: pointer;" onerror="this.src='/seller/image/placeholder.png'">`;
     
     // Update active state on thumbnails
     document.querySelectorAll('.thumbnail').forEach(thumb => {
