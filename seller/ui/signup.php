@@ -159,8 +159,8 @@ unset($_SESSION['old_input']);
                     <input type="checkbox" id="terms" name="terms" required>
                     <label for="terms">
                         I agree to the 
-                        <a href="#">Terms of Service</a> and 
-                        <a href="#">Privacy Policy</a>
+                        <a href="terms.html">Terms of Service</a> and 
+                        <a href="privacy.html">Privacy Policy</a>
                     </label>
                 </div>
 
