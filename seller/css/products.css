@@ -405,7 +405,7 @@ body {
 }
 
 /* Modal Styles */
-.modal {
+/* .modal {
     display: none;
     position: fixed;
     top: 0;
@@ -430,7 +430,7 @@ body {
     width: 90%;
     padding: 2rem;
     animation: slideUp 0.3s ease;
-}
+} */
 
 @keyframes fadeIn {
     from { opacity: 0; }
