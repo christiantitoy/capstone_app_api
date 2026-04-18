@@ -321,16 +321,6 @@ require_once __DIR__ . '/../backend/session/auth.php';
             color: #2e7d32;
         }
 
-        .status-expired {
-            background: #ffebee;
-            color: #c62828;
-        }
-
-        .status-pending {
-            background: #fff3e0;
-            color: #e65100;
-        }
-
         /* Pricing Section */
         .pricing-section {
             background: var(--bg-light);
@@ -445,7 +435,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
             background: linear-gradient(135deg, white, #fff8f0);
         }
 
-        .popular-badge {
+        .popular-badge, .free-badge {
             position: absolute;
             top: -10px;
             left: 20px;
@@ -458,15 +448,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
         }
 
         .free-badge {
-            position: absolute;
-            top: -10px;
-            left: 20px;
             background: var(--free);
-            color: white;
-            padding: 0.2rem 1rem;
-            font-size: 0.7rem;
-            font-weight: 600;
-            border-radius: 20px;
         }
 
         .card-left {
@@ -568,10 +550,6 @@ require_once __DIR__ . '/../backend/session/auth.php';
             transform: translateY(-2px);
         }
 
-        .btn-silver {
-            background: var(--primary);
-        }
-
         .btn-gold {
             background: var(--secondary);
         }
@@ -586,6 +564,154 @@ require_once __DIR__ . '/../backend/session/auth.php';
 
         .billing-period.active {
             display: block;
+        }
+
+        /* ============== CONFIRMATION MODAL ============== */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(6px);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 8% auto;
+            width: 90%;
+            max-width: 460px;
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+            overflow: hidden;
+            animation: modalPop 0.3s ease forwards;
+        }
+
+        @keyframes modalPop {
+            from { transform: scale(0.95) translateY(20px); opacity: 0; }
+            to { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #ebedf0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            color: var(--dark);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: #95a5a6;
+            width: 40px;
+            height: 40px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+        }
+
+        .modal-close:hover {
+            background: #f8f9fa;
+            color: var(--danger);
+        }
+
+        .modal-body {
+            padding: 1.75rem 1.5rem;
+        }
+
+        .plan-change-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .from-plan, .to-plan {
+            flex: 1;
+        }
+
+        .arrow {
+            font-size: 1.6rem;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        .price-info {
+            background: #f8fafc;
+            padding: 1rem;
+            border-radius: 12px;
+            text-align: center;
+            margin: 1.25rem 0;
+        }
+
+        .price-info strong {
+            color: var(--success);
+            font-size: 1.35rem;
+        }
+
+        .warning-note {
+            background: #fff3e0;
+            border-left: 4px solid var(--warning);
+            padding: 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #e65100;
+            margin-top: 1rem;
+        }
+
+        .warning-note i {
+            color: var(--warning);
+        }
+
+        .modal-footer {
+            padding: 1.25rem 1.5rem;
+            background: #f8f9fa;
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .btn-cancel, .btn-confirm {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-cancel {
+            background: #f1f5f9;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+        }
+
+        .btn-cancel:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-confirm {
+            background: var(--primary);
+            color: white;
+            border: none;
+        }
+
+        .btn-confirm:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
         }
 
         footer {
@@ -607,8 +733,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
             .card-right { text-align: center; }
             .feature-badges { justify-content: center; }
             .pending-alert { flex-direction: column; text-align: center; }
-            .pending-info { justify-content: center; }
-            .pending-amount { text-align: center; }
+            .modal-content { margin: 15% auto; }
         }
     </style>
 </head>
@@ -766,7 +891,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
                             </div>
                         </div>
                         <div class="card-right">
-                            <button class="pricing-btn btn-upgrade" onclick="upgradePlan('silver', 'monthly', 300)">Upgrade to Silver</button>
+                            <button class="pricing-btn btn-upgrade" onclick="showPlanModal('silver', 'monthly', 300)">Upgrade to Silver</button>
                         </div>
                     </div>
 
@@ -791,7 +916,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
                             </div>
                         </div>
                         <div class="card-right">
-                            <button class="pricing-btn btn-upgrade btn-gold" onclick="upgradePlan('gold', 'monthly', 800)">Upgrade to Gold</button>
+                            <button class="pricing-btn btn-upgrade btn-gold" onclick="showPlanModal('gold', 'monthly', 800)">Upgrade to Gold</button>
                         </div>
                     </div>
                 </div>
@@ -800,7 +925,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
             <!-- Yearly Plans -->
             <div id="yearlyPlans" class="billing-period">
                 <div class="pricing-grid">
-                    <!-- Bronze Yearly (same) -->
+                    <!-- Bronze Yearly -->
                     <div class="pricing-card bronze">
                         <div class="free-badge">CURRENT PLAN</div>
                         <div class="card-left">
@@ -846,7 +971,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
                             </div>
                         </div>
                         <div class="card-right">
-                            <button class="pricing-btn btn-upgrade" onclick="upgradePlan('silver', 'yearly', 3000)">Upgrade to Silver</button>
+                            <button class="pricing-btn btn-upgrade" onclick="showPlanModal('silver', 'yearly', 3000)">Upgrade to Silver</button>
                         </div>
                     </div>
 
@@ -871,7 +996,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
                             </div>
                         </div>
                         <div class="card-right">
-                            <button class="pricing-btn btn-upgrade btn-gold" onclick="upgradePlan('gold', 'yearly', 8000)">Upgrade to Gold</button>
+                            <button class="pricing-btn btn-upgrade btn-gold" onclick="showPlanModal('gold', 'yearly', 8000)">Upgrade to Gold</button>
                         </div>
                     </div>
                 </div>
@@ -884,13 +1009,54 @@ require_once __DIR__ . '/../backend/session/auth.php';
     </main>
 </div>
 
+<!-- ==================== PLAN CONFIRMATION MODAL ==================== -->
+<div id="planConfirmModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Confirm Plan Change</h3>
+            <button class="modal-close" onclick="closeModal()">×</button>
+        </div>
+        
+        <div class="modal-body">
+            <div class="plan-change-info">
+                <div class="from-plan">
+                    <strong>Current:</strong><br>
+                    <span id="currentPlanModal">Bronze Plan</span>
+                </div>
+                <div class="arrow">→</div>
+                <div class="to-plan">
+                    <strong>New:</strong><br>
+                    <span id="newPlanModal">Silver Plan (Monthly)</span>
+                </div>
+            </div>
+
+            <div class="price-info">
+                <p>You will be charged <strong id="modalAmount">₱300.00</strong> 
+                <span id="modalBillingPeriod">per month</span></p>
+            </div>
+
+            <div class="warning-note" id="downgradeWarning" style="display: none;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>Downgrading will take effect at the end of your current billing period. Some features may no longer be available.</p>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+            <button class="btn-confirm" id="confirmBtn" onclick="proceedWithPlanChange()">
+                Confirm Upgrade
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
 // Set current date
 document.getElementById('dateDisplay').textContent = new Date().toLocaleDateString('en-US', { 
     year: 'numeric', month: 'long', day: 'numeric' 
 });
 
-// Toggle between monthly and yearly plans
+// Toggle between monthly and yearly
 const monthlyRadio = document.getElementById('monthlyRadio');
 const yearlyRadio = document.getElementById('yearlyRadio');
 const monthlyPlans = document.getElementById('monthlyPlans');
@@ -898,61 +1064,103 @@ const yearlyPlans = document.getElementById('yearlyPlans');
 
 function updatePriceDisplay() {
     const isMonthly = monthlyRadio.checked;
-    
-    // Update price displays in cards
     document.querySelectorAll('.pricing-card').forEach(card => {
-        const monthlyPrice = card.querySelector('.monthly-price');
-        const yearlyPrice = card.querySelector('.yearly-price');
-        
-        if (monthlyPrice && yearlyPrice) {
-            if (isMonthly) {
-                monthlyPrice.style.display = 'block';
-                yearlyPrice.style.display = 'none';
-            } else {
-                monthlyPrice.style.display = 'none';
-                yearlyPrice.style.display = 'block';
-            }
+        const monthlyPriceEl = card.querySelector('.monthly-price');
+        const yearlyPriceEl = card.querySelector('.yearly-price');
+        if (monthlyPriceEl && yearlyPriceEl) {
+            monthlyPriceEl.style.display = isMonthly ? 'block' : 'none';
+            yearlyPriceEl.style.display = isMonthly ? 'none' : 'block';
         }
     });
 }
 
-monthlyRadio.addEventListener('change', function() {
-    if (this.checked) {
-        monthlyPlans.classList.add('active');
-        yearlyPlans.classList.remove('active');
-        updatePriceDisplay();
-    }
+monthlyRadio.addEventListener('change', () => {
+    monthlyPlans.classList.add('active');
+    yearlyPlans.classList.remove('active');
+    updatePriceDisplay();
 });
 
-yearlyRadio.addEventListener('change', function() {
-    if (this.checked) {
-        yearlyPlans.classList.add('active');
-        monthlyPlans.classList.remove('active');
-        updatePriceDisplay();
-    }
+yearlyRadio.addEventListener('change', () => {
+    yearlyPlans.classList.add('active');
+    monthlyPlans.classList.remove('active');
+    updatePriceDisplay();
 });
 
-// Upgrade plan function
-function upgradePlan(plan, billing, amount) {
-    // You can show a confirmation modal here
-    if (confirm(`Upgrade to ${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan (${billing}) for ₱${amount.toFixed(2)}?`)) {
-        // Redirect to payment page
-        window.location.href = `/seller/ui/payment.php?amount=${amount}&plan=${plan}&billing=${billing}`;
-    }
-}
+// Modal variables
+let pendingPlanChange = {};
 
-// Show pending alert if there's a pending payment (example - can be dynamic from backend)
-function showPendingAlert(plan, amount) {
-    const alertDiv = document.getElementById('pendingAlert');
-    const pendingAmountSpan = document.getElementById('pendingAmount');
-    const payNowBtn = document.getElementById('payNowBtn');
+// Show confirmation modal
+function showPlanModal(plan, billing, amount) {
+    const currentPlanName = document.getElementById('currentPlanName').textContent.trim();
+
+    pendingPlanChange = {
+        plan: plan,
+        billing: billing,
+        amount: amount
+    };
+
+    // Update modal content
+    document.getElementById('currentPlanModal').textContent = currentPlanName;
+    document.getElementById('newPlanModal').textContent = 
+        `${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan (${billing})`;
     
-    pendingAmountSpan.textContent = `₱${amount.toFixed(2)}`;
-    alertDiv.style.display = 'flex';
+    document.getElementById('modalAmount').textContent = `₱${amount.toLocaleString('en-US')}`;
+    document.getElementById('modalBillingPeriod').textContent = 
+        billing === 'monthly' ? 'per month' : 'per year';
+
+    const isDowngrade = (plan === 'bronze' && currentPlanName !== 'Bronze Plan');
+
+    const downgradeWarning = document.getElementById('downgradeWarning');
+    const confirmBtn = document.getElementById('confirmBtn');
+    const modalTitle = document.getElementById('modalTitle');
+
+    if (isDowngrade) {
+        downgradeWarning.style.display = 'block';
+        modalTitle.textContent = "Confirm Downgrade";
+        confirmBtn.textContent = "Confirm Downgrade";
+        confirmBtn.style.backgroundColor = 'var(--danger)';
+    } else {
+        downgradeWarning.style.display = 'none';
+        modalTitle.textContent = "Confirm Upgrade";
+        confirmBtn.textContent = "Confirm & Pay";
+        confirmBtn.style.backgroundColor = 'var(--primary)';
+    }
+
+    // Show modal
+    document.getElementById('planConfirmModal').style.display = 'block';
 }
 
-// Example: Uncomment to test pending alert
-// showPendingAlert('silver', 300);
+// Close modal
+function closeModal() {
+    document.getElementById('planConfirmModal').style.display = 'none';
+}
+
+// Proceed with plan change
+function proceedWithPlanChange() {
+    if (!pendingPlanChange.plan) return;
+
+    const { plan, billing, amount } = pendingPlanChange;
+    closeModal();
+
+    // Redirect to payment page
+    window.location.href = `/seller/ui/payment.php?amount=${amount}&plan=${plan}&billing=${billing}`;
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('planConfirmModal');
+    if (event.target === modal) {
+        closeModal();
+    }
+};
+
+// Close with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === "Escape") {
+        const modal = document.getElementById('planConfirmModal');
+        if (modal.style.display === 'block') closeModal();
+    }
+});
 </script>
 
 </body>

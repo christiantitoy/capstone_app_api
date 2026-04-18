@@ -1,3 +1,8 @@
+<?php
+// /seller/ui/payment.php
+require_once __DIR__ . '/../backend/session/auth.php';
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,545 +12,8 @@
     <link rel="icon" type="image/png" href="/seller/image/app_icon.png">
     <link rel="stylesheet" href="../css/error.css?v=<?= time() ?>">
     <link rel="stylesheet" href="../css/logout.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../css/payment.css?v=<?= time() ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --primary: #3498db;
-            --primary-dark: #2980b9;
-            --secondary: #e67e22;
-            --success: #2ecc71;
-            --danger: #e74c3c;
-            --dark: #2c3e50;
-            --gray: #7f8c8d;
-            --light: #ecf0f1;
-            --border: #e2e8f0;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-            background: #f5f7fa;
-            color: var(--dark);
-            min-height: 100vh;
-        }
-
-        /* Header */
-        .page-header {
-            background: white;
-            border-bottom: 1px solid var(--border);
-            padding: 0.875rem 1.5rem;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .header-container {
-            max-width: 1100px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            gap: 1.25rem;
-        }
-
-        .back-btn {
-            background: none;
-            border: none;
-            font-size: 1rem;
-            cursor: pointer;
-            color: var(--gray);
-            padding: 0.5rem;
-            border-radius: 8px;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .back-btn:hover {
-            background: var(--light);
-            color: var(--primary);
-        }
-
-        .page-header h1 {
-            font-size: 1.25rem;
-            font-weight: 600;
-        }
-
-        /* Main Container */
-        .payment-container {
-            max-width: 1100px;
-            margin: 1.5rem auto;
-            padding: 0 1.5rem;
-        }
-
-        /* Two Column Layout */
-        .payment-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-        }
-
-        /* Cards */
-        .card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-            overflow: hidden;
-            margin-bottom: 1.25rem;
-        }
-
-        .card-header {
-            padding: 1rem 1.25rem;
-            border-bottom: 1px solid var(--border);
-            background: #fafbfc;
-        }
-
-        .card-header h2 {
-            font-size: 1rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .card-header h2 i {
-            color: var(--primary);
-            font-size: 0.9rem;
-        }
-
-        .card-body {
-            padding: 1.25rem;
-        }
-
-        /* Amount Card */
-        .amount-card {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            border-radius: 12px;
-            padding: 1.5rem;
-            text-align: center;
-            margin-bottom: 1.25rem;
-        }
-
-        .amount-label {
-            color: rgba(255,255,255,0.7);
-            font-size: 0.75rem;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            margin-bottom: 0.5rem;
-        }
-
-        .amount-value {
-            color: white;
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 0.25rem;
-        }
-
-        .amount-sub {
-            color: rgba(255,255,255,0.6);
-            font-size: 0.7rem;
-        }
-
-        /* QR Section */
-        .qr-section {
-            text-align: center;
-        }
-
-        .qr-image {
-            width: 160px;
-            height: 160px;
-            margin: 0 auto 0.75rem;
-            background: white;
-            border-radius: 12px;
-            padding: 0.5rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .qr-image:hover {
-            transform: scale(1.02);
-        }
-
-        .qr-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-
-        .qr-hint {
-            font-size: 0.7rem;
-            color: var(--gray);
-            margin-top: 0.5rem;
-        }
-
-        /* Instructions */
-        .instruction-list {
-            list-style: none;
-        }
-
-        .instruction-item {
-            display: flex;
-            gap: 0.75rem;
-            padding: 0.6rem 0;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .instruction-item:last-child {
-            border-bottom: none;
-        }
-
-        .step-number {
-            width: 22px;
-            height: 22px;
-            background: var(--primary);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.65rem;
-            font-weight: 700;
-            color: white;
-            flex-shrink: 0;
-        }
-
-        .step-text {
-            font-size: 0.8rem;
-            color: #4a5568;
-            line-height: 1.4;
-        }
-
-        /* Upload Area */
-        .upload-area {
-            border: 2px dashed var(--border);
-            border-radius: 10px;
-            padding: 1.25rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            background: #fafbfc;
-        }
-
-        .upload-area:hover {
-            border-color: var(--primary);
-            background: #f0f7ff;
-        }
-
-        .upload-area.has-image {
-            border-color: var(--success);
-            background: #f0fdf4;
-            padding: 0;
-            position: relative;
-            min-height: 150px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .upload-icon {
-            font-size: 2rem;
-            color: var(--gray);
-            margin-bottom: 0.5rem;
-        }
-
-        .upload-text {
-            font-size: 0.8rem;
-            color: var(--dark);
-        }
-
-        .upload-hint {
-            font-size: 0.65rem;
-            color: var(--gray);
-            margin-top: 0.25rem;
-        }
-
-        .preview-image {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            border-radius: 10px;
-            max-height: 150px;
-        }
-
-        .remove-image {
-            position: absolute;
-            top: 0.25rem;
-            right: 0.25rem;
-            background: rgba(0,0,0,0.6);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-            font-size: 0.7rem;
-        }
-
-        .remove-image:hover {
-            background: var(--danger);
-        }
-
-        /* Form Inputs */
-        .form-group {
-            margin-top: 1rem;
-        }
-
-        .form-label {
-            display: block;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-bottom: 0.4rem;
-            color: var(--dark);
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 0.6rem 0.875rem;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 0.85rem;
-            transition: all 0.2s;
-            outline: none;
-        }
-
-        .form-input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(52,152,219,0.1);
-        }
-
-        .form-input.error {
-            border-color: var(--danger);
-        }
-
-        .input-hint {
-            font-size: 0.65rem;
-            margin-top: 0.3rem;
-        }
-
-        .input-hint.error {
-            color: var(--danger);
-        }
-
-        .input-hint.success {
-            color: var(--success);
-        }
-
-        /* Submit Button */
-        .submit-section {
-            margin-top: 1.5rem;
-            text-align: center;
-        }
-
-        .submit-btn {
-            background: var(--success);
-            color: white;
-            border: none;
-            padding: 0.875rem 2rem;
-            border-radius: 10px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .submit-btn:hover:not(:disabled) {
-            background: #27ae60;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(46,204,113,0.3);
-        }
-
-        .submit-btn:disabled {
-            background: #bdc3c7;
-            cursor: not-allowed;
-        }
-
-        /* Modal - Optimized for small laptops */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            display: flex;
-            flex-direction: column;
-            background: white;
-            border-radius: 16px;
-            padding: 1rem;
-            max-width: 90vw;
-            max-height: 90vh;
-            text-align: center;
-            cursor: default;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-        }
-
-        .modal-content img {
-            max-width: 100vw;
-            max-height: 85vh;
-            width: auto;
-            height: auto;
-            border-radius: 10px;
-            background: white;
-            padding: 0.5rem;
-        }
-
-        .modal-close {
-            margin-top: 1rem;
-            padding: 0.5rem 1.25rem;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-
-        .modal-close:hover {
-            background: var(--primary-dark);
-        }
-
-        /* Footer */
-        .page-footer {
-            text-align: center;
-            padding: 1.5rem;
-            color: var(--gray);
-            font-size: 0.7rem;
-            border-top: 1px solid var(--border);
-            margin-top: 1.5rem;
-        }
-
-        /* Toast */
-        .toast {
-            position: fixed;
-            bottom: 1.5rem;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: var(--dark);
-            color: white;
-            padding: 0.6rem 1.25rem;
-            border-radius: 40px;
-            font-size: 0.8rem;
-            z-index: 1100;
-            transition: transform 0.3s;
-            white-space: nowrap;
-        }
-
-        .toast.show {
-            transform: translateX(-50%) translateY(0);
-        }
-
-        .toast.success {
-            background: var(--success);
-        }
-
-        .toast.error {
-            background: var(--danger);
-        }
-
-        /* Responsive - Small Laptops (1366x768 and below) */
-        @media (max-width: 1024px) {
-            .payment-container {
-                max-width: 100%;
-                padding: 0 1rem;
-            }
-            
-            .payment-grid {
-                gap: 1rem;
-            }
-            
-            .amount-value {
-                font-size: 2rem;
-            }
-            
-            .qr-image {
-                width: 130px;
-                height: 130px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .payment-grid {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-            }
-            
-            .page-header {
-                padding: 0.75rem 1rem;
-            }
-            
-            .payment-container {
-                margin: 1rem auto;
-            }
-            
-            .amount-value {
-                font-size: 1.8rem;
-            }
-            
-            .qr-image {
-                width: 140px;
-                height: 140px;
-            }
-            
-            .toast {
-                white-space: normal;
-                text-align: center;
-                max-width: 80%;
-                font-size: 0.75rem;
-            }
-            
-            .modal-content img {
-                max-width: 85vw;
-                max-height: 70vh;
-            }
-        }
-
-        /* For very small screens (mobile) */
-        @media (max-width: 480px) {
-            .card-body {
-                padding: 1rem;
-            }
-            
-            .instruction-item {
-                gap: 0.5rem;
-            }
-            
-            .step-text {
-                font-size: 0.75rem;
-            }
-            
-            .submit-btn {
-                width: 100%;
-                justify-content: center;
-            }
-        }
-    </style>
 </head>
 <body>
 
@@ -670,7 +138,7 @@
     <p>&copy; 2026 PalitOra Seller Dashboard. All rights reserved.</p>
 </footer>
 
-<!-- QR Modal - Optimized for all screen sizes -->
+<!-- QR Modal -->
 <div id="qrModal" class="modal" onclick="closeQRModal()">
     <div class="modal-content" onclick="event.stopPropagation()">
         <img src="/seller/image/qr.jpg" alt="QR Code" onerror="this.src='https://placehold.co/300x300?text=QR+Code'">
@@ -680,7 +148,7 @@
 <!-- Toast -->
 <div id="toast" class="toast"></div>
 
-<!-- ── LOGOUT CONFIRMATION MODAL ── -->
+<!-- Logout Modal -->
 <div class="logout-modal-overlay" id="logoutModal">
     <div class="logout-modal-content">
         <div class="logout-modal-header">
@@ -701,188 +169,191 @@
 <script src="/seller/js/logout.js"></script>
 
 <script>
-    // Get URL parameters
+    // Get URL parameters from my_plan.php
     const urlParams = new URLSearchParams(window.location.search);
-    let amount = parseFloat(urlParams.get('amount')) || 299.00;
-    
+    const plan     = urlParams.get('plan') || 'silver';
+    const billing  = urlParams.get('billing') || 'monthly';
+    let amount     = parseFloat(urlParams.get('amount')) || 300.00;
+
     // State variables
-    let selectedImage = null;
     let isSubmitting = false;
-    
+
     // Display amount
     document.getElementById('amountDisplay').innerText = `₱${amount.toFixed(2)}`;
     document.getElementById('instructionAmount').innerText = `₱${amount.toFixed(2)}`;
-    
-    // Handle image upload
+
+    // Handle image upload (preview only - we send the real file to API)
     function handleImageUpload(event) {
         const file = event.target.files[0];
-        if (file && file.type.startsWith('image/')) {
-            if (file.size > 5 * 1024 * 1024) {
-                showToast('File too large. Max 5MB', 'error');
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                selectedImage = e.target.result;
-                const previewImg = document.getElementById('previewImg');
-                const removeBtn = document.getElementById('removeImageBtn');
-                const uploadArea = document.getElementById('uploadArea');
-                
-                previewImg.src = selectedImage;
-                previewImg.style.display = 'block';
-                removeBtn.style.display = 'flex';
-                uploadArea.classList.add('has-image');
-                
-                // Hide upload text
-                const uploadIcon = uploadArea.querySelector('.upload-icon');
-                const uploadText = uploadArea.querySelector('.upload-text');
-                const uploadHint = uploadArea.querySelector('.upload-hint');
-                if (uploadIcon) uploadIcon.style.display = 'none';
-                if (uploadText) uploadText.style.display = 'none';
-                if (uploadHint) uploadHint.style.display = 'none';
-                
-                checkFormComplete();
-            };
-            reader.readAsDataURL(file);
-        } else {
+        if (!file || !file.type.startsWith('image/')) {
             showToast('Please select a valid image file', 'error');
+            return;
         }
+
+        if (file.size > 5 * 1024 * 1024) {
+            showToast('File too large. Maximum 5MB allowed.', 'error');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const previewImg = document.getElementById('previewImg');
+            const removeBtn = document.getElementById('removeImageBtn');
+            const uploadArea = document.getElementById('uploadArea');
+
+            previewImg.src = e.target.result;
+            previewImg.style.display = 'block';
+            removeBtn.style.display = 'flex';
+            uploadArea.classList.add('has-image');
+
+            // Hide upload texts
+            uploadArea.querySelector('.upload-icon').style.display = 'none';
+            uploadArea.querySelector('.upload-text').style.display = 'none';
+            uploadArea.querySelector('.upload-hint').style.display = 'none';
+
+            checkFormComplete();
+        };
+        reader.readAsDataURL(file);
     }
-    
+
     // Remove uploaded image
     function removeImage() {
-        selectedImage = null;
         const previewImg = document.getElementById('previewImg');
         const removeBtn = document.getElementById('removeImageBtn');
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
-        
+
         previewImg.style.display = 'none';
         removeBtn.style.display = 'none';
         uploadArea.classList.remove('has-image');
-        
-        // Show upload text again
-        const uploadIcon = uploadArea.querySelector('.upload-icon');
-        const uploadText = uploadArea.querySelector('.upload-text');
-        const uploadHint = uploadArea.querySelector('.upload-hint');
-        if (uploadIcon) uploadIcon.style.display = 'block';
-        if (uploadText) uploadText.style.display = 'block';
-        if (uploadHint) uploadHint.style.display = 'block';
-        
+
+        // Show upload texts again
+        uploadArea.querySelector('.upload-icon').style.display = 'block';
+        uploadArea.querySelector('.upload-text').style.display = 'block';
+        uploadArea.querySelector('.upload-hint').style.display = 'block';
+
         fileInput.value = '';
-        
         checkFormComplete();
     }
-    
+
     // Validate GCash number
     function validateGCashNumber() {
         const input = document.getElementById('gcashNumber');
         const hint = document.getElementById('gcashHint');
-        const value = input.value;
-        
-        // Allow only digits
-        if (value && !/^\d+$/.test(value)) {
-            input.value = value.replace(/\D/g, '');
-        }
-        
-        const cleanValue = input.value;
-        
-        if (cleanValue.length === 0) {
+        let value = input.value.replace(/\D/g, ''); // keep only digits
+
+        input.value = value;
+
+        if (value.length === 0) {
             hint.innerHTML = '';
             hint.className = 'input-hint';
             input.classList.remove('error');
-        } else if (cleanValue.length < 11) {
+        } else if (value.length < 11) {
             hint.innerHTML = 'Please enter a complete 11-digit GCash number';
             hint.className = 'input-hint error';
             input.classList.add('error');
-        } else if (cleanValue.length === 11 && !cleanValue.startsWith('09')) {
+        } else if (value.length === 11 && !value.startsWith('09')) {
             hint.innerHTML = 'GCash number must start with "09"';
             hint.className = 'input-hint error';
             input.classList.add('error');
-        } else if (cleanValue.length === 11 && cleanValue.startsWith('09')) {
+        } else if (value.length === 11 && value.startsWith('09')) {
             hint.innerHTML = '<i class="fas fa-check-circle"></i> Valid GCash number';
             hint.className = 'input-hint success';
             input.classList.remove('error');
-        } else {
-            hint.innerHTML = '';
-            hint.className = 'input-hint';
-            input.classList.remove('error');
         }
-        
+
         checkFormComplete();
     }
-    
-    // Check if form is complete
+
+    // Check if form is ready to submit
     function checkFormComplete() {
         const gcashNumber = document.getElementById('gcashNumber').value;
-        const isImageSelected = selectedImage !== null;
+        const fileInput = document.getElementById('fileInput');
+        const isImageSelected = fileInput.files.length > 0;
         const isGcashValid = gcashNumber.length === 11 && gcashNumber.startsWith('09');
+
         const isComplete = isImageSelected && isGcashValid && !isSubmitting;
-        
-        const submitBtn = document.getElementById('submitBtn');
-        submitBtn.disabled = !isComplete;
+
+        document.getElementById('submitBtn').disabled = !isComplete;
     }
-    
-    // Open QR modal
+
+    // Open / Close QR Modal
     function openQRModal() {
         document.getElementById('qrModal').classList.add('active');
     }
-    
-    // Close QR modal
+
     function closeQRModal() {
         document.getElementById('qrModal').classList.remove('active');
     }
-    
-    // Show toast message
+
+    // Show toast
     function showToast(message, type = 'success') {
         const toast = document.getElementById('toast');
         toast.textContent = message;
         toast.className = `toast ${type}`;
         toast.classList.add('show');
-        
-        setTimeout(() => {
-            toast.classList.remove('show');
-        }, 3000);
+
+        setTimeout(() => toast.classList.remove('show'), 4000);
     }
-    
-    // Submit payment
-    function submitPayment() {
-        const gcashNumber = document.getElementById('gcashNumber').value;
+
+    // Main Submit Function - Calls the real API
+    async function submitPayment() {
+        const gcashNumber = document.getElementById('gcashNumber').value.trim();
         const submitBtn = document.getElementById('submitBtn');
         const submitText = document.getElementById('submitText');
-        
-        if (isSubmitting) return;
-        
+        const fileInput = document.getElementById('fileInput');
+
+        if (isSubmitting || !gcashNumber || fileInput.files.length === 0) return;
+
         isSubmitting = true;
         submitBtn.disabled = true;
-        submitText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-        
-        // Simulate API call
-        setTimeout(() => {
-            console.log('Payment submitted:', {
-                amount: amount,
-                gcash_number: gcashNumber,
-                proof_image: selectedImage ? 'image_data_here' : null
+        submitText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+
+        const formData = new FormData();
+        formData.append('plan', plan);
+        formData.append('billing', billing);
+        formData.append('amount', amount);
+        formData.append('gcash_number', gcashNumber);
+        formData.append('proof_image', fileInput.files[0]);
+
+        try {
+            const res = await fetch('/seller/backend/payment/submit_payment.php', {
+                method: 'POST',
+                body: formData
             });
-            
-            showToast('Payment proof submitted successfully!', 'success');
-            
-            setTimeout(() => {
-                window.location.href = '/seller/ui/orders.php';
-            }, 1500);
-        }, 2000);
+
+            const data = await res.json();
+
+            if (data.success) {
+                showToast(data.message || 'Payment proof submitted successfully!', 'success');
+                setTimeout(() => {
+                    window.location.href = '/seller/ui/my_plan.php';
+                }, 2000);
+            } else {
+                showToast(data.message || 'Submission failed. Please try again.', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Network error. Please check your connection and try again.', 'error');
+        } finally {
+            isSubmitting = false;
+            submitBtn.disabled = false;
+            submitText.innerHTML = '<i class="fas fa-check-circle"></i> Submit Payment Proof';
+        }
     }
-    
-    // Add input event listener for GCash number
+
+    // Event listeners
     document.getElementById('gcashNumber').addEventListener('input', validateGCashNumber);
-    
-    // Close modal with Escape key
+
+    // Close QR modal with Escape key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeQRModal();
         }
     });
+
+    // Initial check
+    checkFormComplete();
 </script>
 
 </body>
