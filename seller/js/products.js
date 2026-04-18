@@ -55,36 +55,31 @@ function displayProducts(products) {
             stockText = `Low Stock (${product.stock})`;
         }
         
-        // Determine status badge
+        // Determine status badge based on actual schema (approved, on_hold, removed)
         let statusClass = '';
         let statusIcon = '';
         let statusText = '';
         
         switch(product.status) {
-            case 'active':
-                statusClass = 'status-active';
+            case 'approved':
+                statusClass = 'status-approved';
                 statusIcon = 'fa-check-circle';
-                statusText = 'Active';
-                break;
-            case 'pending':
-                statusClass = 'status-pending';
-                statusIcon = 'fa-clock';
-                statusText = 'Pending Approval';
-                break;
-            case 'rejected':
-                statusClass = 'status-rejected';
-                statusIcon = 'fa-times-circle';
-                statusText = 'Rejected';
+                statusText = 'Approved';
                 break;
             case 'on_hold':
                 statusClass = 'status-onhold';
                 statusIcon = 'fa-pause-circle';
                 statusText = 'On Hold';
                 break;
+            case 'removed':
+                statusClass = 'status-removed';
+                statusIcon = 'fa-trash';
+                statusText = 'Removed';
+                break;
             default:
-                statusClass = 'status-inactive';
-                statusIcon = 'fa-minus-circle';
-                statusText = product.status || 'Inactive';
+                statusClass = 'status-pending';
+                statusIcon = 'fa-clock';
+                statusText = 'Pending';
         }
         
         // Variations display

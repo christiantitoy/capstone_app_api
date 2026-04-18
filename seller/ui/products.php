@@ -15,6 +15,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
     <link rel="stylesheet" href="../css/logout.css?v=<?= time() ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* Product Header with Status Badge */
         .product-header {
             display: flex;
             align-items: flex-start;
@@ -22,7 +23,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
             gap: 8px;
             margin-bottom: 4px;
         }
-        
+
         .product-title {
             font-size: 1.1rem;
             font-weight: 600;
@@ -30,8 +31,12 @@ require_once __DIR__ . '/../backend/session/auth.php';
             margin: 0;
             flex: 1;
             min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
-        
+
+        /* Status Badge Styles */
         .status-badge {
             display: inline-flex;
             align-items: center;
@@ -43,21 +48,65 @@ require_once __DIR__ . '/../backend/session/auth.php';
             white-space: nowrap;
             flex-shrink: 0;
         }
-        
-        .status-badge i { font-size: 0.65rem; }
-        
-        .status-active { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
-        .status-pending { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
-        .status-rejected { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
-        .status-onhold { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
-        .status-inactive { background: #f5f5f5; color: #616161; border: 1px solid #e0e0e0; }
-        
+
+        .status-badge i {
+            font-size: 0.65rem;
+        }
+
+        /* Approved Status */
+        .status-approved {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #a5d6a7;
+        }
+
+        /* On Hold Status */
+        .status-onhold {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        /* Removed Status (shouldn't display, but just in case) */
+        .status-removed {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+        }
+
+        /* Pending/Default Status */
+        .status-pending {
+            background: #e3f2fd;
+            color: #1565c0;
+            border: 1px solid #90caf9;
+        }
+
+        /* Make product card handle the new layout */
+        .product-card .product-info {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        /* Ensure actions stay at bottom */
         .product-actions {
             margin-top: 8px;
             display: flex;
             gap: 8px;
             border-top: 1px solid #eef2f6;
             padding-top: 10px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .product-header {
+                flex-wrap: wrap;
+            }
+            
+            .status-badge {
+                padding: 2px 6px;
+                font-size: 0.65rem;
+            }
         }
     </style>
 </head>
