@@ -55,6 +55,38 @@ function displayProducts(products) {
             stockText = `Low Stock (${product.stock})`;
         }
         
+        // Determine status badge
+        let statusClass = '';
+        let statusIcon = '';
+        let statusText = '';
+        
+        switch(product.status) {
+            case 'active':
+                statusClass = 'status-active';
+                statusIcon = 'fa-check-circle';
+                statusText = 'Active';
+                break;
+            case 'pending':
+                statusClass = 'status-pending';
+                statusIcon = 'fa-clock';
+                statusText = 'Pending Approval';
+                break;
+            case 'rejected':
+                statusClass = 'status-rejected';
+                statusIcon = 'fa-times-circle';
+                statusText = 'Rejected';
+                break;
+            case 'on_hold':
+                statusClass = 'status-onhold';
+                statusIcon = 'fa-pause-circle';
+                statusText = 'On Hold';
+                break;
+            default:
+                statusClass = 'status-inactive';
+                statusIcon = 'fa-minus-circle';
+                statusText = product.status || 'Inactive';
+        }
+        
         // Variations display
         let variationsHtml = '';
         if (product.has_variations == 1 && product.variations_count > 0) {
@@ -73,7 +105,12 @@ function displayProducts(products) {
                     }
                 </div>
                 <div class="product-info">
-                    <h3 class="product-title">${escapeHtml(product.product_name)}</h3>
+                    <div class="product-header">
+                        <h3 class="product-title">${escapeHtml(product.product_name)}</h3>
+                        <span class="status-badge ${statusClass}">
+                            <i class="fas ${statusIcon}"></i> ${statusText}
+                        </span>
+                    </div>
                     <span class="product-category">${escapeHtml(product.category)}</span>
                     <div class="product-price">${product.price_formatted}</div>
                     <div class="product-stock">
