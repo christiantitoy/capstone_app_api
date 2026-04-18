@@ -86,6 +86,10 @@ require_once __DIR__ . '/../backend/session/auth.php';
                 <div class="plan-details">
                     <h3 id="currentPlanName">Bronze Plan</h3>
                     <p id="currentPlanDesc">Free forever · 3 employees · Up to 50 products</p>
+                    <!-- Add billing display here -->
+                    <p id="currentPlanBilling" style="font-size: 0.75rem; color: var(--gray); margin-top: 0.25rem;">
+                        <i class="fas fa-calendar-alt"></i> <span id="billingText">Lifetime</span>
+                    </p>
                 </div>
             </div>
             <div class="plan-status">
@@ -467,6 +471,16 @@ function updatePlanDisplay(planData) {
     // Update description
     document.getElementById('currentPlanDesc').textContent = planData.description;
     
+    // Update billing display
+    const billingText = document.getElementById('billingText');
+    if (planData.billing === 'monthly') {
+        billingText.textContent = 'Monthly Billing';
+    } else if (planData.billing === 'yearly') {
+        billingText.textContent = 'Yearly Billing';
+    } else {
+        billingText.textContent = 'Lifetime Access';
+    }
+    
     // Update status badge
     const statusBadge = document.getElementById('currentPlanStatus');
     const isActive = planData.status === 'active';
@@ -481,12 +495,20 @@ function updatePlanDisplay(planData) {
     const expiryEl = document.getElementById('planExpiry');
     if (planData.end_date_formatted) {
         if (planData.billing === 'lifetime') {
-            expiryEl.textContent = 'Lifetime access';
+            expiryEl.textContent = 'Never expires';
+        } else if (planData.status === 'pending') {
+            expiryEl.textContent = 'Activation pending payment';
         } else {
             expiryEl.textContent = `Renews on ${planData.end_date_formatted}`;
         }
     } else {
-        expiryEl.textContent = planData.billing === 'lifetime' ? 'Lifetime access' : 'Active subscription';
+        if (planData.billing === 'lifetime') {
+            expiryEl.textContent = 'Never expires';
+        } else if (planData.status === 'pending') {
+            expiryEl.textContent = 'Activation pending payment';
+        } else {
+            expiryEl.textContent = 'Active subscription';
+        }
     }
 }
 
