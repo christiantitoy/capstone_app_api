@@ -525,6 +525,132 @@ body {
     transform: none;
 }
 
+/* =========================
+   DELETE MODAL (SCOPED)
+========================= */
+
+#deleteModal.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease;
+}
+
+#deleteModal.modal.active {
+    display: flex;
+}
+
+#deleteModal .modal-content {
+    background: white;
+    border-radius: 12px;
+    max-width: 450px;
+    width: 90%;
+    padding: 2rem;
+    animation: slideUp 0.3s ease;
+}
+
+/* Scoped inner elements */
+#deleteModal .modal-icon {
+    text-align: center;
+    font-size: 4rem;
+    color: var(--danger);
+    margin-bottom: 1rem;
+}
+
+#deleteModal .modal-title {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--dark);
+}
+
+#deleteModal .modal-message {
+    text-align: center;
+    color: #5f6b7a;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+#deleteModal .modal-warning {
+    background: #ffebee;
+    color: #c62828;
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+#deleteModal .modal-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+#deleteModal .modal-btn {
+    padding: 0.7rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    font-size: 0.95rem;
+}
+
+#deleteModal .modal-btn-cancel {
+    background: #e0e0e0;
+    color: #5f6b7a;
+}
+
+#deleteModal .modal-btn-cancel:hover {
+    background: #d0d0d0;
+}
+
+#deleteModal .modal-btn-confirm {
+    background: var(--danger);
+    color: white;
+}
+
+#deleteModal .modal-btn-confirm:hover {
+    background: #c0392b;
+    transform: translateY(-2px);
+}
+
+#deleteModal .modal-btn-confirm:disabled {
+    background: var(--gray);
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Animations (shared OK) */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* Toast Notification */
 .toast {
     position: fixed;
