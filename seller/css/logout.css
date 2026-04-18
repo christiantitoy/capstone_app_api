@@ -90,7 +90,7 @@
     background: #f8fafc;
 }
 
-.logout-btn {
+.logout-btn2 {
     padding: 0.85rem 1.5rem;
     border-radius: 8px;
     font-weight: 600;
@@ -104,21 +104,21 @@
     display: inline-block;
 }
 
-.logout-btn-secondary {
+.logout-btn2-secondary {
     background: #ebedf0;
     color: #2c3e50;
 }
 
-.logout-btn-secondary:hover {
+.logout-btn2-secondary:hover {
     background: #d5dbe0;
 }
 
-.logout-btn-danger {
+.logout-btn2-danger {
     background: var(--danger);
     color: white;
 }
 
-.logout-btn-danger:hover {
+.logout-btn2-danger:hover {
     background: #c0392b;
     transform: translateY(-1px);
 }

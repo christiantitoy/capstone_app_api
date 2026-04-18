@@ -205,8 +205,8 @@ if (!$seller_id) {
             <p class="logout-text-secondary">You will need to log in again to access your dashboard.</p>
         </div>
         <div class="logout-modal-footer">
-            <button class="logout-btn logout-btn-secondary" id="cancelLogout">Cancel</button>
-            <a href="/seller/backend/auth/logout.php" class="logout-btn logout-btn-danger">Sign Out</a>
+            <button class="logout-btn2 logout-btn2-secondary" id="cancelLogout">Cancel</button>
+            <a href="/seller/backend/auth/logout.php" class="logout-btn2 logout-btn2-danger">Sign Out</a>
         </div>
     </div>
 </div>
