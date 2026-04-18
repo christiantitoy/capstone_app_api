@@ -66,7 +66,6 @@ $role_display = [
     <title>Employees - Seller Dashboard</title>
     <link rel="icon" type="image/png" href="/seller/image/app_icon.png">
     <link rel="stylesheet" href="../css/employees.css?v=<?= time() ?>">
-    <link rel="stylesheet" href="../css/error.css?v=<?= time() ?>">
     <link rel="stylesheet" href="../css/logout.css?v=<?= time() ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -512,6 +511,121 @@ document.getElementById('searchInput')?.addEventListener('keyup', function() {
         }
     });
 });
+
+// Global variable to store employee limits data
+let employeeLimits = null;
+
+// Check employee limits on page load
+async function checkEmployeeLimits() {
+    try {
+        const response = await fetch('/seller/backend/employees/check_employee_limits.php');
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+            employeeLimits = result.data;
+            
+            // Update UI with limit information
+            updateEmployeeLimitUI(result.data);
+            
+            // Show notification if employees were put on hold
+            if (result.data.employees_put_on_hold > 0) {
+                showToast(
+                    `⚠️ ${result.data.employees_put_on_hold} employee(s) put on hold. Your ${result.data.plan} plan allows ${result.data.max_employees} active employees. Upgrade to add more.`,
+                    'warning'
+                );
+                setTimeout(() => location.reload(), 2000);
+            }
+            
+            // Show success if employees were reactivated
+            if (result.data.employees_reactivated > 0) {
+                showToast(
+                    `✅ ${result.data.employees_reactivated} employee(s) reactivated!`,
+                    'success'
+                );
+                setTimeout(() => location.reload(), 2000);
+            }
+        }
+    } catch (error) {
+        console.error('Error checking employee limits:', error);
+    }
+}
+
+// Update UI with employee limit information
+function updateEmployeeLimitUI(data) {
+    const headerElement = document.querySelector('.employees-header h2');
+    if (headerElement && data.max_employees !== 'unlimited') {
+        headerElement.innerHTML = `Team Members (${data.active_employees}/${data.max_employees} active)`;
+        
+        // Add limit warning if near or at limit
+        if (data.active_employees >= data.max_employees) {
+            const warningSpan = document.createElement('span');
+            warningSpan.style.cssText = 'margin-left: 10px; font-size: 0.85rem; color: var(--danger);';
+            warningSpan.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Limit reached - Upgrade plan to add more`;
+            headerElement.appendChild(warningSpan);
+            
+            // Disable add employee button
+            const addBtn = document.querySelector('.add-employee-btn');
+            if (addBtn) {
+                addBtn.disabled = true;
+                addBtn.style.opacity = '0.6';
+                addBtn.style.cursor = 'not-allowed';
+                addBtn.title = `Your ${data.plan} plan only allows ${data.max_employees} active employees`;
+                addBtn.onclick = (e) => {
+                    e.preventDefault();
+                    showToast(`Upgrade to Silver or Gold plan to add more employees.`, 'warning');
+                };
+            }
+        }
+    } else if (headerElement && data.max_employees === 'unlimited') {
+        headerElement.innerHTML = `Team Members (${data.total_employees} total)`;
+    }
+    
+    // Show on-hold employees count if any
+    if (data.on_hold_employees > 0) {
+        const filterGroup = document.querySelector('.filter-group');
+        if (filterGroup) {
+            const onHoldBadge = document.createElement('span');
+            onHoldBadge.style.cssText = 'margin-left: 10px; padding: 4px 10px; background: #fff3cd; color: #856404; border-radius: 20px; font-size: 0.8rem;';
+            onHoldBadge.innerHTML = `<i class="fas fa-pause-circle"></i> ${data.on_hold_employees} on hold`;
+            filterGroup.insertBefore(onHoldBadge, filterGroup.firstChild);
+        }
+    }
+}
+
+// Call on page load
+document.addEventListener('DOMContentLoaded', function() {
+    checkEmployeeLimits();
+});
+
+// Update showToast function to support warning type
+const originalShowToast = showToast;
+showToast = function(message, type = 'success') {
+    const toast = document.getElementById('deleteToast');
+    const toastMessage = document.getElementById('toastMessage');
+    const icon = toast.querySelector('i');
+    
+    toastMessage.textContent = message;
+    
+    if (type === 'error') {
+        toast.style.borderLeftColor = 'var(--danger)';
+        icon.style.color = 'var(--danger)';
+        icon.className = 'fas fa-exclamation-circle';
+    } else if (type === 'warning') {
+        toast.style.borderLeftColor = '#ffc107';
+        icon.style.color = '#856404';
+        icon.className = 'fas fa-exclamation-triangle';
+    } else {
+        toast.style.borderLeftColor = 'var(--success)';
+        icon.style.color = 'var(--success)';
+        icon.className = 'fas fa-check-circle';
+    }
+    
+    toast.style.display = 'block';
+    
+    setTimeout(() => {
+        toast.style.display = 'none';
+    }, 5000);
+};
 
 // Attach filter listeners
 document.getElementById('filterRole')?.addEventListener('change', applyFilters);
