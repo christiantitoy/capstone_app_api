@@ -353,6 +353,7 @@ tr:hover { background: #f8fafc; }
 .modal {
     display: none;
     position: fixed;
+    padding: 1rem;
     top: 0;
     left: 0;
     width: 100%;
