@@ -360,6 +360,26 @@ require_once __DIR__ . '/../backend/session/auth.php';
     </div>
 </div>
 
+<!-- ── LOGOUT CONFIRMATION MODAL ── -->
+<div class="logout-modal-overlay" id="logoutModal">
+    <div class="logout-modal-content">
+        <div class="logout-modal-header">
+            <h3>Sign Out</h3>
+            <button class="logout-modal-close" id="closeModal">×</button>
+        </div>
+        <div class="logout-modal-body">
+            <p>Are you sure you want to sign out?</p>
+            <p class="logout-text-secondary">You will need to log in again to access your dashboard.</p>
+        </div>
+        <div class="logout-modal-footer">
+            <button class="logout-btn2 logout-btn2-secondary" id="cancelLogout">Cancel</button>
+            <a href="/seller/backend/auth/logout.php" class="logout-btn2 logout-btn2-danger">Sign Out</a>
+        </div>
+    </div>
+</div>
+
+<script src="/seller/js/logout.js"></script>
+
 <script>
 // Global variable to store current plan data
 let currentPlanData = null;

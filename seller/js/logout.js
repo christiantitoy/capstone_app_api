@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const userProfile = document.getElementById('userProfile');
     if (userProfile) {
         userProfile.addEventListener('click', () => {
-            window.location.href = '/seller/ui/profile.php';
+            window.location.href = '/seller/ui/seller_profile.php';
         });
     }
 });

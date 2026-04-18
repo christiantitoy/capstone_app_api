@@ -129,7 +129,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
             <a href="#" class="nav-item"><i class="fas fa-cog"></i><span>Sales</span></a>
         </nav>
         <div class="sidebar-footer">
-            <div class="user-profile">
+            <div class="user-profile" id="userProfile">
                 <div class="avatar"><?= strtoupper(substr($seller_name, 0, 1)) ?></div>
                 <div class="user-info">
                     <h4 class="seller-name"><?= htmlspecialchars($seller_name) ?></h4>
