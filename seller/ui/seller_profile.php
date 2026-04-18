@@ -303,47 +303,166 @@ require_once __DIR__ . '/../backend/session/auth.php';
             color: #c62828;
         }
 
-        /* Store Images */
-        .store-images {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .store-logo {
-            width: 100px;
-            height: 100px;
-            border-radius: 10px;
-            background: #f8fafc;
-            border: 1px solid #eef2f6;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        /* Facebook-style Banner */
+        .store-banner-container {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+            cursor: pointer;
             overflow: hidden;
         }
 
-        .store-logo img {
+        .store-banner-img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
 
-        .store-banner {
-            flex: 1;
-            height: 100px;
-            border-radius: 10px;
-            background: #f8fafc;
-            border: 1px solid #eef2f6;
+        .store-banner-placeholder {
+            width: 100%;
+            height: 100%;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
+            color: white;
+            gap: 8px;
+        }
+
+        .store-banner-placeholder i {
+            font-size: 3rem;
+            opacity: 0.7;
+        }
+
+        .store-banner-placeholder span {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        /* Facebook-style Logo */
+        .store-logo-container {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: white;
+            border: 4px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            position: relative;
+            margin-top: -60px;
+            cursor: pointer;
             overflow: hidden;
         }
 
-        .store-banner img {
+        .store-logo-img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .store-logo-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+        }
+
+        .store-logo-placeholder i {
+            font-size: 3rem;
+        }
+
+        /* Image Overlay */
+        .image-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            color: white;
+            font-size: 1.5rem;
+            gap: 8px;
+        }
+
+        .store-banner-container:hover .image-overlay,
+        .store-logo-container:hover .image-overlay {
+            opacity: 1;
+        }
+
+        .store-banner-container .image-overlay {
+            border-radius: 0;
+        }
+
+        .store-logo-container .image-overlay {
+            border-radius: 50%;
+        }
+
+        /* Full Image Modal */
+        .full-image-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .full-image-modal.active {
+            display: flex;
+        }
+
+        .full-image-content {
+            max-width: 90%;
+            max-height: 90%;
+            position: relative;
+        }
+
+        .full-image-content img {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            padding: 8px;
+            transition: opacity 0.2s;
+        }
+
+        .modal-close-btn:hover {
+            opacity: 0.7;
+        }
+
+        .modal-caption {
+            position: absolute;
+            bottom: -40px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: white;
+            font-size: 1rem;
         }
 
         /* Edit Button */
@@ -462,12 +581,14 @@ require_once __DIR__ . '/../backend/session/auth.php';
                 width: 100%;
             }
             
-            .store-images {
-                flex-direction: column;
+            .store-banner-container {
+                height: 150px;
             }
             
-            .store-logo {
-                width: 100%;
+            .store-logo-container {
+                width: 100px;
+                height: 100px;
+                margin-top: -50px;
             }
         }
     </style>
@@ -531,6 +652,15 @@ require_once __DIR__ . '/../backend/session/auth.php';
     </main>
 </div>
 
+<!-- Full Image Modal -->
+<div id="fullImageModal" class="full-image-modal" onclick="closeFullImage()">
+    <div class="full-image-content" onclick="event.stopPropagation()">
+        <button class="modal-close-btn" onclick="closeFullImage()">×</button>
+        <img id="fullImage" src="" alt="Full view">
+        <div class="modal-caption" id="imageCaption"></div>
+    </div>
+</div>
+
 <!-- Logout Modal -->
 <div class="logout-modal-overlay" id="logoutModal">
     <div class="logout-modal-content">
@@ -551,6 +681,94 @@ require_once __DIR__ . '/../backend/session/auth.php';
 
 <script src="/seller/js/logout.js"></script>
 <script>
+// Fix user profile redirect
+document.addEventListener('DOMContentLoaded', function() {
+    const userProfile = document.getElementById('userProfile');
+    if (userProfile) {
+        const newProfile = userProfile.cloneNode(true);
+        userProfile.parentNode.replaceChild(newProfile, userProfile);
+        
+        newProfile.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = '/seller/ui/seller_profile.php';
+        });
+        
+        newProfile.style.cursor = 'pointer';
+    }
+});
+
+// Full image view functions
+function viewFullImage(type, imageUrl) {
+    if (!imageUrl) {
+        showToast('warning', 'No image available');
+        return;
+    }
+    
+    const modal = document.getElementById('fullImageModal');
+    const fullImage = document.getElementById('fullImage');
+    const caption = document.getElementById('imageCaption');
+    
+    fullImage.src = imageUrl;
+    caption.textContent = type === 'banner' ? 'Store Banner' : 'Store Logo';
+    modal.classList.add('active');
+    
+    // Prevent body scroll
+    document.body.style.overflow = 'hidden';
+}
+
+function closeFullImage() {
+    const modal = document.getElementById('fullImageModal');
+    modal.classList.remove('active');
+    
+    // Restore body scroll
+    document.body.style.overflow = '';
+}
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeFullImage();
+    }
+});
+
+// Toast notification
+function showToast(type, message) {
+    const existingToast = document.querySelector('.toast');
+    if (existingToast) existingToast.remove();
+    
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: white;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 3000;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-left: 4px solid ${type === 'success' ? '#2ecc71' : type === 'warning' ? '#f39c12' : '#e74c3c'};
+    `;
+    
+    const icon = type === 'success' ? 'fa-check-circle' : type === 'warning' ? 'fa-exclamation-triangle' : 'fa-exclamation-circle';
+    const color = type === 'success' ? '#2ecc71' : type === 'warning' ? '#f39c12' : '#e74c3c';
+    
+    toast.innerHTML = `
+        <i class="fas ${icon}" style="color: ${color}; font-size: 1.2rem;"></i>
+        <span>${escapeHtml(message)}</span>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
 
 // Load profile data
 async function loadProfile() {
@@ -659,54 +877,84 @@ function displayProfile(data) {
                         <i class="fas fa-edit"></i> Edit
                     </button>
                 </div>
-                <div class="card-body">
-                    <div class="store-images">
-                        <div class="store-logo">
-                            ${store.logo_url ? 
-                                `<img src="${escapeHtml(store.logo_url)}" alt="Store Logo">` : 
-                                '<i class="fas fa-store" style="font-size: 2rem; color: var(--gray);"></i>'
-                            }
-                        </div>
-                        <div class="store-banner">
-                            ${store.banner_url ? 
-                                `<img src="${escapeHtml(store.banner_url)}" alt="Store Banner">` : 
-                                '<i class="fas fa-image" style="font-size: 2rem; color: var(--gray);"></i>'
-                            }
-                        </div>
+                <div class="card-body" style="padding: 0;">
+                    <!-- Facebook-style Banner -->
+                    <div class="store-banner-container" onclick="viewFullImage('banner', '${escapeHtml(store.banner_url || '')}')">
+                        ${store.banner_url ? 
+                            `<img src="${escapeHtml(store.banner_url)}" alt="Store Banner" class="store-banner-img">` : 
+                            `<div class="store-banner-placeholder">
+                                <i class="fas fa-image"></i>
+                                <span>Add Cover Photo</span>
+                            </div>`
+                        }
+                        ${store.banner_url ? `
+                            <div class="image-overlay">
+                                <i class="fas fa-search-plus"></i> Click to view
+                            </div>
+                        ` : ''}
                     </div>
                     
-                    <div class="info-row">
-                        <span class="info-label"><i class="fas fa-tag"></i> Store Name</span>
-                        <span class="info-value">${escapeHtml(store.store_name)}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label"><i class="fas fa-folder"></i> Category</span>
-                        <span class="info-value">${escapeHtml(categoryDisplay)}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label"><i class="fas fa-align-left"></i> Description</span>
-                        <span class="info-value">${escapeHtml(store.description)}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label"><i class="fas fa-phone"></i> Contact</span>
-                        <span class="info-value">${escapeHtml(store.contact_number)}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label"><i class="fas fa-clock"></i> Operating Hours</span>
-                        <span class="info-value">
-                            ${store.open_time_formatted && store.close_time_formatted ? 
-                                `${store.open_time_formatted} - ${store.close_time_formatted}` : 
-                                'Not set'
+                    <!-- Facebook-style Logo (positioned over banner) -->
+                    <div style="padding: 0 1.5rem 1.5rem 1.5rem; position: relative;">
+                        <div class="store-logo-container" onclick="viewFullImage('logo', '${escapeHtml(store.logo_url || '')}')">
+                            ${store.logo_url ? 
+                                `<img src="${escapeHtml(store.logo_url)}" alt="Store Logo" class="store-logo-img">` : 
+                                `<div class="store-logo-placeholder">
+                                    <i class="fas fa-store"></i>
+                                </div>`
                             }
-                        </span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label"><i class="fas fa-user-shield"></i> Owner Name</span>
-                        <span class="info-value">${escapeHtml(store.owner_full_name)}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label"><i class="fas fa-id-card"></i> ID Type</span>
-                        <span class="info-value">${escapeHtml(store.id_type)}</span>
+                            ${store.logo_url ? `
+                                <div class="image-overlay">
+                                    <i class="fas fa-search-plus"></i>
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div style="margin-top: 1rem;">
+                            <div class="info-row">
+                                <span class="info-label"><i class="fas fa-tag"></i> Store Name</span>
+                                <span class="info-value">${escapeHtml(store.store_name)}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="fas fa-folder"></i> Category</span>
+                                <span class="info-value">${escapeHtml(categoryDisplay)}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="fas fa-align-left"></i> Description</span>
+                                <span class="info-value">${escapeHtml(store.description)}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="fas fa-phone"></i> Contact</span>
+                                <span class="info-value">${escapeHtml(store.contact_number)}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="fas fa-clock"></i> Operating Hours</span>
+                                <span class="info-value">
+                                    ${store.open_time_formatted && store.close_time_formatted ? 
+                                        `${store.open_time_formatted} - ${store.close_time_formatted}` : 
+                                        'Not set'
+                                    }
+                                </span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="fas fa-map-marker-alt"></i> Location</span>
+                                <span class="info-value">
+                                    ${store.latitude && store.longitude ? 
+                                        `${store.latitude}, ${store.longitude}` : 
+                                        'Not set'
+                                    }
+                                    ${store.plus_code ? `<br><small style="color: var(--gray);">Plus Code: ${escapeHtml(store.plus_code)}</small>` : ''}
+                                </span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="fas fa-user-shield"></i> Owner Name</span>
+                                <span class="info-value">${escapeHtml(store.owner_full_name)}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="fas fa-id-card"></i> ID Type</span>
+                                <span class="info-value">${escapeHtml(store.id_type)}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
