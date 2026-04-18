@@ -8,7 +8,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seller Profile - Dashboard</title>
+    <title>My Store - Seller Dashboard</title>
     <link rel="icon" type="image/png" href="/seller/image/app_icon.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/logout.css?v=<?= time() ?>">
@@ -35,7 +35,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
         .dashboard-container {
             display: grid;
             grid-template-columns: 240px 1fr;
-            min-height: 100vh;
+            height: 100vh;
         }
 
         /* Sidebar */
@@ -45,14 +45,16 @@ require_once __DIR__ . '/../backend/session/auth.php';
             display: flex;
             flex-direction: column;
             padding: 1.5rem 0;
-            position: sticky;
-            top: 0;
-            height: 100vh;
         }
 
         .sidebar-header {
             padding: 0 1.5rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
+
+        .logo { font-size: 1.8rem; color: var(--primary); }
 
         .sidebar-header h2 {
             font-size: 1.4rem;
@@ -85,6 +87,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 12px;
         }
 
         .user-profile {
@@ -92,25 +95,35 @@ require_once __DIR__ . '/../backend/session/auth.php';
             align-items: center;
             gap: 10px;
             flex: 1;
+            min-width: 0;
             cursor: pointer;
+            border-radius: 8px;
+            padding: 4px 8px;
+            transition: background 0.2s;
         }
 
-        .avatar {
-            width: 38px; height: 38px;
-            background: var(--primary);
-            color: white;
-            border-radius: 50%;
-            display: grid; place-items: center;
-            font-weight: bold;
+        .user-profile:hover {
+            background: #f0f2f5;
         }
 
-        .user-info h4 {
+        .user-info {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .seller-name {
             font-size: 0.9rem;
             font-weight: 600;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .user-info p {
+        .user-profile p {
             font-size: 0.75rem;
+            margin: 0;
             color: var(--gray);
         }
 
@@ -120,30 +133,57 @@ require_once __DIR__ . '/../backend/session/auth.php';
             color: #e74c3c;
             font-size: 1.3rem;
             cursor: pointer;
+            flex-shrink: 0;
+            padding: 8px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: #fee;
+        }
+
+        .avatar {
+            width: 38px; height: 38px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: grid; place-items: center;
+            font-weight: bold; font-size: 1.1rem;
         }
 
         /* Main Content */
         .main-content {
-            padding: 2rem 2.5rem;
             overflow-y: auto;
+            padding: 1.5rem 2.5rem;
         }
 
-        .page-header {
+        .main-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
             margin-bottom: 2rem;
         }
 
-        .page-header h1 {
-            font-size: 1.8rem;
+        .header-left h1 { 
+            font-size: 1.8rem; 
             font-weight: 600;
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-bottom: 0.5rem;
+        }
+        .header-left p { color: #7f8c8d; margin-top: 0.25rem; }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            flex-wrap: wrap;
         }
 
-        .page-header p {
-            color: #7f8c8d;
-        }
+        .date-display { color: #7f8c8d; font-size: 0.95rem; white-space: nowrap; }
 
         /* Profile Grid */
         .profile-grid {
@@ -154,7 +194,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
 
         .profile-card {
             background: white;
-            border-radius: 12px;
+            border-radius: 10px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
             overflow: hidden;
         }
@@ -218,24 +258,23 @@ require_once __DIR__ . '/../backend/session/auth.php';
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 4px 12px;
-            border-radius: 20px;
+            padding: 6px 14px;
+            border-radius: 50px;
             font-size: 0.85rem;
             font-weight: 600;
+            color: white;
         }
 
         .plan-bronze {
-            background: linear-gradient(135deg, #cd7f32, #a0522d);
-            color: white;
+            background: #b45309;
         }
 
         .plan-silver {
-            background: linear-gradient(135deg, #c0c0c0, #808080);
-            color: white;
+            background: #6b7280;
         }
 
         .plan-gold {
-            background: linear-gradient(135deg, #ffd700, #daa520);
+            background: #fbbf24;
             color: #333;
         }
 
@@ -268,15 +307,15 @@ require_once __DIR__ . '/../backend/session/auth.php';
         .store-images {
             display: flex;
             gap: 1rem;
-            margin-top: 1rem;
+            margin-bottom: 1.5rem;
         }
 
         .store-logo {
             width: 100px;
             height: 100px;
-            border-radius: 12px;
+            border-radius: 10px;
             background: #f8fafc;
-            border: 2px dashed #d1d9e0;
+            border: 1px solid #eef2f6;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -292,9 +331,9 @@ require_once __DIR__ . '/../backend/session/auth.php';
         .store-banner {
             flex: 1;
             height: 100px;
-            border-radius: 12px;
+            border-radius: 10px;
             background: #f8fafc;
-            border: 2px dashed #d1d9e0;
+            border: 1px solid #eef2f6;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -307,41 +346,6 @@ require_once __DIR__ . '/../backend/session/auth.php';
             object-fit: cover;
         }
 
-        /* Document List */
-        .doc-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-        }
-
-        .doc-badge {
-            background: #f8fafc;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            color: var(--dark);
-            border: 1px solid #e0e0e0;
-        }
-
-        /* Loading State */
-        .loading-state {
-            text-align: center;
-            padding: 3rem;
-            color: var(--gray);
-        }
-
-        .loading-state i {
-            font-size: 2rem;
-            margin-bottom: 1rem;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
         /* Edit Button */
         .edit-btn {
             background: none;
@@ -352,6 +356,10 @@ require_once __DIR__ . '/../backend/session/auth.php';
             font-size: 0.85rem;
             cursor: pointer;
             transition: all 0.15s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .edit-btn:hover {
@@ -373,6 +381,10 @@ require_once __DIR__ . '/../backend/session/auth.php';
             opacity: 0.5;
         }
 
+        .no-store-message h3 {
+            margin-bottom: 0.5rem;
+        }
+
         .setup-store-btn {
             display: inline-block;
             margin-top: 1rem;
@@ -382,6 +394,39 @@ require_once __DIR__ . '/../backend/session/auth.php';
             text-decoration: none;
             border-radius: 6px;
             font-weight: 500;
+            transition: background 0.15s;
+        }
+
+        .setup-store-btn:hover {
+            background: #2980b9;
+        }
+
+        /* Loading State */
+        .loading-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--gray);
+        }
+
+        .loading-state i {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Footer */
+        footer.main-footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: #95a5a6;
+            font-size: 0.9rem;
+            border-top: 1px solid #ebedf0;
+            margin-top: 2rem;
         }
 
         /* Responsive */
@@ -442,17 +487,17 @@ require_once __DIR__ . '/../backend/session/auth.php';
             <a href="/seller/ui/employees.php" class="nav-item"><i class="fas fa-users"></i><span>Employees</span></a>
             <a href="/seller/ui/my_plan.php" class="nav-item"><i class="fas fa-crown"></i><span>My Plan</span></a>
             <a href="/seller/ui/seller_profile.php" class="nav-item active"><i class="fas fa-store"></i><span>My Store</span></a>
-            <a href="#" class="nav-item"><i class="fas fa-cog"></i><span>Sales</span></a>
+            <a href="#" class="nav-item"><i class="fas fa-chart-line"></i><span>Sales</span></a>
         </nav>
         <div class="sidebar-footer">
-            <div class="user-profile">
+            <div class="user-profile" id="userProfile">
                 <div class="avatar"><?= strtoupper(substr($seller_name, 0, 1)) ?></div>
                 <div class="user-info">
-                    <h4><?= htmlspecialchars($seller_name) ?></h4>
+                    <h4 class="seller-name"><?= htmlspecialchars($seller_name) ?></h4>
                     <p>Seller Account</p>
                 </div>
             </div>
-            <button class="logout-btn logout-trigger">
+            <button class="logout-btn logout-trigger" title="Sign out">
                 <i class="fas fa-sign-out-alt"></i>
             </button>
         </div>
@@ -460,13 +505,18 @@ require_once __DIR__ . '/../backend/session/auth.php';
 
     <!-- Main Content -->
     <main class="main-content">
-        <div class="page-header">
-            <h1>
-                <i class="fas fa-store" style="color: var(--primary);"></i>
-                My Store Profile
-            </h1>
-            <p>View and manage your store information</p>
-        </div>
+        <header class="main-header">
+            <div class="header-left">
+                <h1>
+                    <i class="fas fa-store" style="color: var(--primary);"></i>
+                    My Store Profile
+                </h1>
+                <p>View and manage your store information</p>
+            </div>
+            <div class="header-right">
+                <div class="date-display"><?= date('F j, Y') ?></div>
+            </div>
+        </header>
 
         <div id="profileContent">
             <div class="loading-state">
@@ -474,6 +524,10 @@ require_once __DIR__ . '/../backend/session/auth.php';
                 <p>Loading profile information...</p>
             </div>
         </div>
+
+        <footer class="main-footer">
+            <p>© <?= date('Y') ?> Seller Dashboard. All rights reserved.</p>
+        </footer>
     </main>
 </div>
 
@@ -497,6 +551,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
 
 <script src="/seller/js/logout.js"></script>
 <script>
+
 // Load profile data
 async function loadProfile() {
     try {
@@ -531,9 +586,6 @@ function displayProfile(data) {
             <div class="profile-card">
                 <div class="card-header">
                     <h2><i class="fas fa-user-circle"></i> Account Information</h2>
-                    <button class="edit-btn" onclick="editAccount()">
-                        <i class="fas fa-edit"></i> Edit
-                    </button>
                 </div>
                 <div class="card-body">
                     <div class="info-row">
@@ -699,10 +751,6 @@ function showError(message) {
             </div>
         </div>
     `;
-}
-
-function editAccount() {
-    window.location.href = '/seller/ui/edit_account.php';
 }
 
 function editStore() {
