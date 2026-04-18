@@ -383,19 +383,19 @@ require_once __DIR__ . '/../backend/session/auth.php';
 </div>
 
 <!-- ── LOGOUT CONFIRMATION MODAL ── -->
-<div class="modal-overlay" id="logoutModal">
-    <div class="modal-content">
-        <div class="modal-header">
+<div class="logout-modal-overlay" id="logoutModal">
+    <div class="logout-modal-content">
+        <div class="logout-modal-header">
             <h3>Sign Out</h3>
-            <button class="modal-close" id="closeModal">×</button>
+            <button class="logout-modal-close" id="closeModal">×</button>
         </div>
-        <div class="modal-body">
+        <div class="logout-modal-body">
             <p>Are you sure you want to sign out?</p>
-            <p class="text-secondary">You will need to log in again to access your dashboard.</p>
+            <p class="logout-text-secondary">You will need to log in again to access your dashboard.</p>
         </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" id="cancelLogout">Cancel</button>
-            <a href="/seller/backend/auth/logout.php" class="btn btn-danger">Sign Out</a>
+        <div class="logout-modal-footer">
+            <button class="logout-btn logout-btn-secondary" id="cancelLogout">Cancel</button>
+            <a href="/seller/backend/auth/logout.php" class="logout-btn logout-btn-danger">Sign Out</a>
         </div>
     </div>
 </div>

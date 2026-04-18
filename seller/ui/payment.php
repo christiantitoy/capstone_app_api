@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Payment - Seller Dashboard</title>
     <link rel="icon" type="image/png" href="/seller/image/app_icon.png">
+    <link rel="stylesheet" href="../css/error.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../css/logout.css?v=<?= time() ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -677,6 +679,26 @@
 
 <!-- Toast -->
 <div id="toast" class="toast"></div>
+
+<!-- ── LOGOUT CONFIRMATION MODAL ── -->
+<div class="logout-modal-overlay" id="logoutModal">
+    <div class="logout-modal-content">
+        <div class="logout-modal-header">
+            <h3>Sign Out</h3>
+            <button class="logout-modal-close" id="closeModal">×</button>
+        </div>
+        <div class="logout-modal-body">
+            <p>Are you sure you want to sign out?</p>
+            <p class="logout-text-secondary">You will need to log in again to access your dashboard.</p>
+        </div>
+        <div class="logout-modal-footer">
+            <button class="logout-btn logout-btn-secondary" id="cancelLogout">Cancel</button>
+            <a href="/seller/backend/auth/logout.php" class="logout-btn logout-btn-danger">Sign Out</a>
+        </div>
+    </div>
+</div>
+
+<script src="/seller/js/logout.js"></script>
 
 <script>
     // Get URL parameters

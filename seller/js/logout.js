@@ -1,36 +1,51 @@
-// Add this to your existing DOMContentLoaded event
 document.addEventListener('DOMContentLoaded', () => {
-    // Your existing logout modal code
-    const modal = document.getElementById('logoutModal');
-    const trigger = document.querySelector('.logout-trigger');
+    // Logout modal elements
+    const logoutModal = document.getElementById('logoutModal');
+    const logoutTrigger = document.querySelector('.logout-trigger');
     const closeBtn = document.getElementById('closeModal');
     const cancelBtn = document.getElementById('cancelLogout');
 
-    function openModal() {
-        modal.classList.add('active');
+    function openLogoutModal() {
+        logoutModal.classList.add('active');
         document.body.style.overflow = 'hidden';
     }
 
-    function closeModal() {
-        modal.classList.remove('active');
+    function closeLogoutModal() {
+        logoutModal.classList.remove('active');
         document.body.style.overflow = '';
     }
 
-    if (trigger) trigger.addEventListener('click', openModal);
-    if (closeBtn) closeBtn.addEventListener('click', closeModal);
-    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+    // Open modal
+    if (logoutTrigger) {
+        logoutTrigger.addEventListener('click', openLogoutModal);
+    }
 
-    modal.addEventListener('click', e => {
-        if (e.target === modal) closeModal();
-    });
+    // Close modal buttons
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeLogoutModal);
+    }
 
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Escape' && modal.classList.contains('active')) {
-            closeModal();
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', closeLogoutModal);
+    }
+
+    // Click outside modal content
+    if (logoutModal) {
+        logoutModal.addEventListener('click', (e) => {
+            if (e.target === logoutModal) {
+                closeLogoutModal();
+            }
+        });
+    }
+
+    // ESC key closes modal
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && logoutModal?.classList.contains('active')) {
+            closeLogoutModal();
         }
     });
 
-    // Add profile click - redirect to profile page
+    // Profile redirect
     const userProfile = document.getElementById('userProfile');
     if (userProfile) {
         userProfile.addEventListener('click', () => {
