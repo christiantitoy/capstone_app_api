@@ -35,6 +35,13 @@ require_once __DIR__ . '/../backend/session/auth.php';
             background: #e0a800;
             transform: translateY(-2px);
         }
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status-pending i {
+            color: #856404;
+        }
     </style>
 </head>
 <body>
@@ -149,7 +156,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
             <div id="monthlyPlans" class="billing-period active">
                 <div class="pricing-grid">
                     <!-- Bronze -->
-                    <div class="pricing-card bronze" data-plan="bronze" data-billing="lifetime">
+                    <div class="pricing-card bronze" data-plan="bronze" data-billing="lifetime" data-price="0">
                         <div class="free-badge">CURRENT PLAN</div>
                         <div class="card-left">
                             <div class="plan-color bronze-color">
@@ -229,7 +236,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
             <div id="yearlyPlans" class="billing-period">
                 <div class="pricing-grid">
                     <!-- Bronze Yearly -->
-                    <div class="pricing-card bronze" data-plan="bronze" data-billing="lifetime">
+                    <div class="pricing-card bronze" data-plan="bronze" data-billing="lifetime" data-price="0">
                         <div class="free-badge">CURRENT PLAN</div>
                         <div class="card-left">
                             <div class="plan-color bronze-color">
@@ -395,12 +402,12 @@ yearlyRadio.addEventListener('change', () => {
 // Modal variables
 let pendingPlanChange = {};
 
-// Check if it's a downgrade
+// Check if it's a downgrade (using OFFICIAL plan)
 function checkIfDowngrade(newPlan, newBilling) {
     if (!currentPlanData) return false;
     
-    const currentPlan = currentPlanData.plan;
-    const currentBilling = currentPlanData.billing;
+    const currentPlan = currentPlanData.official_plan;
+    const currentBilling = currentPlanData.official_billing;
     
     const planRank = { 'bronze': 1, 'silver': 2, 'gold': 3 };
     const billingMultiplier = { 'monthly': 1, 'yearly': 12, 'lifetime': 999 };
@@ -419,21 +426,21 @@ function checkIfDowngrade(newPlan, newBilling) {
     return false;
 }
 
-// Check if it's just a billing change
+// Check if it's just a billing change (using OFFICIAL plan)
 function checkIfBillingChange(newPlan, newBilling) {
     if (!currentPlanData) return false;
-    return (newPlan === currentPlanData.plan && newBilling !== currentPlanData.billing);
+    return (newPlan === currentPlanData.official_plan && newBilling !== currentPlanData.official_billing);
 }
 
 // Show confirmation modal
 function showPlanModal(plan, billing, amount) {
-    const currentPlanName = currentPlanData ? 
-        `${currentPlanData.plan.charAt(0).toUpperCase() + currentPlanData.plan.slice(1)} Plan (${currentPlanData.billing})` : 
-        'Bronze Plan';
+    const currentPlanDisplay = currentPlanData ? 
+        `${currentPlanData.official_plan.charAt(0).toUpperCase() + currentPlanData.official_plan.slice(1)} Plan (${currentPlanData.official_billing})` : 
+        'Bronze Plan (lifetime)';
 
     pendingPlanChange = { plan, billing, amount };
 
-    document.getElementById('currentPlanModal').textContent = currentPlanName;
+    document.getElementById('currentPlanModal').textContent = currentPlanDisplay;
     document.getElementById('newPlanModal').textContent = 
         `${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan (${billing})`;
     
@@ -495,12 +502,12 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// Update pricing buttons based on current plan
+// Update pricing buttons based on OFFICIAL plan and billing
 function updatePricingButtons(planData) {
-    const currentPlan = planData.plan.toLowerCase();
-    const currentBilling = planData.billing;
+    const officialPlan = planData.official_plan.toLowerCase();
+    const officialBilling = planData.official_billing;
     const planRank = { 'bronze': 1, 'silver': 2, 'gold': 3 };
-    const currentRank = planRank[currentPlan] || 1;
+    const officialRank = planRank[officialPlan] || 1;
     
     document.querySelectorAll('.pricing-card[data-plan]').forEach(card => {
         const cardPlan = card.getAttribute('data-plan');
@@ -512,16 +519,17 @@ function updatePricingButtons(planData) {
         
         let newButton;
         
-        if (cardPlan === currentPlan && cardBilling === currentBilling) {
-            // Current plan and billing
+        // Check against OFFICIAL plan (source of truth)
+        if (cardPlan === officialPlan && cardBilling === officialBilling) {
+            // This is the seller's official current plan
             newButton = document.createElement('span');
             newButton.className = 'pricing-btn btn-current';
             newButton.textContent = 'Current Plan';
-        } else if (cardPlan === currentPlan && cardBilling !== currentBilling) {
-            // Same plan, different billing
+        } else if (cardPlan === officialPlan && cardBilling !== officialBilling) {
+            // Same plan, different billing period
             newButton = document.createElement('button');
-            if ((currentBilling === 'yearly' && cardBilling === 'monthly') ||
-                (currentBilling === 'lifetime' && cardBilling !== 'lifetime')) {
+            if ((officialBilling === 'yearly' && cardBilling === 'monthly') ||
+                (officialBilling === 'lifetime' && cardBilling !== 'lifetime')) {
                 newButton.className = 'pricing-btn btn-downgrade';
                 newButton.textContent = 'Downgrade';
             } else {
@@ -532,7 +540,7 @@ function updatePricingButtons(planData) {
         } else {
             // Different plan
             newButton = document.createElement('button');
-            if (cardRank < currentRank) {
+            if (cardRank < officialRank) {
                 newButton.className = 'pricing-btn btn-downgrade';
                 newButton.textContent = 'Downgrade';
             } else {
@@ -545,13 +553,13 @@ function updatePricingButtons(planData) {
         if (existingBtn) existingBtn.replaceWith(newButton);
     });
     
-    // Hide popular badge for current plan
+    // Hide popular badge for official current plan
     document.querySelectorAll('.popular-badge').forEach(badge => {
         const card = badge.closest('.pricing-card');
         if (card) {
             const cardPlan = card.getAttribute('data-plan');
             const cardBilling = card.getAttribute('data-billing');
-            badge.style.display = (cardPlan === currentPlan && cardBilling === currentBilling) ? 'none' : 'block';
+            badge.style.display = (cardPlan === officialPlan && cardBilling === officialBilling) ? 'none' : 'block';
         }
     });
 }
@@ -577,21 +585,24 @@ async function fetchCurrentPlan() {
 function updatePlanDisplay(planData) {
     currentPlanData = planData;
     
-    const planName = planData.plan.charAt(0).toUpperCase() + planData.plan.slice(1);
-    document.getElementById('currentPlanName').textContent = `${planName} Plan`;
+    // Update CURRENT PLAN CARD using SUBSCRIBED data (from sellers_plan table)
+    const subscribedPlanName = planData.subscribed_plan.charAt(0).toUpperCase() + planData.subscribed_plan.slice(1);
+    document.getElementById('currentPlanName').textContent = `${subscribedPlanName} Plan`;
     document.getElementById('currentPlanDesc').textContent = planData.description;
     
+    // Update billing display in current plan card
     const billingText = document.getElementById('billingText');
-    if (planData.billing === 'monthly') {
+    if (planData.subscribed_billing === 'monthly') {
         billingText.textContent = 'Monthly Billing';
-    } else if (planData.billing === 'yearly') {
+    } else if (planData.subscribed_billing === 'yearly') {
         billingText.textContent = 'Yearly Billing';
     } else {
         billingText.textContent = 'Lifetime Access';
     }
     
+    // Update status badge
     const statusBadge = document.getElementById('currentPlanStatus');
-    const isActive = planData.status === 'active';
+    const isActive = planData.subscribed_status === 'active';
     
     statusBadge.className = `status-badge ${isActive ? 'status-active' : 'status-pending'}`;
     statusBadge.innerHTML = `
@@ -599,27 +610,28 @@ function updatePlanDisplay(planData) {
         ${isActive ? 'Active' : 'Pending'}
     `;
     
+    // Update expiry/renewal text
     const expiryEl = document.getElementById('planExpiry');
     if (planData.end_date_formatted) {
-        if (planData.billing === 'lifetime') {
+        if (planData.subscribed_billing === 'lifetime') {
             expiryEl.textContent = 'Never expires';
-        } else if (planData.status === 'pending') {
+        } else if (planData.subscribed_status === 'pending') {
             expiryEl.textContent = 'Activation pending payment';
         } else {
             expiryEl.textContent = `Renews on ${planData.end_date_formatted}`;
         }
     } else {
-        if (planData.billing === 'lifetime') {
+        if (planData.subscribed_billing === 'lifetime') {
             expiryEl.textContent = 'Never expires';
-        } else if (planData.status === 'pending') {
+        } else if (planData.subscribed_status === 'pending') {
             expiryEl.textContent = 'Activation pending payment';
         } else {
             expiryEl.textContent = 'Active subscription';
         }
     }
     
-    // Set billing toggle
-    if (planData.billing === 'yearly') {
+    // Set billing toggle based on OFFICIAL billing (for default view)
+    if (planData.official_billing === 'yearly') {
         yearlyRadio.checked = true;
         monthlyPlans.classList.remove('active');
         yearlyPlans.classList.add('active');
@@ -630,7 +642,7 @@ function updatePlanDisplay(planData) {
     }
     updatePriceDisplay();
     
-    // Update pricing buttons
+    // Update pricing buttons using OFFICIAL data (from sellers table)
     updatePricingButtons(planData);
 }
 
