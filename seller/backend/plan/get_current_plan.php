@@ -14,30 +14,62 @@ try {
         throw new Exception('Unauthorized');
     }
 
-    // Get seller's current plan
+    // Get seller's current plan from sellers_plan table
     $stmt = $conn->prepare("
         SELECT 
-            plan,
-            billing,
-            status,
-            start_date,
-            end_date
-        FROM public.sellers_plan 
-        WHERE seller_id = ?
-        ORDER BY created_at DESC 
+            sp.plan,
+            sp.billing,
+            sp.status,
+            sp.start_date,
+            sp.end_date
+        FROM public.sellers_plan sp
+        WHERE sp.seller_id = ?
+        ORDER BY sp.created_at DESC 
         LIMIT 1
     ");
     
     $stmt->execute([$seller_id]);
     $plan = $stmt->fetch(PDO::FETCH_ASSOC);
 
+    // If no plan in sellers_plan, fallback to sellers table
+    if (!$plan) {
+        $stmt2 = $conn->prepare("
+            SELECT 
+                LOWER(seller_plan) as plan,
+                COALESCE(seller_billing, 'lifetime') as billing,
+                'active' as status,
+                created_at as start_date,
+                NULL as end_date
+            FROM public.sellers
+            WHERE id = ?
+        ");
+        $stmt2->execute([$seller_id]);
+        $plan = $stmt2->fetch(PDO::FETCH_ASSOC);
+    }
+
     if ($plan) {
+        // Ensure plan is lowercase for consistency
+        $plan['plan'] = strtolower($plan['plan']);
+        
         // Format dates
         if ($plan['start_date']) {
             $plan['start_date_formatted'] = date('M d, Y', strtotime($plan['start_date']));
         }
         if ($plan['end_date']) {
             $plan['end_date_formatted'] = date('M d, Y', strtotime($plan['end_date']));
+            
+            // Add days remaining calculation
+            $end_timestamp = strtotime($plan['end_date']);
+            $now = time();
+            if ($end_timestamp > $now) {
+                $plan['days_remaining'] = ceil(($end_timestamp - $now) / 86400);
+            } else {
+                $plan['days_remaining'] = 0;
+                // Optionally mark as expired if past end date
+                if ($plan['status'] === 'active') {
+                    $plan['status'] = 'expired';
+                }
+            }
         }
         
         // Add plan description
@@ -66,6 +98,10 @@ try {
 
 } catch (Exception $e) {
     $response['message'] = $e->getMessage();
+    error_log("Get Plan Error: " . $e->getMessage());
+} catch (PDOException $e) {
+    $response['message'] = 'Database error. Please try again later.';
+    error_log("Get Plan DB Error: " . $e->getMessage());
 }
 
 echo json_encode($response);
