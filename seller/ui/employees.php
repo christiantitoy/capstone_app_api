@@ -135,6 +135,7 @@ $role_display = [
                 <select class="filter-select" id="filterStatus">
                     <option value="">All Status</option>
                     <option value="active">Active</option>
+                    <option value="on_hold">On Hold</option>
                     <option value="inactive">Inactive</option>
                 </select>
                 <button class="add-employee-btn" onclick="openAddModal()">
@@ -191,7 +192,7 @@ $role_display = [
                                 </td>
                                 <td>
                                     <span class="status-badge status-<?= htmlspecialchars($emp['status'] ?? 'unknown') ?>">
-                                        <?= ucfirst($emp['status'] ?? 'Unknown') ?>
+                                        <?= $emp['status'] === 'on_hold' ? 'On Hold' : ucfirst($emp['status'] ?? 'Unknown') ?>
                                     </span>
                                 </td>
                                 <td>
@@ -484,10 +485,10 @@ function applyFilters() {
     const rows = document.querySelectorAll('#employeesTable tbody tr');
 
     rows.forEach(row => {
-        const rowRole   = row.getAttribute('data-role') || '';
+        const rowRole = row.getAttribute('data-role') || '';
         const rowStatus = row.getAttribute('data-status') || '';
 
-        const matchRole   = !roleFilter   || rowRole === roleFilter;
+        const matchRole = !roleFilter || rowRole === roleFilter;
         const matchStatus = !statusFilter || rowStatus === statusFilter;
 
         row.style.display = (matchRole && matchStatus) ? '' : 'none';
