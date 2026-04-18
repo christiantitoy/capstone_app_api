@@ -30,14 +30,12 @@ require_once __DIR__ . '/../backend/session/auth.php';
     <div class="payment-grid">
         <!-- Left Column -->
         <div>
-            <!-- Amount Card -->
             <div class="amount-card">
                 <div class="amount-label">Total Amount Due</div>
                 <div class="amount-value" id="amountDisplay">₱0.00</div>
                 <div class="amount-sub">PalitOra Payment</div>
             </div>
 
-            <!-- QR Code Card -->
             <div class="card">
                 <div class="card-header">
                     <h2><i class="fas fa-qrcode"></i> Scan QR Code</h2>
@@ -57,44 +55,26 @@ require_once __DIR__ . '/../backend/session/auth.php';
 
         <!-- Right Column -->
         <div>
-            <!-- Instructions Card -->
             <div class="card">
                 <div class="card-header">
                     <h2><i class="fas fa-info-circle"></i> How to Pay</h2>
                 </div>
                 <div class="card-body">
                     <ul class="instruction-list">
-                        <li class="instruction-item">
-                            <span class="step-number">1</span>
-                            <span class="step-text">Scan the QR code using GCash or any QR-enabled payment app</span>
-                        </li>
-                        <li class="instruction-item">
-                            <span class="step-number">2</span>
-                            <span class="step-text">Enter the exact amount: <strong id="instructionAmount">₱0.00</strong></span>
-                        </li>
-                        <li class="instruction-item">
-                            <span class="step-number">3</span>
-                            <span class="step-text">Complete the payment and take a screenshot of the confirmation</span>
-                        </li>
-                        <li class="instruction-item">
-                            <span class="step-number">4</span>
-                            <span class="step-text">Upload the screenshot below and enter your GCash number</span>
-                        </li>
-                        <li class="instruction-item">
-                            <span class="step-number">5</span>
-                            <span class="step-text">Click "Submit Payment Proof" to complete your transaction</span>
-                        </li>
+                        <li class="instruction-item"><span class="step-number">1</span> Scan the QR code using GCash</li>
+                        <li class="instruction-item"><span class="step-number">2</span> Enter the exact amount: <strong id="instructionAmount">₱0.00</strong></li>
+                        <li class="instruction-item"><span class="step-number">3</span> Complete payment and take screenshot</li>
+                        <li class="instruction-item"><span class="step-number">4</span> Upload screenshot and enter GCash number</li>
+                        <li class="instruction-item"><span class="step-number">5</span> Submit payment proof</li>
                     </ul>
                 </div>
             </div>
 
-            <!-- Proof of Payment Card -->
             <div class="card">
                 <div class="card-header">
                     <h2><i class="fas fa-receipt"></i> Proof of Payment</h2>
                 </div>
                 <div class="card-body">
-                    <!-- Upload Area -->
                     <div>
                         <div class="form-label">Payment Screenshot</div>
                         <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
@@ -109,7 +89,6 @@ require_once __DIR__ . '/../backend/session/auth.php';
                         <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
                     </div>
 
-                    <!-- GCash Number Input -->
                     <div class="form-group">
                         <label class="form-label">GCash Number Used</label>
                         <input type="tel" 
@@ -157,7 +136,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
         </div>
         <div class="logout-modal-body">
             <p>Are you sure you want to sign out?</p>
-            <p class="logout-text-secondary">You will need to log in again to access your dashboard.</p>
+            <p class="logout-text-secondary">You will need to log in again.</p>
         </div>
         <div class="logout-modal-footer">
             <button class="logout-btn logout-btn-secondary" id="cancelLogout">Cancel</button>
@@ -169,7 +148,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
 <script src="/seller/js/logout.js"></script>
 
 <script>
-    // Get URL parameters from my_plan.php
+    // Get URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     const plan     = urlParams.get('plan') || 'silver';
     const billing  = urlParams.get('billing') || 'monthly';
@@ -177,19 +156,19 @@ require_once __DIR__ . '/../backend/session/auth.php';
 
     // State variables
     let isSubmitting = false;
+    let isSubmitted = false;        // ← New: Prevents re-submission after success
 
     // Display amount
     document.getElementById('amountDisplay').innerText = `₱${amount.toFixed(2)}`;
     document.getElementById('instructionAmount').innerText = `₱${amount.toFixed(2)}`;
 
-    // Handle image upload (preview only - we send the real file to API)
+    // Handle image upload preview
     function handleImageUpload(event) {
         const file = event.target.files[0];
         if (!file || !file.type.startsWith('image/')) {
             showToast('Please select a valid image file', 'error');
             return;
         }
-
         if (file.size > 5 * 1024 * 1024) {
             showToast('File too large. Maximum 5MB allowed.', 'error');
             return;
@@ -206,7 +185,6 @@ require_once __DIR__ . '/../backend/session/auth.php';
             removeBtn.style.display = 'flex';
             uploadArea.classList.add('has-image');
 
-            // Hide upload texts
             uploadArea.querySelector('.upload-icon').style.display = 'none';
             uploadArea.querySelector('.upload-text').style.display = 'none';
             uploadArea.querySelector('.upload-hint').style.display = 'none';
@@ -216,7 +194,6 @@ require_once __DIR__ . '/../backend/session/auth.php';
         reader.readAsDataURL(file);
     }
 
-    // Remove uploaded image
     function removeImage() {
         const previewImg = document.getElementById('previewImg');
         const removeBtn = document.getElementById('removeImageBtn');
@@ -227,7 +204,6 @@ require_once __DIR__ . '/../backend/session/auth.php';
         removeBtn.style.display = 'none';
         uploadArea.classList.remove('has-image');
 
-        // Show upload texts again
         uploadArea.querySelector('.upload-icon').style.display = 'block';
         uploadArea.querySelector('.upload-text').style.display = 'block';
         uploadArea.querySelector('.upload-hint').style.display = 'block';
@@ -236,11 +212,10 @@ require_once __DIR__ . '/../backend/session/auth.php';
         checkFormComplete();
     }
 
-    // Validate GCash number
     function validateGCashNumber() {
         const input = document.getElementById('gcashNumber');
         const hint = document.getElementById('gcashHint');
-        let value = input.value.replace(/\D/g, ''); // keep only digits
+        let value = input.value.replace(/\D/g, '');
 
         input.value = value;
 
@@ -265,8 +240,9 @@ require_once __DIR__ . '/../backend/session/auth.php';
         checkFormComplete();
     }
 
-    // Check if form is ready to submit
     function checkFormComplete() {
+        if (isSubmitted) return;
+
         const gcashNumber = document.getElementById('gcashNumber').value;
         const fileInput = document.getElementById('fileInput');
         const isImageSelected = fileInput.files.length > 0;
@@ -277,7 +253,6 @@ require_once __DIR__ . '/../backend/session/auth.php';
         document.getElementById('submitBtn').disabled = !isComplete;
     }
 
-    // Open / Close QR Modal
     function openQRModal() {
         document.getElementById('qrModal').classList.add('active');
     }
@@ -286,24 +261,22 @@ require_once __DIR__ . '/../backend/session/auth.php';
         document.getElementById('qrModal').classList.remove('active');
     }
 
-    // Show toast
     function showToast(message, type = 'success') {
         const toast = document.getElementById('toast');
         toast.textContent = message;
         toast.className = `toast ${type}`;
         toast.classList.add('show');
-
         setTimeout(() => toast.classList.remove('show'), 4000);
     }
 
-    // Main Submit Function - Calls the real API
+    // ==================== MAIN SUBMIT FUNCTION ====================
     async function submitPayment() {
         const gcashNumber = document.getElementById('gcashNumber').value.trim();
         const submitBtn = document.getElementById('submitBtn');
         const submitText = document.getElementById('submitText');
         const fileInput = document.getElementById('fileInput');
 
-        if (isSubmitting || !gcashNumber || fileInput.files.length === 0) return;
+        if (isSubmitting || isSubmitted || !gcashNumber || fileInput.files.length === 0) return;
 
         isSubmitting = true;
         submitBtn.disabled = true;
@@ -325,31 +298,47 @@ require_once __DIR__ . '/../backend/session/auth.php';
             const data = await res.json();
 
             if (data.success) {
+                // SUCCESS - Make button permanently unclickable
+                isSubmitted = true;
+                isSubmitting = false;
+
+                submitBtn.disabled = true;
+                submitBtn.style.opacity = "0.7";
+                submitBtn.style.cursor = "not-allowed";
+                submitText.innerHTML = '<i class="fas fa-check-circle"></i> Submitted Successfully';
+
                 showToast(data.message || 'Payment proof submitted successfully!', 'success');
+
+                // Redirect after 2 seconds
                 setTimeout(() => {
                     window.location.href = '/seller/ui/my_plan.php';
                 }, 2000);
             } else {
                 showToast(data.message || 'Submission failed. Please try again.', 'error');
+                resetSubmitButton();
             }
         } catch (err) {
             console.error(err);
             showToast('Network error. Please check your connection and try again.', 'error');
-        } finally {
-            isSubmitting = false;
-            submitBtn.disabled = false;
-            submitText.innerHTML = '<i class="fas fa-check-circle"></i> Submit Payment Proof';
+            resetSubmitButton();
         }
+    }
+
+    // Reset button state on error
+    function resetSubmitButton() {
+        isSubmitting = false;
+        const submitBtn = document.getElementById('submitBtn');
+        const submitText = document.getElementById('submitText');
+        
+        submitBtn.disabled = false;
+        submitText.innerHTML = '<i class="fas fa-check-circle"></i> Submit Payment Proof';
     }
 
     // Event listeners
     document.getElementById('gcashNumber').addEventListener('input', validateGCashNumber);
 
-    // Close QR modal with Escape key
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeQRModal();
-        }
+        if (e.key === 'Escape') closeQRModal();
     });
 
     // Initial check
