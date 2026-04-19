@@ -8,40 +8,7 @@ if (!$seller_id) {
     header("Location: /seller/ui/login.php");
     exit;
 }
-
-// Fetch top selling products
-require_once '/var/www/html/connection/db_connection.php';
-
-$topProducts = [];
-try {
-    $stmt = $conn->prepare("
-        SELECT 
-            i.id,
-            i.product_name,
-            i.sold as total_sold,
-            i.main_image_url,
-            (i.sold * 100.0 / NULLIF((SELECT MAX(sold) FROM items WHERE seller_id = ? AND sold > 0), 0)) as percentage
-        FROM items i
-        WHERE i.seller_id = ? AND i.sold > 0
-        GROUP BY i.id, i.product_name, i.sold, i.main_image_url
-        ORDER BY i.sold DESC, i.id
-        LIMIT 5
-    ");
-    $stmt->execute([$seller_id, $seller_id]);
-    $topProducts = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Calculate max sold for percentage
-    if (!empty($topProducts)) {
-        $maxSold = $topProducts[0]['total_sold'];
-        foreach ($topProducts as &$product) {
-            $product['percentage'] = $maxSold > 0 ? round(($product['total_sold'] / $maxSold) * 100) : 0;
-        }
-    }
-} catch (PDOException $e) {
-    $topProducts = [];
-}
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -163,35 +130,6 @@ try {
                         </tr>
                     </tbody>
                 </table>
-            </div>
-        </div>
-
-        <!-- Quick Actions + Top Products -->
-        <div class="side-by-side">
-            <div class="top-products">
-                <div class="section-header"><h2>Top Selling Products</h2></div>
-                <div class="products-list">
-                    <?php if (empty($topProducts)): ?>
-                        <div class="product-item" style="justify-content: center; padding: 2rem;">
-                            <p style="color: #95a5a6;">No sales data yet</p>
-                        </div>
-                    <?php else: ?>
-                        <?php foreach ($topProducts as $product): ?>
-                            <div class="product-item">
-                                <div class="product-info">
-                                    <h4><?= htmlspecialchars($product['product_name']) ?></h4>
-                                    <p><?= $product['total_sold'] ?> sold</p>
-                                </div>
-                                <div class="product-progress">
-                                    <div class="progress-bar">
-                                        <div class="progress-fill" style="width:<?= $product['percentage'] ?>%;background:#3498db;"></div>
-                                    </div>
-                                    <span><?= $product['percentage'] ?>%</span>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </div>
             </div>
         </div>
 
