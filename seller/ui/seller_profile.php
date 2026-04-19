@@ -872,9 +872,6 @@ function displayProfile(data) {
             <div class="profile-card full-width">
                 <div class="card-header">
                     <h2><i class="fas fa-store-alt"></i> Store Information</h2>
-                    <button class="edit-btn" onclick="editStore()">
-                        <i class="fas fa-edit"></i> Edit
-                    </button>
                 </div>
                 <div class="card-body" style="padding: 0;">
                     <!-- Facebook-style Banner -->
