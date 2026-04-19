@@ -607,7 +607,6 @@ require_once __DIR__ . '/../backend/session/auth.php';
             <a href="/seller/ui/orders.php" class="nav-item"><i class="fas fa-shopping-cart"></i><span>Orders</span></a>
             <a href="/seller/ui/employees.php" class="nav-item"><i class="fas fa-users"></i><span>Employees</span></a>
             <a href="/seller/ui/my_plan.php" class="nav-item"><i class="fas fa-crown"></i><span>My Plan</span></a>
-            <a href="/seller/ui/seller_profile.php" class="nav-item active"><i class="fas fa-store"></i><span>My Store</span></a>
             <a href="#" class="nav-item"><i class="fas fa-chart-line"></i><span>Sales</span></a>
         </nav>
         <div class="sidebar-footer">
@@ -949,10 +948,6 @@ function displayProfile(data) {
                             <div class="info-row">
                                 <span class="info-label"><i class="fas fa-user-shield"></i> Owner Name</span>
                                 <span class="info-value">${escapeHtml(store.owner_full_name)}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="info-label"><i class="fas fa-id-card"></i> ID Type</span>
-                                <span class="info-value">${escapeHtml(store.id_type)}</span>
                             </div>
                         </div>
                     </div>
