@@ -44,7 +44,7 @@ if ($password === '') {
 try {
     // 🔍 STEP 1: Check if email exists
     $stmt = $conn->prepare("
-        SELECT id, full_name, email, seller_id, role, password, is_removed
+        SELECT id, full_name, email, seller_id, role, password, status, is_removed
         FROM employees
         WHERE email = :email
         LIMIT 1
