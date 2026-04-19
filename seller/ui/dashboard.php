@@ -9,6 +9,35 @@ if (!$seller_id) {
     exit;
 }
 
+// Fetch top selling products
+require_once '/var/www/html/connection/db_connection.php';
+
+$topProducts = [];
+try {
+    $stmt = $conn->prepare("
+        SELECT 
+            i.product_name,
+            i.sold as total_sold,
+            i.main_image_url,
+            (i.sold * 100.0 / NULLIF((SELECT SUM(sold) FROM items WHERE seller_id = ? AND sold > 0), 0)) as percentage
+        FROM items i
+        WHERE i.seller_id = ? AND i.sold > 0
+        ORDER BY i.sold DESC
+        LIMIT 5
+    ");
+    $stmt->execute([$seller_id, $seller_id]);
+    $topProducts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Calculate max sold for percentage if no products have sold > 0
+    if (!empty($topProducts)) {
+        $maxSold = $topProducts[0]['total_sold'];
+        foreach ($topProducts as &$product) {
+            $product['percentage'] = round(($product['total_sold'] / $maxSold) * 100);
+        }
+    }
+} catch (PDOException $e) {
+    $topProducts = [];
+}
 ?>
 
 
@@ -64,23 +93,22 @@ if (!$seller_id) {
                 // Define plan styles
                 $plan_styles = [
                     'bronze' => [
-                        'background' => '#b45309', // Brown/orange
+                        'background' => '#b45309',
                         'hover' => '#d97706',
                         'icon' => 'fa-medal'
                     ],
                     'silver' => [
-                        'background' => '#6b7280', // Gray
+                        'background' => '#6b7280',
                         'hover' => '#9ca3af',
                         'icon' => 'fa-star'
                     ],
                     'gold' => [
-                        'background' => '#fbbf24', // Gold
+                        'background' => '#fbbf24',
                         'hover' => '#fcd34d',
                         'icon' => 'fa-crown'
                     ]
                 ];
                 
-                // Get current plan (default to bronze if not set)
                 $current_plan = strtolower($seller_plan ?? 'bronze');
                 $plan_style = $plan_styles[$current_plan] ?? $plan_styles['bronze'];
                 ?>
@@ -105,8 +133,8 @@ if (!$seller_id) {
                 <div class="stat-info"><h3 id="orders-count">--</h3><p>Total Orders</p></div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon" style="background:#3498db20;color:#3498db"><i class="fas fa-dollar-sign"></i></div>
-                <div class="stat-info"><h3>$18,420.50</h3><p>Total Revenue</p></div>
+                <div class="stat-icon" style="background:#27ae6020;color:#27ae60"><i class="fas fa-dollar-sign"></i></div>
+                <div class="stat-info"><h3 id="revenue-count">--</h3><p>Total Revenue</p></div>
             </div>
         </section>
 
@@ -136,47 +164,31 @@ if (!$seller_id) {
             </div>
         </div>
 
-        <!-- Quick Actions + Top Products - same height, side by side -->
+        <!-- Quick Actions + Top Products -->
         <div class="side-by-side">
-
             <div class="top-products">
                 <div class="section-header"><h2>Top Selling Products</h2></div>
                 <div class="products-list">
-                    <div class="product-item">
-                        <div class="product-info"><h4>Wireless Earbuds Pro</h4><p>148 sold</p></div>
-                        <div class="product-progress">
-                            <div class="progress-bar"><div class="progress-fill" style="width:92%;background:#3498db;"></div></div>
-                            <span>92%</span>
+                    <?php if (empty($topProducts)): ?>
+                        <div class="product-item" style="justify-content: center; padding: 2rem;">
+                            <p style="color: #95a5a6;">No sales data yet</p>
                         </div>
-                    </div>
-                    <div class="product-item">
-                        <div class="product-info"><h4>Smart LED Bulb (4-pack)</h4><p>97 sold</p></div>
-                        <div class="product-progress">
-                            <div class="progress-bar"><div class="progress-fill" style="width:76%;background:#3498db;"></div></div>
-                            <span>76%</span>
-                        </div>
-                    </div>
-                    <div class="product-item">
-                        <div class="product-info"><h4>Phone Fast Charger 65W</h4><p>82 sold</p></div>
-                        <div class="product-progress">
-                            <div class="progress-bar"><div class="progress-fill" style="width:68%;background:#3498db;"></div></div>
-                            <span>68%</span>
-                        </div>
-                    </div>
-                    <div class="product-item">
-                        <div class="product-info"><h4>Reusable Water Bottle 1L</h4><p>65 sold</p></div>
-                        <div class="product-progress">
-                            <div class="progress-bar"><div class="progress-fill" style="width:54%;background:#3498db;"></div></div>
-                            <span>54%</span>
-                        </div>
-                    </div>
-                    <div class="product-item">
-                        <div class="product-info"><h4>Portable Power Bank 20000mAh</h4><p>51 sold</p></div>
-                        <div class="product-progress">
-                            <div class="progress-bar"><div class="progress-fill" style="width:42%;background:#3498db;"></div></div>
-                            <span>42%</span>
-                        </div>
-                    </div>
+                    <?php else: ?>
+                        <?php foreach ($topProducts as $product): ?>
+                            <div class="product-item">
+                                <div class="product-info">
+                                    <h4><?= htmlspecialchars($product['product_name']) ?></h4>
+                                    <p><?= $product['total_sold'] ?> sold</p>
+                                </div>
+                                <div class="product-progress">
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width:<?= $product['percentage'] ?>%;background:#3498db;"></div>
+                                    </div>
+                                    <span><?= $product['percentage'] ?>%</span>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -193,7 +205,7 @@ if (!$seller_id) {
     </main>
 </div>
 
-<!-- ── LOGOUT CONFIRMATION MODAL ── -->
+<!-- LOGOUT MODAL -->
 <div class="logout-modal-overlay" id="logoutModal">
     <div class="logout-modal-content">
         <div class="logout-modal-header">
@@ -213,79 +225,76 @@ if (!$seller_id) {
 
 <script src="/seller/js/logout.js"></script>
 
-
- <script>
-
-    // --------------------------------------------------------------------------------------------------
-    // JS code to fetch and display products and orders count on the dashboard cards. 
-    // This runs only once when the page loads.
-        const sellerId = <?php echo json_encode($seller_id); ?>;
-        
-        async function loadData() {
-            try {
-                const response = await fetch(`/seller/backend/dashboard_backends/count_products.php?seller_id=${sellerId}`);
-                const data = await response.json();
+<script>
+    const sellerId = <?php echo json_encode($seller_id); ?>;
+    
+    async function loadData() {
+        try {
+            const response = await fetch(`/seller/backend/dashboard_backends/count_products.php?seller_id=${sellerId}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                document.getElementById('products-count').textContent = data.products_count;
+                document.getElementById('orders-count').textContent = data.orders_count;
                 
-                if (data.success) {
-                    document.getElementById('products-count').textContent = data.products_count;
-                    document.getElementById('orders-count').textContent = data.orders_count;
+                // Fetch revenue data
+                const revenueRes = await fetch(`/seller/backend/dashboard_backends/get_revenue.php?seller_id=${sellerId}`);
+                const revenueData = await revenueRes.json();
+                if (revenueData.success) {
+                    document.getElementById('revenue-count').textContent = '₱' + parseFloat(revenueData.total_revenue).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                 }
-            } catch (error) {
-                console.error('Error:', error);
             }
+        } catch (error) {
+            console.error('Error:', error);
         }
-        
-        // Load data only once when page loads
-        loadData();
+    }
+    
+    loadData();
 
-// --------------------------------------------------------------------------------------------------
-    // JS code to fetch and display recent orders in the "Recent Orders" table.
-    //  This also runs once on page load.
+    // Recent orders
     fetch(`/seller/backend/dashboard_backends/get_recent_orders.php?seller_id=${sellerId}`)
-            .then(res => res.json())
-            .then(data => {
-                const tbody = document.getElementById('recent-orders-body');
+        .then(res => res.json())
+        .then(data => {
+            const tbody = document.getElementById('recent-orders-body');
+            
+            if (data.success && data.orders.length > 0) {
+                tbody.innerHTML = '';
                 
-                if (data.success && data.orders.length > 0) {
-                    tbody.innerHTML = '';
+                data.orders.forEach(order => {
+                    let statusClass = 'status-badge';
+                    if (order.status === 'delivered' || order.status === 'complete') {
+                        statusClass += ' status-delivered';
+                    } else if (order.status === 'shipped') {
+                        statusClass += ' status-shipped';
+                    } else {
+                        statusClass += ' status-pending';
+                    }
                     
-                    data.orders.forEach(order => {
-                        let statusClass = 'status-badge';
-                        if (order.status === 'delivered' || order.status === 'complete') {
-                            statusClass += ' status-delivered';
-                        } else if (order.status === 'shipped') {
-                            statusClass += ' status-shipped';
-                        } else {
-                            statusClass += ' status-pending';
-                        }
-                        
-                        tbody.innerHTML += `
-                            <tr>
-                                <td>#${String(order.order_id).padStart(5, '0')}</td>
-                                <td>${order.customer_name || 'Guest'}</td>
-                                <td>${order.products}</td>
-                                <td>$${parseFloat(order.total_amount).toFixed(2)}</td>
-                                <td><span class="${statusClass}">
-                                    ${order.status
-                                        .split('_')
-                                        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                                        .join(' ')}
-                                    </span>
-                                </td>
-                            </tr>
-                        `;
-                    });
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No orders found</td></tr>';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('recent-orders-body').innerHTML = '<tr><td colspan="5" style="text-align: center;">Error loading orders</td></tr>';
-            });
-// -------------------------------------------------------------------------------------------------------------------
-
-    </script>
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>#${String(order.order_id).padStart(5, '0')}</td>
+                            <td>${order.customer_name || 'Guest'}</td>
+                            <td>${order.products}</td>
+                            <td>₱${parseFloat(order.total_amount).toFixed(2)}</td>
+                            <td><span class="${statusClass}">
+                                ${order.status
+                                    .split('_')
+                                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                    .join(' ')}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No orders found</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('recent-orders-body').innerHTML = '<tr><td colspan="5" style="text-align: center;">Error loading orders</td></tr>';
+        });
+</script>
 
 </body>
 </html>
