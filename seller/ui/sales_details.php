@@ -13,6 +13,9 @@ if (!$sale_id) {
 require_once '/var/www/html/connection/db_connection.php';
 
 $sale = null;
+$variation_details = null;
+$all_images = [];
+
 try {
     $stmt = $conn->prepare("
         SELECT 
@@ -21,6 +24,8 @@ try {
             oi.quantity,
             oi.unit_price,
             oi.total_price,
+            oi.variation_id,
+            oi.selected_options,
             i.product_name,
             i.product_description,
             i.main_image_url,
@@ -49,19 +54,61 @@ try {
         exit;
     }
     
-    // Get all images for this product
-    $all_images = [];
-    if (!empty($sale['main_image_url'])) {
-        $all_images[] = $sale['main_image_url'];
+    // Get variation details if exists
+    if (!empty($sale['variation_id'])) {
+        $var_stmt = $conn->prepare("
+            SELECT options_json, sku, image_urls
+            FROM item_variants
+            WHERE id = ?
+        ");
+        $var_stmt->execute([$sale['variation_id']]);
+        $variation_details = $var_stmt->fetch(PDO::FETCH_ASSOC);
     }
+    
+    // Get all images - start with variation images if available
+    if ($variation_details && !empty($variation_details['image_urls'])) {
+        $var_images = explode(',', $variation_details['image_urls']);
+        foreach ($var_images as $img) {
+            $trimmed = trim($img);
+            if (!empty($trimmed) && !in_array($trimmed, $all_images)) {
+                $all_images[] = $trimmed;
+            }
+        }
+    }
+    
+    // Add main product image (if not already added)
+    if (!empty($sale['main_image_url'])) {
+        $trimmed = trim($sale['main_image_url']);
+        if (!in_array($trimmed, $all_images)) {
+            $all_images[] = $trimmed;
+        }
+    }
+    
+    // Add additional product images (if not already added)
     if (!empty($sale['image_urls'])) {
         $additional = explode(',', $sale['image_urls']);
         foreach ($additional as $img) {
             $trimmed = trim($img);
-            if (!empty($trimmed)) {
+            if (!empty($trimmed) && !in_array($trimmed, $all_images)) {
                 $all_images[] = $trimmed;
             }
         }
+    }
+    
+    // Parse variation options for display
+    $variation_text = '';
+    if ($variation_details && !empty($variation_details['options_json'])) {
+        $options = json_decode($variation_details['options_json'], true);
+        if (is_array($options)) {
+            $variation_parts = [];
+            foreach ($options as $key => $value) {
+                $variation_parts[] = ucfirst($key) . ': ' . $value;
+            }
+            $variation_text = implode(', ', $variation_parts);
+        }
+    } elseif (!empty($sale['selected_options'])) {
+        // Fallback to selected_options from order_items
+        $variation_text = $sale['selected_options'];
     }
     
 } catch (PDOException $e) {
@@ -110,6 +157,7 @@ try {
             align-items: center;
             gap: 1rem;
             margin-bottom: 2rem;
+            flex-wrap: wrap;
         }
 
         .back-btn {
@@ -253,8 +301,20 @@ try {
         .product-name {
             font-size: 1.8rem;
             font-weight: 700;
-            margin-bottom: 0.75rem;
+            margin-bottom: 0.5rem;
             color: var(--dark);
+        }
+
+        .product-variation {
+            display: inline-block;
+            background: #e8f4fd;
+            color: var(--primary);
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            align-self: flex-start;
         }
 
         .product-description {
@@ -419,6 +479,7 @@ try {
             cursor: pointer;
             padding: 10px;
             transition: opacity 0.2s;
+            z-index: 1001;
         }
 
         .close-fullscreen:hover {
@@ -437,6 +498,7 @@ try {
             padding: 1rem;
             border-radius: 50%;
             transition: background 0.2s;
+            z-index: 1001;
         }
 
         .nav-arrow:hover {
@@ -461,6 +523,7 @@ try {
             padding: 0.5rem 1rem;
             border-radius: 20px;
             font-size: 0.9rem;
+            z-index: 1001;
         }
 
         /* Responsive */
@@ -485,6 +548,11 @@ try {
             .nav-arrow {
                 font-size: 1.5rem;
                 padding: 0.75rem;
+            }
+            
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
             }
         }
     </style>
@@ -532,6 +600,19 @@ try {
                 <!-- Product Info -->
                 <div class="product-info">
                     <h2 class="product-name"><?= htmlspecialchars($sale['product_name']) ?></h2>
+                    
+                    <?php if (!empty($variation_text)): ?>
+                        <div class="product-variation">
+                            <i class="fas fa-tag"></i> <?= htmlspecialchars($variation_text) ?>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <?php if (!empty($variation_details['sku'])): ?>
+                        <div class="product-variation" style="background: #f0f2f5; color: var(--gray); margin-top: -0.5rem;">
+                            <i class="fas fa-barcode"></i> SKU: <?= htmlspecialchars($variation_details['sku']) ?>
+                        </div>
+                    <?php endif; ?>
+                    
                     <p class="product-description"><?= htmlspecialchars($sale['product_description'] ?? 'No description available') ?></p>
                     
                     <div class="info-grid">
