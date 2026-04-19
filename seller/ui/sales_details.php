@@ -14,7 +14,8 @@ require_once '/var/www/html/connection/db_connection.php';
 
 $sale = null;
 $variation_details = null;
-$all_images = [];
+$main_item_images = [];
+$variation_images = [];
 
 try {
     $stmt = $conn->prepare("
@@ -63,37 +64,39 @@ try {
         ");
         $var_stmt->execute([$sale['variation_id']]);
         $variation_details = $var_stmt->fetch(PDO::FETCH_ASSOC);
-    }
-    
-    // Get all images - start with variation images if available
-    if ($variation_details && !empty($variation_details['image_urls'])) {
-        $var_images = explode(',', $variation_details['image_urls']);
-        foreach ($var_images as $img) {
-            $trimmed = trim($img);
-            if (!empty($trimmed) && !in_array($trimmed, $all_images)) {
-                $all_images[] = $trimmed;
+        
+        // Get variation images
+        if ($variation_details && !empty($variation_details['image_urls'])) {
+            $var_images = explode(',', $variation_details['image_urls']);
+            foreach ($var_images as $img) {
+                $trimmed = trim($img);
+                if (!empty($trimmed)) {
+                    $variation_images[] = $trimmed;
+                }
             }
         }
     }
     
-    // Add main product image (if not already added)
+    // Get main item images
     if (!empty($sale['main_image_url'])) {
         $trimmed = trim($sale['main_image_url']);
-        if (!in_array($trimmed, $all_images)) {
-            $all_images[] = $trimmed;
+        if (!empty($trimmed)) {
+            $main_item_images[] = $trimmed;
         }
     }
     
-    // Add additional product images (if not already added)
     if (!empty($sale['image_urls'])) {
         $additional = explode(',', $sale['image_urls']);
         foreach ($additional as $img) {
             $trimmed = trim($img);
-            if (!empty($trimmed) && !in_array($trimmed, $all_images)) {
-                $all_images[] = $trimmed;
+            if (!empty($trimmed) && !in_array($trimmed, $main_item_images)) {
+                $main_item_images[] = $trimmed;
             }
         }
     }
+    
+    // Combine all images for gallery (variation images first if exists, then main item images)
+    $all_images = array_merge($variation_images, $main_item_images);
     
     // Parse variation options for display
     $variation_text = '';
@@ -107,7 +110,6 @@ try {
             $variation_text = implode(', ', $variation_parts);
         }
     } elseif (!empty($sale['selected_options'])) {
-        // Fallback to selected_options from order_items
         $variation_text = $sale['selected_options'];
     }
     
@@ -251,10 +253,24 @@ try {
             font-size: 4rem;
         }
 
+        .image-section-label {
+            font-size: 0.85rem;
+            color: var(--gray);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .image-section-label i {
+            font-size: 0.9rem;
+        }
+
         .thumbnail-strip {
             display: flex;
             gap: 0.75rem;
             flex-wrap: wrap;
+            margin-bottom: 1rem;
         }
 
         .thumbnail {
@@ -280,16 +296,6 @@ try {
             width: 100%;
             height: 100%;
             object-fit: cover;
-        }
-
-        .thumbnail-placeholder {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--gray);
-            font-size: 1.5rem;
         }
 
         /* Product Info */
@@ -401,46 +407,79 @@ try {
         /* Order Summary */
         .order-section {
             padding: 2rem;
-            background: #fafbfc;
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
         }
 
-        .summary-table {
+        .order-summary-container {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .summary-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1px solid #eef2f6;
             width: 100%;
-            max-width: 400px;
-            margin-left: auto;
+            max-width: 380px;
+        }
+
+        .summary-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 1.25rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eef2f6;
+        }
+
+        .summary-header i {
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .summary-header span {
+            font-weight: 600;
+            color: var(--dark);
         }
 
         .summary-row {
             display: flex;
             justify-content: space-between;
-            padding: 0.75rem 0;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .summary-row:last-child {
-            border-bottom: none;
-        }
-
-        .summary-row.total {
-            font-weight: 700;
-            font-size: 1.2rem;
-            border-top: 2px solid #d1d9e0;
-            border-bottom: none;
-            margin-top: 0.5rem;
-            padding-top: 1rem;
+            padding: 0.6rem 0;
         }
 
         .summary-label {
             color: var(--gray);
+            font-size: 0.9rem;
         }
 
         .summary-value {
-            font-weight: 600;
+            font-weight: 500;
             color: var(--dark);
         }
 
+        .summary-divider {
+            height: 1px;
+            background: #eef2f6;
+            margin: 1rem 0;
+        }
+
+        .summary-row.total {
+            padding-top: 0.5rem;
+        }
+
+        .summary-label.total {
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 1rem;
+        }
+
         .summary-value.total {
+            font-weight: 700;
             color: var(--success);
+            font-size: 1.2rem;
         }
 
         /* Fullscreen Modal */
@@ -541,7 +580,11 @@ try {
                 grid-template-columns: 1fr;
             }
 
-            .summary-table {
+            .order-summary-container {
+                justify-content: stretch;
+            }
+
+            .summary-card {
                 max-width: 100%;
             }
 
@@ -586,11 +629,32 @@ try {
                         <?php endif; ?>
                     </div>
                     
-                    <?php if (count($all_images) > 1): ?>
-                        <div class="thumbnail-strip" id="thumbnailStrip">
-                            <?php foreach ($all_images as $index => $img): ?>
+                    <?php if (!empty($variation_images)): ?>
+                        <div class="image-section-label">
+                            <i class="fas fa-tags"></i> Variation Images
+                        </div>
+                        <div class="thumbnail-strip">
+                            <?php foreach ($variation_images as $index => $img): ?>
                                 <div class="thumbnail <?= $index === 0 ? 'active' : '' ?>" onclick="changeImage(<?= $index ?>)">
-                                    <img src="<?= htmlspecialchars($img) ?>" alt="Thumbnail <?= $index + 1 ?>">
+                                    <img src="<?= htmlspecialchars($img) ?>" alt="Variation <?= $index + 1 ?>">
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <?php if (!empty($main_item_images)): ?>
+                        <div class="image-section-label">
+                            <i class="fas fa-image"></i> Product Images
+                        </div>
+                        <div class="thumbnail-strip">
+                            <?php 
+                            $startIndex = count($variation_images);
+                            foreach ($main_item_images as $offset => $img): 
+                                $index = $startIndex + $offset;
+                                $isActive = empty($variation_images) && $offset === 0;
+                            ?>
+                                <div class="thumbnail <?= $isActive ? 'active' : '' ?>" onclick="changeImage(<?= $index ?>)">
+                                    <img src="<?= htmlspecialchars($img) ?>" alt="Product <?= $offset + 1 ?>">
                                 </div>
                             <?php endforeach; ?>
                         </div>
@@ -667,25 +731,29 @@ try {
 
             <!-- Order Summary -->
             <div class="order-section">
-                <h3 class="section-title">
-                    <i class="fas fa-receipt"></i> Order Summary
-                </h3>
-                <div class="summary-table">
-                    <div class="summary-row">
-                        <span class="summary-label">Subtotal</span>
-                        <span class="summary-value">₱<?= number_format($sale['subtotal'], 2) ?></span>
-                    </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Shipping Fee</span>
-                        <span class="summary-value">₱<?= number_format($sale['shipping_fee'], 2) ?></span>
-                    </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Platform Fee</span>
-                        <span class="summary-value">₱<?= number_format($sale['platform_fee'], 2) ?></span>
-                    </div>
-                    <div class="summary-row total">
-                        <span class="summary-label">Total Amount</span>
-                        <span class="summary-value total">₱<?= number_format($sale['total_amount'], 2) ?></span>
+                <div class="order-summary-container">
+                    <div class="summary-card">
+                        <div class="summary-header">
+                            <i class="fas fa-receipt"></i>
+                            <span>Order Summary</span>
+                        </div>
+                        <div class="summary-row">
+                            <span class="summary-label">Subtotal</span>
+                            <span class="summary-value">₱<?= number_format($sale['subtotal'], 2) ?></span>
+                        </div>
+                        <div class="summary-row">
+                            <span class="summary-label">Shipping Fee</span>
+                            <span class="summary-value">₱<?= number_format($sale['shipping_fee'], 2) ?></span>
+                        </div>
+                        <div class="summary-row">
+                            <span class="summary-label">Platform Fee</span>
+                            <span class="summary-value">₱<?= number_format($sale['platform_fee'], 2) ?></span>
+                        </div>
+                        <div class="summary-divider"></div>
+                        <div class="summary-row total">
+                            <span class="summary-label total">Total Amount</span>
+                            <span class="summary-value total">₱<?= number_format($sale['total_amount'], 2) ?></span>
+                        </div>
                     </div>
                 </div>
             </div>
