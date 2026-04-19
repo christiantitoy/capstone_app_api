@@ -75,7 +75,7 @@ try {
     if (!empty($user['is_removed'])) {
         echo json_encode([
             'status' => 'error',
-            'message' => 'Account has been removed'
+            'message' => 'Account has been removed. Please contact your employer.'
         ]);
         $conn = null;
         exit;
