@@ -19,10 +19,12 @@ try {
         exit;
     }
 
-    // Allowed statuses (match ENUM)
+    // Allowed statuses (match database constraint)
     $allowed_statuses = [
         "pending",
+        "pending_payment",
         "packed",
+        "ready_for_pickup",
         "shipped",
         "delivered",
         "locked",
