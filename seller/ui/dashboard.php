@@ -16,23 +16,25 @@ $topProducts = [];
 try {
     $stmt = $conn->prepare("
         SELECT 
+            i.id,
             i.product_name,
             i.sold as total_sold,
             i.main_image_url,
-            (i.sold * 100.0 / NULLIF((SELECT SUM(sold) FROM items WHERE seller_id = ? AND sold > 0), 0)) as percentage
+            (i.sold * 100.0 / NULLIF((SELECT MAX(sold) FROM items WHERE seller_id = ? AND sold > 0), 0)) as percentage
         FROM items i
         WHERE i.seller_id = ? AND i.sold > 0
-        ORDER BY i.sold DESC
+        GROUP BY i.id, i.product_name, i.sold, i.main_image_url
+        ORDER BY i.sold DESC, i.id
         LIMIT 5
     ");
     $stmt->execute([$seller_id, $seller_id]);
     $topProducts = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Calculate max sold for percentage if no products have sold > 0
+    // Calculate max sold for percentage
     if (!empty($topProducts)) {
         $maxSold = $topProducts[0]['total_sold'];
         foreach ($topProducts as &$product) {
-            $product['percentage'] = round(($product['total_sold'] / $maxSold) * 100);
+            $product['percentage'] = $maxSold > 0 ? round(($product['total_sold'] / $maxSold) * 100) : 0;
         }
     }
 } catch (PDOException $e) {
@@ -133,7 +135,7 @@ try {
                 <div class="stat-info"><h3 id="orders-count">--</h3><p>Total Orders</p></div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon" style="background:#27ae6020;color:#27ae60"><i class="fas fa-dollar-sign"></i></div>
+                <div class="stat-icon" style="background:#27ae6020;color:#27ae60"><i class="fas fa-peso-sign"></i></div>
                 <div class="stat-info"><h3 id="revenue-count">--</h3><p>Total Revenue</p></div>
             </div>
         </section>
@@ -258,7 +260,7 @@ try {
                     let statusClass = 'status-badge';
                     if (order.status === 'delivered' || order.status === 'complete') {
                         statusClass += ' status-delivered';
-                    } else if (order.status === 'shipped') {
+                    } else if (order.status === 'shipped' || order.status === 'ready_for_pickup') {
                         statusClass += ' status-shipped';
                     } else {
                         statusClass += ' status-pending';
