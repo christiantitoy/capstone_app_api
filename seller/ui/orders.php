@@ -531,7 +531,7 @@ function viewOrderDetails(orderId) {
         <div class="order-info-grid">
             <div class="order-info-item">
                 <div class="order-info-label">Order Number</div>
-                <div class="order-info-value">${escapeHtml(order.order_number)}</div>
+                <div class="order-info-value">#${escapeHtml(order.order_number)}</div>
             </div>
             <div class="order-info-item">
                 <div class="order-info-label">Order Date</div>

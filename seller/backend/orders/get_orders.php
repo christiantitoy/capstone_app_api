@@ -62,7 +62,7 @@ try {
     
     // Format data for display
     foreach ($orders as &$order) {
-        $order['order_number'] = '#' . str_pad($order['id'], 6, '0', STR_PAD_LEFT);
+        $order['order_number'] = $order['id']; // Just the ID, no padding
         $order['subtotal_formatted'] = '₱' . number_format($order['subtotal'], 2);
         $order['created_date'] = date('M d, Y', strtotime($order['created_at']));
         $order['created_datetime'] = date('M d, Y h:i A', strtotime($order['created_at']));
