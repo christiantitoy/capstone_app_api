@@ -20,16 +20,25 @@ if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
 }
 
 try {
-    // Check if email exists in employees table
-    $checkUserStmt = $conn->prepare("SELECT id, full_name FROM employees WHERE email = ? AND is_removed = FALSE");
-    $checkUserStmt->execute([$email]);
-    $user = $checkUserStmt->fetch(PDO::FETCH_ASSOC);
+    // First check if email exists but is removed
+    $checkRemovedStmt = $conn->prepare("SELECT id, full_name, is_removed FROM employees WHERE email = ?");
+    $checkRemovedStmt->execute([$email]);
+    $employee = $checkRemovedStmt->fetch(PDO::FETCH_ASSOC);
     
-    // Return error if email not found
-    if (!$user) {
+    // Check if employee exists
+    if (!$employee) {
         echo json_encode([
             'success' => false,
             'message' => 'Email not found. Please register first.'
+        ]);
+        exit;
+    }
+    
+    // Check if account is removed
+    if ($employee['is_removed']) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Account is removed. Please contact your administrator.'
         ]);
         exit;
     }
@@ -97,7 +106,7 @@ try {
     <body>
         <div class='container'>
             <h2>Password Reset Request</h2>
-            <p>Hello {$user['full_name']},</p>
+            <p>Hello {$employee['full_name']},</p>
             <p>You requested to reset your password. Use the OTP code below:</p>
             <div class='otp-code'>{$otpCode}</div>
             <p>This code will expire in <strong>10 minutes</strong>.</p>
@@ -118,7 +127,7 @@ try {
             "email" => "christiantitoy@gmail.com"
         ],
         "to" => [
-            ["email" => $email, "name" => $user['full_name']]
+            ["email" => $email, "name" => $employee['full_name']]
         ],
         "subject" => "Password Reset OTP - PalitOra",
         "htmlContent" => $htmlContent,
