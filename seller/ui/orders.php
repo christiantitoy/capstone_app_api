@@ -462,7 +462,7 @@ function displayOrders(orders) {
         
         html += `
             <tr class="clickable-row" onclick="viewOrderDetails(${order.id})">
-                <td><strong>${escapeHtml(order.order_number)}</strong></td>
+                <td><strong>#${escapeHtml(String(order.order_number))}</strong></td>
                 <td>${escapeHtml(order.customer_name)}</td>
                 <td><span class="badge badge-info">${order.item_count} item(s)</span></td>
                 <td><strong>${order.subtotal_formatted}</strong></td>

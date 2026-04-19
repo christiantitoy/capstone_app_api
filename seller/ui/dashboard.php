@@ -206,7 +206,7 @@ if (!$seller_id) {
                     
                     tbody.innerHTML += `
                         <tr>
-                            <td>#${String(order.order_id).padStart(5, '0')}</td>
+                            <td>#${order.order_id}</td>
                             <td>${order.customer_name || 'Guest'}</td>
                             <td>${order.products}</td>
                             <td>₱${parseFloat(order.total_amount).toFixed(2)}</td>
