@@ -728,35 +728,6 @@ try {
                     </div>
                 </div>
             </div>
-
-            <!-- Order Summary -->
-            <div class="order-section">
-                <div class="order-summary-container">
-                    <div class="summary-card">
-                        <div class="summary-header">
-                            <i class="fas fa-receipt"></i>
-                            <span>Order Summary</span>
-                        </div>
-                        <div class="summary-row">
-                            <span class="summary-label">Subtotal</span>
-                            <span class="summary-value">₱<?= number_format($sale['subtotal'], 2) ?></span>
-                        </div>
-                        <div class="summary-row">
-                            <span class="summary-label">Shipping Fee</span>
-                            <span class="summary-value">₱<?= number_format($sale['shipping_fee'], 2) ?></span>
-                        </div>
-                        <div class="summary-row">
-                            <span class="summary-label">Platform Fee</span>
-                            <span class="summary-value">₱<?= number_format($sale['platform_fee'], 2) ?></span>
-                        </div>
-                        <div class="summary-divider"></div>
-                        <div class="summary-row total">
-                            <span class="summary-label total">Total Amount</span>
-                            <span class="summary-value total">₱<?= number_format($sale['total_amount'], 2) ?></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
