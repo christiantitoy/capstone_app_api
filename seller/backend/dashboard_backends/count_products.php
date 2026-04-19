@@ -1,5 +1,5 @@
 <?php
-// /seller/backend/dashboard_backends/count_products.php (enhanced with orders count)
+// /seller/backend/dashboard_backends/count_products.php
 
 require_once '/var/www/html/connection/db_connection.php';
 
@@ -11,8 +11,9 @@ if (empty($seller_id) || !is_numeric($seller_id)) {
     echo json_encode([
         'success' => false,
         'error' => 'Invalid seller_id provided',
-        'count' => 0,
-        'orders_count' => 0
+        'products_count' => 0,
+        'orders_count' => 0,
+        'total_revenue' => 0
     ]);
     exit;
 }
@@ -25,7 +26,6 @@ try {
     $product_count = (int)($product_result['total_count'] ?? 0);
     
     // Count orders for the seller's products
-    // This counts unique orders that contain at least one product from this seller
     $stmt = $conn->prepare("
         SELECT COUNT(DISTINCT o.id) as total_orders
         FROM orders o
@@ -36,6 +36,19 @@ try {
     $stmt->execute([$seller_id]);
     $order_result = $stmt->fetch(PDO::FETCH_ASSOC);
     $orders_count = (int)($order_result['total_orders'] ?? 0);
+    
+    // Calculate total revenue from delivered/completed orders
+    $stmt = $conn->prepare("
+        SELECT COALESCE(SUM(oi.total_price), 0) as total_revenue
+        FROM order_items oi
+        INNER JOIN items i ON oi.product_id = i.id
+        INNER JOIN orders o ON oi.order_id = o.id
+        WHERE i.seller_id = ? 
+        AND o.status IN ('delivered', 'complete')
+    ");
+    $stmt->execute([$seller_id]);
+    $revenue_result = $stmt->fetch(PDO::FETCH_ASSOC);
+    $total_revenue = (float)($revenue_result['total_revenue'] ?? 0);
     
     // Optional: Get detailed order statistics by status
     $stmt = $conn->prepare("
@@ -56,13 +69,15 @@ try {
         $order_status_summary[$status_count['status']] = (int)$status_count['order_count'];
     }
     
-    // Return JSON response with both counts
+    // Return JSON response with all counts and revenue
     header('Content-Type: application/json');
     echo json_encode([
         'success' => true,
         'seller_id' => (int)$seller_id,
         'products_count' => $product_count,
         'orders_count' => $orders_count,
+        'total_revenue' => $total_revenue,
+        'total_revenue_formatted' => '₱' . number_format($total_revenue, 2),
         'order_status_summary' => $order_status_summary,
         'message' => 'Counts retrieved successfully'
     ]);
@@ -76,7 +91,8 @@ try {
         'success' => false,
         'error' => 'Database error occurred',
         'products_count' => 0,
-        'orders_count' => 0
+        'orders_count' => 0,
+        'total_revenue' => 0
     ]);
     exit;
 }

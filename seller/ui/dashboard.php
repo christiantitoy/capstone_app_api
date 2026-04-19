@@ -236,13 +236,7 @@ try {
             if (data.success) {
                 document.getElementById('products-count').textContent = data.products_count;
                 document.getElementById('orders-count').textContent = data.orders_count;
-                
-                // Fetch revenue data
-                const revenueRes = await fetch(`/seller/backend/dashboard_backends/get_revenue.php?seller_id=${sellerId}`);
-                const revenueData = await revenueRes.json();
-                if (revenueData.success) {
-                    document.getElementById('revenue-count').textContent = '₱' + parseFloat(revenueData.total_revenue).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                }
+                document.getElementById('revenue-count').textContent = '₱' + parseFloat(data.total_revenue).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             }
         } catch (error) {
             console.error('Error:', error);
