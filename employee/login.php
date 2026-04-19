@@ -81,9 +81,25 @@ try {
         exit;
     }
 
-    // ✅ Update last login
-    $conn->prepare("UPDATE employees SET last_login = NOW(), status = 'active' WHERE id = :id")
-     ->execute(['id' => $user['id']]);
+    // 🔍 STEP 4: Check if account is on hold (block login)
+    if ($user['status'] === 'on_hold') {
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Your account is on hold. Please contact administrator.'
+        ]);
+        $conn = null;
+        exit;
+    }
+
+    // ✅ Update last login and reactivate if inactive
+    if ($user['status'] === 'inactive') {
+        $conn->prepare("UPDATE employees SET last_login = NOW(), status = 'active' WHERE id = :id")
+             ->execute(['id' => $user['id']]);
+        $user['status'] = 'active'; // Update status in the response
+    } else {
+        $conn->prepare("UPDATE employees SET last_login = NOW() WHERE id = :id")
+             ->execute(['id' => $user['id']]);
+    }
 
     // Remove sensitive data
     unset($user['password'], $user['is_removed']);
