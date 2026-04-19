@@ -156,6 +156,31 @@ try {
         $stmt5 = $conn->prepare($sql5);
         $stmt5->execute([$rider_id, $order_id, $delivery_id, $shipping_fee, $total_amount]);
 
+        // 6️⃣ Insert into sold_items table for each order item
+        $sql6 = "
+            INSERT INTO sold_items (order_deliveries_id, order_items_id, orders_id, created_at)
+            SELECT ?, oi.id, ?, NOW()
+            FROM order_items oi
+            WHERE oi.order_id = ?
+        ";
+
+        $stmt6 = $conn->prepare($sql6);
+        $stmt6->execute([$delivery_id, $order_id, $order_id]);
+        $itemsInserted = $stmt6->rowCount();
+
+        // 7️⃣ Increment sold count in items table for each product
+        $sql7 = "
+            UPDATE items i
+            SET sold = sold + oi.quantity
+            FROM order_items oi
+            WHERE oi.order_id = ?
+            AND i.id = oi.product_id
+        ";
+
+        $stmt7 = $conn->prepare($sql7);
+        $stmt7->execute([$order_id]);
+        $productsUpdated = $stmt7->rowCount();
+
         $conn->commit();
 
         echo json_encode([
@@ -165,7 +190,9 @@ try {
             "earnings_recorded" => [
                 "shipping_fee" => $shipping_fee,
                 "total_amount" => $total_amount
-            ]
+            ],
+            "sold_items_recorded" => $itemsInserted,
+            "products_sold_updated" => $productsUpdated
         ]);
 
     } catch (Exception $e) {
