@@ -552,7 +552,7 @@ try {
                         </thead>
                         <tbody>
                             <?php foreach ($sales as $sale): ?>
-                                <tr onclick="showSaleDetails(<?= htmlspecialchars(json_encode($sale)) ?>)">
+                                <tr onclick="window.location.href='/seller/ui/sales_details.php?sale_id=<?= $sale['sale_id'] ?>'">
                                     <td>
                                         <strong><?= htmlspecialchars($sale['product_name']) ?></strong>
                                         <br>
@@ -644,23 +644,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-
-// Show sale details alert
-function showSaleDetails(sale) {
-    alert(
-        'Sale Details\n' +
-        '──────────────────\n' +
-        'Product: ' + sale.product_name + '\n' +
-        'Buyer: ' + sale.recipient_name + '\n' +
-        'Quantity: ' + sale.quantity + '\n' +
-        'Unit Price: ₱' + parseFloat(sale.unit_price).toFixed(2) + '\n' +
-        'Total: ₱' + parseFloat(sale.total_price).toFixed(2) + '\n' +
-        'Payment: ' + sale.payment_method + '\n' +
-        'Date: ' + new Date(sale.sale_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) + '\n' +
-        '──────────────────\n' +
-        'Address: ' + sale.full_address
-    );
-}
 </script>
 
 </body>
