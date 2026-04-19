@@ -17,15 +17,8 @@ try {
             oi.unit_price,
             oi.total_price,
             i.product_name,
-            i.main_image_url,
-            o.id as order_id,
-            o.subtotal,
-            o.shipping_fee,
-            o.platform_fee,
-            o.total_amount,
             o.payment_method,
             ba.recipient_name,
-            ba.phone_number,
             ba.full_address
         FROM sold_items si
         JOIN order_items oi ON si.order_items_id = oi.id
@@ -229,7 +222,7 @@ try {
         /* Stats Cards */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 1.5rem;
             margin-bottom: 2rem;
         }
@@ -257,7 +250,6 @@ try {
         .stat-icon.blue { background: #e8f4fd; color: var(--primary); }
         .stat-icon.green { background: #e8f5e9; color: var(--success); }
         .stat-icon.orange { background: #fff3e0; color: var(--warning); }
-        .stat-icon.purple { background: #f3e5f5; color: #9b59b6; }
 
         .stat-info h3 {
             font-size: 0.85rem;
@@ -349,32 +341,13 @@ try {
             font-size: 0.9rem;
         }
 
+        .sales-table tbody tr {
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
         .sales-table tbody tr:hover {
-            background: #fafbfc;
-        }
-
-        .product-cell {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .product-image {
-            width: 45px;
-            height: 45px;
-            border-radius: 6px;
-            object-fit: cover;
-            background: #f0f2f5;
-        }
-
-        .product-info h4 {
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-
-        .product-info p {
-            font-size: 0.8rem;
-            color: var(--gray);
+            background: #f0f7ff;
         }
 
         .buyer-cell {
@@ -549,17 +522,6 @@ try {
                     </div>
                 </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-icon purple">
-                    <i class="fas fa-truck"></i>
-                </div>
-                <div class="stat-info">
-                    <h3>Shipping Fees</h3>
-                    <div class="stat-value">
-                        ₱<?= number_format(array_sum(array_unique(array_column($sales, 'shipping_fee'))), 2) ?>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- Sales Table -->
@@ -584,33 +546,17 @@ try {
                             <tr>
                                 <th>Product</th>
                                 <th>Buyer</th>
-                                <th>Order ID</th>
-                                <th>Quantity</th>
                                 <th>Unit Price</th>
-                                <th>Total</th>
                                 <th>Payment</th>
-                                <th>Date</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($sales as $sale): ?>
-                                <tr>
+                                <tr onclick="showSaleDetails(<?= htmlspecialchars(json_encode($sale)) ?>)">
                                     <td>
-                                        <div class="product-cell">
-                                            <?php if ($sale['main_image_url']): ?>
-                                                <img src="<?= htmlspecialchars($sale['main_image_url']) ?>" 
-                                                     alt="<?= htmlspecialchars($sale['product_name']) ?>" 
-                                                     class="product-image">
-                                            <?php else: ?>
-                                                <div class="product-image" style="display: flex; align-items: center; justify-content: center;">
-                                                    <i class="fas fa-box" style="color: var(--gray);"></i>
-                                                </div>
-                                            <?php endif; ?>
-                                            <div class="product-info">
-                                                <h4><?= htmlspecialchars($sale['product_name']) ?></h4>
-                                                <p>ID: <?= $sale['sale_id'] ?></p>
-                                            </div>
-                                        </div>
+                                        <strong><?= htmlspecialchars($sale['product_name']) ?></strong>
+                                        <br>
+                                        <small style="color: var(--gray);">Qty: <?= $sale['quantity'] ?></small>
                                     </td>
                                     <td>
                                         <div class="buyer-cell">
@@ -620,16 +566,12 @@ try {
                                             </span>
                                         </div>
                                     </td>
-                                    <td>#<?= $sale['order_id'] ?></td>
-                                    <td><?= $sale['quantity'] ?></td>
-                                    <td>₱<?= number_format($sale['unit_price'], 2) ?></td>
-                                    <td class="amount-cell">₱<?= number_format($sale['total_price'], 2) ?></td>
+                                    <td class="amount-cell">₱<?= number_format($sale['unit_price'], 2) ?></td>
                                     <td>
                                         <span class="payment-badge">
                                             <?= htmlspecialchars($sale['payment_method']) ?>
                                         </span>
                                     </td>
-                                    <td><?= date('M d, Y', strtotime($sale['sale_date'])) ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -691,9 +633,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 for (let row of rows) {
                     const productName = row.cells[0]?.textContent.toLowerCase() || '';
                     const buyerName = row.cells[1]?.textContent.toLowerCase() || '';
-                    const orderId = row.cells[2]?.textContent.toLowerCase() || '';
                     
-                    if (productName.includes(filter) || buyerName.includes(filter) || orderId.includes(filter)) {
+                    if (productName.includes(filter) || buyerName.includes(filter)) {
                         row.style.display = '';
                     } else {
                         row.style.display = 'none';
@@ -703,6 +644,23 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Show sale details alert
+function showSaleDetails(sale) {
+    alert(
+        'Sale Details\n' +
+        '──────────────────\n' +
+        'Product: ' + sale.product_name + '\n' +
+        'Buyer: ' + sale.recipient_name + '\n' +
+        'Quantity: ' + sale.quantity + '\n' +
+        'Unit Price: ₱' + parseFloat(sale.unit_price).toFixed(2) + '\n' +
+        'Total: ₱' + parseFloat(sale.total_price).toFixed(2) + '\n' +
+        'Payment: ' + sale.payment_method + '\n' +
+        'Date: ' + new Date(sale.sale_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) + '\n' +
+        '──────────────────\n' +
+        'Address: ' + sale.full_address
+    );
+}
 </script>
 
 </body>

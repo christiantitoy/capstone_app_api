@@ -37,14 +37,14 @@ try {
     $order_result = $stmt->fetch(PDO::FETCH_ASSOC);
     $orders_count = (int)($order_result['total_orders'] ?? 0);
     
-    // Calculate total revenue from delivered/completed orders
+    // Calculate total revenue from sold_items (same as sales page)
+    // This counts only delivered/completed orders that have been recorded in sold_items
     $stmt = $conn->prepare("
         SELECT COALESCE(SUM(oi.total_price), 0) as total_revenue
-        FROM order_items oi
-        INNER JOIN items i ON oi.product_id = i.id
-        INNER JOIN orders o ON oi.order_id = o.id
-        WHERE i.seller_id = ? 
-        AND o.status IN ('delivered', 'complete')
+        FROM sold_items si
+        JOIN order_items oi ON si.order_items_id = oi.id
+        JOIN items i ON oi.product_id = i.id
+        WHERE i.seller_id = ?
     ");
     $stmt->execute([$seller_id]);
     $revenue_result = $stmt->fetch(PDO::FETCH_ASSOC);
