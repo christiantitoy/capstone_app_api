@@ -167,12 +167,227 @@ require_once '../backend/session/auth_admin.php';
 
 <script src="/admin/js/logout.js"></script>
 
-
 <script>
+    // Store original riders data for filtering
+    let allRiders = [];
+    
     // Display current date
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     document.getElementById('currentDate').textContent = new Date().toLocaleDateString(undefined, options);
     
+    // Function to view rider details
+    function viewRider(riderId) {
+        window.location.href = `rider_details.php?id=${riderId}`;
+    }
+    
+    // Load riders from backend
+    async function loadRiders() {
+        const tableBody = document.getElementById('ridersTableBody');
+        
+        try {
+            const response = await fetch('../backend/riders/get_riders.php');
+            const result = await response.json();
+            
+            if (result.success) {
+                allRiders = result.data;
+                const stats = result.statistics;
+                
+                // Update statistics
+                document.getElementById('totalRiders').textContent = stats.total;
+                document.getElementById('approvedRiders').textContent = stats.approved;
+                document.getElementById('pendingRiders').textContent = stats.pending;
+                document.getElementById('activeRiders').textContent = stats.online + stats.delivering;
+                
+                // Display riders
+                displayRiders(allRiders);
+            } else {
+                tableBody.innerHTML = '<div class="loading">Failed to load riders</div>';
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            tableBody.innerHTML = '<div class="loading">Error loading riders</div>';
+        }
+    }
+    
+    function displayRiders(riders) {
+        const tbody = document.getElementById('ridersTableBody');
+        
+        if (riders.length === 0) {
+            tbody.innerHTML = '<div class="loading">No riders found</div>';
+            return;
+        }
+        
+        let html = '';
+        riders.forEach(rider => {
+            const statusClass = getStatusClass(rider.status);
+            const verificationClass = getVerificationClass(rider.verification_status);
+            
+            // Determine action buttons based on verification status
+            let actionButtons = '';
+            if (rider.verification_status === 'pending') {
+                actionButtons = `
+                    <button class="approve-btn" onclick="event.stopPropagation(); approveRider(${rider.id})">Approve</button>
+                    <button class="reject-btn" onclick="event.stopPropagation(); rejectRider(${rider.id})">Reject</button>
+                `;
+            } else if (rider.verification_status === 'complete') {
+                actionButtons = `
+                    <button class="suspend-btn" onclick="event.stopPropagation(); suspendRider(${rider.id})">Suspend</button>
+                `;
+            } else if (rider.verification_status === 'rejected') {
+                actionButtons = `
+                    <button class="approve-btn" onclick="event.stopPropagation(); approveRider(${rider.id})">Approve</button>
+                `;
+            } else {
+                actionButtons = `
+                    <button class="approve-btn" onclick="event.stopPropagation(); approveRider(${rider.id})">Verify</button>
+                    <button class="reject-btn" onclick="event.stopPropagation(); rejectRider(${rider.id})">Reject</button>
+                `;
+            }
+            
+            html += `
+                <div class="rider-row" onclick="viewRider(${rider.id})">
+                    <div class="col-id">#${rider.id}</div>
+                    <div class="col-name">
+                        <strong>${escapeHtml(rider.username)}</strong>
+                    </div>
+                    <div class="col-contact">
+                        <div style="font-size: 13px; color: #7f8c8d;">
+                            <i class="fas fa-envelope" style="margin-right: 5px;"></i>
+                            ${escapeHtml(rider.email)}
+                        </div>
+                    </div>
+                    <div class="col-verification">
+                        <span class="status-badge ${verificationClass}">${formatVerificationStatus(rider.verification_status)}</span>
+                    </div>
+                    <div class="col-status">
+                        <span class="status-badge ${statusClass}">
+                            <i class="fas ${getStatusIcon(rider.status)}" style="margin-right: 5px;"></i>
+                            ${rider.status}
+                        </span>
+                    </div>
+                    <div class="col-actions">
+                        ${actionButtons}
+                    </div>
+                </div>
+            `;
+        });
+        
+        tbody.innerHTML = html;
+    }
+    
+    function getStatusClass(status) {
+        const classes = {
+            'online': 'status-active',
+            'offline': 'status-offline',
+            'delivering': 'status-busy'
+        };
+        return classes[status] || 'status-pending';
+    }
+    
+    function getStatusIcon(status) {
+        const icons = {
+            'online': 'fa-circle',
+            'offline': 'fa-circle',
+            'delivering': 'fa-motorcycle'
+        };
+        return icons[status] || 'fa-circle';
+    }
+    
+    function getVerificationClass(verificationStatus) {
+        const classes = {
+            'complete': 'status-approved',
+            'pending': 'status-pending',
+            'rejected': 'status-rejected',
+            'none': 'status-offline'
+        };
+        return classes[verificationStatus] || 'status-offline';
+    }
+    
+    function formatVerificationStatus(status) {
+        const formats = {
+            'complete': 'Verified',
+            'pending': 'Pending',
+            'rejected': 'Rejected',
+            'none': 'Unverified'
+        };
+        return formats[status] || status;
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // Rider actions
+    function approveRider(riderId) {
+        if (confirm('Are you sure you want to approve this rider?')) {
+            updateRiderStatus(riderId, 'complete');
+        }
+    }
+    
+    function rejectRider(riderId) {
+        const reason = prompt('Please provide a reason for rejection:');
+        if (reason !== null) {
+            updateRiderStatus(riderId, 'rejected', reason);
+        }
+    }
+    
+    function suspendRider(riderId) {
+        if (confirm('Are you sure you want to suspend this rider?')) {
+            updateRiderStatus(riderId, 'suspended');
+        }
+    }
+    
+    async function updateRiderStatus(riderId, status, reason = '') {
+        try {
+            const response = await fetch('../backend/riders/update_rider_status.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    rider_id: riderId,
+                    verification_status: status,
+                    reason: reason
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert(`Rider status updated successfully!`);
+                loadRiders(); // Reload the list
+            } else {
+                alert('Failed to update rider status: ' + result.message);
+            }
+        } catch (error) {
+            console.error('Error updating rider:', error);
+            alert('Error updating rider status. Please try again.');
+        }
+    }
+    
+    // Search functionality
+    document.getElementById('searchRider').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        
+        if (searchTerm === '') {
+            displayRiders(allRiders);
+            return;
+        }
+        
+        const filtered = allRiders.filter(rider => 
+            rider.username.toLowerCase().includes(searchTerm) ||
+            rider.email.toLowerCase().includes(searchTerm) ||
+            rider.id.toString().includes(searchTerm)
+        );
+        
+        displayRiders(filtered);
+    });
+    
+    // Load riders when page loads
+    loadRiders();
 </script>
 
 </body>
