@@ -29,6 +29,7 @@ if (!$sellerId) {
         </a>
         <h1>Seller Details</h1>
         <div class="header-actions">
+            <div id="actionButtons"></div>
             <button class="btn btn-outline" onclick="window.print()">
                 <i class="fas fa-print"></i> Print
             </button>
@@ -66,6 +67,13 @@ if (!$sellerId) {
                         <span class="badge" id="sellerPlan">Bronze</span>
                         <span class="badge" id="approvalStatus">pending</span>
                         <span class="badge" id="emailStatus">Unconfirmed</span>
+                    </div>
+                    <!-- Rejection Reason (if rejected) -->
+                    <div id="rejectionReasonContainer" style="display: none; margin-top: 15px;">
+                        <p style="color: #e74c3c; font-size: 14px; margin-bottom: 5px;">
+                            <i class="fas fa-exclamation-circle"></i> Rejection Reason:
+                        </p>
+                        <p id="rejectionReason" style="background: #fdf0f0; padding: 10px; border-radius: 8px; font-size: 14px; color: #2c3e50;"></p>
                     </div>
                 </div>
             </div>
@@ -176,9 +184,29 @@ if (!$sellerId) {
     <img id="viewerBannerImage" src="" alt="Store Banner">
 </div>
 
+<!-- Rejection Reason Modal -->
+<div id="rejectionModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-times-circle" style="color: #e74c3c;"></i> Reject Seller</h3>
+            <span class="close-modal" onclick="closeRejectionModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>Please provide a reason for rejecting this seller:</p>
+            <textarea id="rejectionReasonInput" rows="4" placeholder="Enter rejection reason..."></textarea>
+            <p class="modal-note">This reason will be recorded and the seller will be notified.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeRejectionModal()">Cancel</button>
+            <button class="btn btn-danger" onclick="confirmReject()">Confirm Rejection</button>
+        </div>
+    </div>
+</div>
+
 <script>
     const sellerId = <?= $sellerId ?>;
     let bannerUrl = '';
+    let currentSeller = null;
     
     // Load seller details
     async function loadSellerDetails() {
@@ -192,7 +220,9 @@ if (!$sellerId) {
             
             if (result.success) {
                 const data = result.data;
+                currentSeller = data.seller;
                 displaySellerDetails(data);
+                updateActionButtons(currentSeller);
                 
                 loadingState.style.display = 'none';
                 sellerContent.style.display = 'block';
@@ -206,6 +236,35 @@ if (!$sellerId) {
             sellerContent.style.display = 'none';
             errorState.style.display = 'block';
             document.getElementById('errorMessage').textContent = error.message;
+        }
+    }
+    
+    function updateActionButtons(seller) {
+        const actionContainer = document.getElementById('actionButtons');
+        
+        if (seller.approval_status === 'pending') {
+            actionContainer.innerHTML = `
+                <button class="btn btn-success" onclick="approveSeller()">
+                    <i class="fas fa-check-circle"></i> Approve
+                </button>
+                <button class="btn btn-danger" onclick="openRejectionModal()">
+                    <i class="fas fa-times-circle"></i> Reject
+                </button>
+            `;
+        } else if (seller.approval_status === 'approved') {
+            actionContainer.innerHTML = `
+                <button class="btn btn-danger" onclick="openRejectionModal()">
+                    <i class="fas fa-times-circle"></i> Reject
+                </button>
+            `;
+        } else if (seller.approval_status === 'rejected') {
+            actionContainer.innerHTML = `
+                <button class="btn btn-success" onclick="approveSeller()">
+                    <i class="fas fa-check-circle"></i> Approve
+                </button>
+            `;
+        } else {
+            actionContainer.innerHTML = '';
         }
     }
     
@@ -228,10 +287,15 @@ if (!$sellerId) {
         // Update profile
         document.getElementById('storeName').textContent = seller.store_name || 'No store setup';
         document.getElementById('sellerName').textContent = seller.full_name;
-        document.getElementById('sellerPlan').textContent = seller.seller_plan;
-        document.getElementById('approvalStatus').textContent = seller.approval_status;
-        document.getElementById('emailStatus').textContent = seller.is_confirmed ? 'Confirmed' : 'Unconfirmed';
-        document.getElementById('emailStatus').className = `badge ${seller.is_confirmed ? 'badge-success' : 'badge-warning'}`;
+        
+        // Update badges with colors
+        updateBadges(seller);
+        
+        // Show rejection reason if rejected
+        if (seller.approval_status === 'rejected' && seller.rejection_reason) {
+            document.getElementById('rejectionReasonContainer').style.display = 'block';
+            document.getElementById('rejectionReason').textContent = seller.rejection_reason;
+        }
         
         // Update store logo
         const logoContainer = document.getElementById('storeLogo');
@@ -282,6 +346,77 @@ if (!$sellerId) {
         
         // Display employees
         displayEmployees(employees);
+    }
+    
+    function updateBadges(seller) {
+        // Seller Plan Badge
+        const planBadge = document.getElementById('sellerPlan');
+        planBadge.textContent = seller.seller_plan;
+        planBadge.className = `badge badge-plan badge-${seller.seller_plan.toLowerCase()}`;
+        
+        // Approval Status Badge
+        const statusBadge = document.getElementById('approvalStatus');
+        statusBadge.textContent = seller.approval_status;
+        statusBadge.className = `badge badge-status badge-${seller.approval_status}`;
+        
+        // Email Status Badge
+        const emailBadge = document.getElementById('emailStatus');
+        emailBadge.textContent = seller.is_confirmed ? 'Confirmed' : 'Unconfirmed';
+        emailBadge.className = `badge badge-email ${seller.is_confirmed ? 'badge-confirmed' : 'badge-unconfirmed'}`;
+    }
+    
+    function approveSeller() {
+        if (confirm('Are you sure you want to approve this seller?')) {
+            updateSellerStatus('approved');
+        }
+    }
+    
+    function openRejectionModal() {
+        document.getElementById('rejectionModal').style.display = 'block';
+        document.getElementById('rejectionReasonInput').value = '';
+    }
+    
+    function closeRejectionModal() {
+        document.getElementById('rejectionModal').style.display = 'none';
+    }
+    
+    function confirmReject() {
+        const reason = document.getElementById('rejectionReasonInput').value.trim();
+        if (!reason) {
+            alert('Please provide a reason for rejection.');
+            return;
+        }
+        updateSellerStatus('rejected', reason);
+    }
+    
+    async function updateSellerStatus(status, reason = '') {
+        try {
+            const response = await fetch('../backend/sellers/update_seller_status.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    seller_id: sellerId,
+                    status: status,
+                    reason: reason
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert(`Seller ${status} successfully!`);
+                closeRejectionModal();
+                // Reload the page to show updated status
+                location.reload();
+            } else {
+                alert('Failed to update seller status: ' + result.message);
+            }
+        } catch (error) {
+            console.error('Error updating seller:', error);
+            alert('Error updating seller status. Please try again.');
+        }
     }
     
     function displayEmployees(employees) {
@@ -352,10 +487,18 @@ if (!$sellerId) {
         }
     });
     
+    window.onclick = function(event) {
+        const modal = document.getElementById('rejectionModal');
+        if (event.target === modal) {
+            closeRejectionModal();
+        }
+    }
+    
     // Keyboard navigation for modal
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeBannerViewer();
+            closeRejectionModal();
         }
     });
     
