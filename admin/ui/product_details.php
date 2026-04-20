@@ -46,7 +46,7 @@ if (!$productId) {
         <!-- Product Header -->
         <div class="product-header-card">
             <div class="product-gallery">
-                <div class="main-image" id="mainImage">
+                <div class="main-image" id="mainImage" onclick="openImageViewer(0)">
                     <div class="image-placeholder"><i class="fas fa-box"></i></div>
                 </div>
                 <div class="thumbnail-list" id="thumbnailList"></div>
@@ -177,28 +177,6 @@ if (!$productId) {
                 </table>
             </div>
         </div>
-
-        <!-- Recent Orders Section -->
-        <div class="info-section">
-            <div class="section-header">
-                <h3><i class="fas fa-history"></i> Recent Orders</h3>
-            </div>
-            <div class="table-container">
-                <table class="orders-table">
-                    <thead>
-                        <tr>
-                            <th>Order ID</th>
-                            <th>Buyer</th>
-                            <th>Quantity</th>
-                            <th>Price</th>
-                            <th>Status</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-                    <tbody id="recentOrdersBody"></tbody>
-                </table>
-            </div>
-        </div>
     </div>
 
     <!-- Error State -->
@@ -210,8 +188,19 @@ if (!$productId) {
     </div>
 </div>
 
+<!-- Full Image Viewer Modal -->
+<div id="imageViewerModal" class="image-viewer-modal">
+    <span class="close-viewer" onclick="closeImageViewer()">&times;</span>
+    <button class="viewer-nav prev" onclick="navigateImage(-1)"><i class="fas fa-chevron-left"></i></button>
+    <img id="viewerImage" src="" alt="Product Image">
+    <button class="viewer-nav next" onclick="navigateImage(1)"><i class="fas fa-chevron-right"></i></button>
+    <div class="image-counter" id="imageCounter">1 / 1</div>
+</div>
+
 <script>
     const productId = <?= $productId ?>;
+    let allProductImages = [];
+    let currentImageIndex = 0;
     
     // Load product details
     async function loadProductDetails() {
@@ -246,7 +235,6 @@ if (!$productId) {
         const product = data.product;
         const variants = data.variants;
         const orderStats = data.order_stats;
-        const recentOrders = data.recent_orders;
         const employee = data.employee;
         
         // Update product header
@@ -284,7 +272,7 @@ if (!$productId) {
         document.getElementById('viewSellerLink').href = `seller_details.php?id=${product.seller_id}`;
         
         if (product.store_logo) {
-            document.getElementById('sellerLogo').innerHTML = `<img src="${product.store_logo}" alt="Store Logo">`;
+            document.getElementById('sellerLogo').innerHTML = `<img src="${product.store_logo}" alt="Store Logo" style="width:100%;height:100%;object-fit:cover;">`;
         }
         
         // Employee info
@@ -302,40 +290,81 @@ if (!$productId) {
             document.getElementById('variantCount').textContent = `${variants.length} variant${variants.length !== 1 ? 's' : ''}`;
             displayVariants(variants);
         }
-        
-        // Recent orders
-        displayRecentOrders(recentOrders);
     }
     
     function displayImages(product) {
         const mainImage = document.getElementById('mainImage');
         const thumbnailList = document.getElementById('thumbnailList');
         
-        const allImages = [];
+        allProductImages = [];
         if (product.main_image_url) {
-            allImages.push(product.main_image_url);
+            allProductImages.push(product.main_image_url);
         }
         if (product.image_urls_array && product.image_urls_array.length > 0) {
-            allImages.push(...product.image_urls_array);
+            allProductImages.push(...product.image_urls_array);
         }
         
-        if (allImages.length > 0) {
-            mainImage.innerHTML = `<img src="${allImages[0]}" alt="${product.product_name}" id="currentMainImage">`;
+        if (allProductImages.length > 0) {
+            mainImage.innerHTML = `<img src="${allProductImages[0]}" alt="${product.product_name}" id="currentMainImage" style="width:100%;height:100%;object-fit:cover;">`;
+            mainImage.style.cursor = 'pointer';
             
-            if (allImages.length > 1) {
-                thumbnailList.innerHTML = allImages.map((img, index) => `
-                    <div class="thumbnail ${index === 0 ? 'active' : ''}" onclick="changeMainImage('${img}', this)">
-                        <img src="${img}" alt="Thumbnail ${index + 1}">
+            if (allProductImages.length > 1) {
+                thumbnailList.innerHTML = allProductImages.map((img, index) => `
+                    <div class="thumbnail ${index === 0 ? 'active' : ''}" onclick="changeMainImage('${img}', ${index}, event)">
+                        <img src="${img}" alt="Thumbnail ${index + 1}" style="width:100%;height:100%;object-fit:cover;">
                     </div>
                 `).join('');
             }
         }
     }
     
-    function changeMainImage(src, element) {
+    function changeMainImage(src, index, event) {
+        if (event) event.stopPropagation();
         document.getElementById('currentMainImage').src = src;
+        currentImageIndex = index;
         document.querySelectorAll('.thumbnail').forEach(thumb => thumb.classList.remove('active'));
-        element.classList.add('active');
+        document.querySelectorAll('.thumbnail')[index].classList.add('active');
+    }
+    
+    function openImageViewer(index) {
+        if (allProductImages.length === 0) return;
+        
+        currentImageIndex = index !== undefined ? index : currentImageIndex;
+        const modal = document.getElementById('imageViewerModal');
+        const viewerImage = document.getElementById('viewerImage');
+        const counter = document.getElementById('imageCounter');
+        
+        viewerImage.src = allProductImages[currentImageIndex];
+        counter.textContent = `${currentImageIndex + 1} / ${allProductImages.length}`;
+        modal.style.display = 'flex';
+        
+        // Hide navigation if only one image
+        document.querySelector('.viewer-nav.prev').style.display = allProductImages.length > 1 ? 'flex' : 'none';
+        document.querySelector('.viewer-nav.next').style.display = allProductImages.length > 1 ? 'flex' : 'none';
+    }
+    
+    function closeImageViewer() {
+        document.getElementById('imageViewerModal').style.display = 'none';
+    }
+    
+    function navigateImage(direction) {
+        if (allProductImages.length === 0) return;
+        
+        currentImageIndex = (currentImageIndex + direction + allProductImages.length) % allProductImages.length;
+        const viewerImage = document.getElementById('viewerImage');
+        const counter = document.getElementById('imageCounter');
+        
+        viewerImage.src = allProductImages[currentImageIndex];
+        counter.textContent = `${currentImageIndex + 1} / ${allProductImages.length}`;
+        
+        // Also update the main image in background
+        const mainImg = document.getElementById('currentMainImage');
+        if (mainImg) {
+            mainImg.src = allProductImages[currentImageIndex];
+            document.querySelectorAll('.thumbnail').forEach((thumb, i) => {
+                thumb.classList.toggle('active', i === currentImageIndex);
+            });
+        }
     }
     
     function displayVariants(variants) {
@@ -358,7 +387,7 @@ if (!$productId) {
                     <td>
                         <div class="variant-image">
                             ${variant.image_urls_array && variant.image_urls_array[0] ? 
-                                `<img src="${variant.image_urls_array[0]}" alt="Variant">` : 
+                                `<img src="${variant.image_urls_array[0]}" alt="Variant" style="width:100%;height:100%;object-fit:cover;">` : 
                                 '<i class="fas fa-image"></i>'
                             }
                         </div>
@@ -366,46 +395,6 @@ if (!$productId) {
                 </tr>
             `;
         }).join('');
-    }
-    
-    function displayRecentOrders(orders) {
-        const tbody = document.getElementById('recentOrdersBody');
-        
-        if (orders.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No orders found</td></tr>';
-            return;
-        }
-        
-        tbody.innerHTML = orders.map(order => {
-            const statusClass = getOrderStatusClass(order.order_status);
-            
-            return `
-                <tr>
-                    <td><strong>#${order.order_id}</strong></td>
-                    <td>${escapeHtml(order.buyer_name || 'Unknown')}</td>
-                    <td>${order.quantity}</td>
-                    <td>₱${formatNumber(order.price_at_time)}</td>
-                    <td><span class="status-badge ${statusClass}">${order.order_status}</span></td>
-                    <td>${new Date(order.order_date).toLocaleDateString()}</td>
-                </tr>
-            `;
-        }).join('');
-    }
-    
-    function getOrderStatusClass(status) {
-        const statusMap = {
-            'pending': 'status-pending',
-            'pending_payment': 'status-pending',
-            'packed': 'status-processing',
-            'ready_for_pickup': 'status-processing',
-            'shipped': 'status-shipped',
-            'assigned': 'status-shipped',
-            'reassigned': 'status-shipped',
-            'delivered': 'status-delivered',
-            'complete': 'status-delivered',
-            'cancelled': 'status-cancelled'
-        };
-        return statusMap[status] || 'status-default';
     }
     
     function formatRole(role) {
@@ -426,6 +415,27 @@ if (!$productId) {
         div.textContent = text;
         return div.innerHTML;
     }
+    
+    // Keyboard navigation for image viewer
+    document.addEventListener('keydown', function(e) {
+        const modal = document.getElementById('imageViewerModal');
+        if (modal.style.display === 'flex') {
+            if (e.key === 'ArrowLeft') {
+                navigateImage(-1);
+            } else if (e.key === 'ArrowRight') {
+                navigateImage(1);
+            } else if (e.key === 'Escape') {
+                closeImageViewer();
+            }
+        }
+    });
+    
+    // Close modal when clicking outside the image
+    document.getElementById('imageViewerModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeImageViewer();
+        }
+    });
     
     // Load details on page load
     document.addEventListener('DOMContentLoaded', loadProductDetails);
