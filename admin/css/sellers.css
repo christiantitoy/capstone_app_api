@@ -563,3 +563,27 @@ td {
         padding: 4px 8px;
     }
 }
+
+/* Clickable row styles */
+.clickable-row {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.clickable-row:hover {
+    background-color: #f8f9fa !important;
+}
+
+.clickable-row:active {
+    background-color: #e9ecef !important;
+}
+
+/* Optional: Add a subtle visual indicator on hover */
+.clickable-row:hover td:first-child {
+    color: #3498db;
+}
+
+/* Make sure the row highlight works with existing table styles */
+.sellers-table tbody tr.clickable-row:hover {
+    background-color: #f8f9fa;
+}

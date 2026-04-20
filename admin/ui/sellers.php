@@ -191,6 +191,11 @@ require_once '../backend/session/auth_admin.php';
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     document.getElementById('currentDate').textContent = new Date().toLocaleDateString(undefined, options);
 
+    // Function to navigate to seller details
+    function viewSeller(sellerId) {
+        window.location.href = `seller_details.php?id=${sellerId}`;
+    }
+
     // Function to fetch and display sellers
     async function loadSellers(searchTerm = '', statusFilter = 'all') {
         const tableBody = document.getElementById('sellersTableBody');
@@ -232,7 +237,7 @@ require_once '../backend/session/auth_admin.php';
                 document.getElementById('rejectedSellers').textContent = sellerStatistics.rejected;
                 
                 if (filteredSellers.length > 0) {
-                    // Display filtered sellers in table
+                    // Display filtered sellers in table with clickable rows
                     tableBody.innerHTML = filteredSellers.map(seller => {
                         // Determine email confirmation status
                         const emailStatus = seller.is_confirmed ? 
@@ -240,7 +245,7 @@ require_once '../backend/session/auth_admin.php';
                             '<span class="status-badge status-unconfirmed"><i class="fas fa-clock"></i> Unconfirmed</span>';
                         
                         return `
-                        <tr>
+                        <tr class="clickable-row" onclick="viewSeller(${seller.id})">
                             <td><strong>#${seller.id}</strong></td>
                             <td>
                                 <div class="seller-info">
