@@ -385,7 +385,16 @@ td {
         margin: 0 15px 20px 15px;
     }
 }
+
 /* Sellers Page Specific Styles */
+
+.filter-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
 .seller_holder {
     width: 100%;
 }

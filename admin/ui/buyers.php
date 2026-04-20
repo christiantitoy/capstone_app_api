@@ -160,9 +160,9 @@ require_once '../backend/session/auth_admin.php';
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     document.getElementById('currentDate').textContent = new Date().toLocaleDateString(undefined, options);
 
-    // Function to view buyer details with more information
+    // Function to view buyer details
     function viewBuyer(buyerId) {
-    window.location.href = `buyer_details.php?id=${buyerId}`;
+        window.location.href = `buyer_details.php?id=${buyerId}`;
     }
     
     // Function to fetch and display buyers
@@ -199,20 +199,21 @@ require_once '../backend/session/auth_admin.php';
                 if (filteredBuyers.length > 0) {
                     // Display filtered buyers in table with clickable rows
                     tableBody.innerHTML = filteredBuyers.map(buyer => {
-                        // Safely encode buyer data for onclick
-                        const buyerData = {
-                            id: buyer.id,
-                            username: buyer.username,
-                            email: buyer.email,
-                            order_count: buyer.order_count || 0,
-                            active_orders_count: buyer.active_orders_count || 0,
-                            completed_orders_count: buyer.completed_orders_count || 0,
-                            total_spent: buyer.total_spent || 0,
-                            last_order_date: buyer.last_order_date
-                        };
-                        
                         return `
                         <div class="table-row" onclick="viewBuyer(${buyer.id})">
+                            <div class="col-id">${buyer.id}</div>
+                            <div class="col-username">
+                                ${escapeHtml(buyer.username)}
+                                ${buyer.order_count > 0 ? '<span class="badge badge-buyer">Buyer</span>' : ''}
+                            </div>
+                            <div class="col-email">${escapeHtml(buyer.email)}</div>
+                            <div class="col-avatar">
+                                ${buyer.avatar_url ? 
+                                    `<img src="${buyer.avatar_url}" alt="Avatar" class="avatar-img">` : 
+                                    `<div class="avatar-placeholder">${buyer.username.charAt(0).toUpperCase()}</div>`
+                                }
+                            </div>
+                        </div>
                         `;
                     }).join('');
                 } else {

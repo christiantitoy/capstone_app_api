@@ -200,17 +200,22 @@ if (!$buyerId) {
         const orderStats = data.order_stats;
         const addresses = data.addresses;
         const recentOrders = data.recent_orders;
+        const buyerSince = data.buyer_since;
         
         // Update profile
         document.getElementById('buyerName').textContent = buyer.username;
         document.getElementById('buyerEmail').textContent = buyer.email;
         
-        const buyerSince = new Date(buyer.buyer_since).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-        document.getElementById('buyerSince').textContent = `Member since ${buyerSince}`;
+        if (buyerSince) {
+            const sinceDate = new Date(buyerSince).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            document.getElementById('buyerSince').textContent = `Member since ${sinceDate}`;
+        } else {
+            document.getElementById('buyerSince').textContent = 'No orders yet';
+        }
         
         // Update avatar
         const avatarContainer = document.getElementById('buyerAvatar');

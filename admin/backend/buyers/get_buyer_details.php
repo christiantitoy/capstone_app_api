@@ -15,14 +15,13 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 $buyerId = (int) $_GET['id'];
 
 try {
-    // Get buyer details
+    // Get buyer details - remove created_at since it doesn't exist
     $sql = "
         SELECT 
             b.id, 
             b.username, 
             b.email, 
-            b.avatar_url,
-            b.created_at as buyer_since
+            b.avatar_url
         FROM buyers b
         WHERE b.id = ?
     ";
@@ -60,7 +59,7 @@ try {
     $stmt = $conn->prepare("
         SELECT 
             COUNT(*) AS total_orders,
-            SUM(total_amount) AS total_spent,
+            COALESCE(SUM(total_amount), 0) AS total_spent,
             MAX(created_at) AS last_order_date,
             SUM(CASE WHEN status IN ('pending', 'pending_payment', 'packed', 'ready_for_pickup', 'shipped', 'assigned', 'reassigned') THEN 1 ELSE 0 END) AS active_orders,
             SUM(CASE WHEN status IN ('delivered', 'complete') THEN 1 ELSE 0 END) AS completed_orders,
@@ -87,10 +86,20 @@ try {
     $stmt->execute([$buyerId]);
     $recentOrders = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
+    // Get the earliest order date as a proxy for "buyer since"
+    $stmt = $conn->prepare("
+        SELECT MIN(created_at) AS first_order_date
+        FROM orders
+        WHERE buyer_id = ?
+    ");
+    $stmt->execute([$buyerId]);
+    $firstOrder = $stmt->fetch(PDO::FETCH_ASSOC);
+    
     echo json_encode([
         'success' => true,
         'data' => [
             'buyer' => $buyer,
+            'buyer_since' => $firstOrder['first_order_date'] ?? null,
             'addresses' => $addresses,
             'order_stats' => [
                 'total_orders' => (int) $orderStats['total_orders'],
