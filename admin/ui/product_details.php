@@ -46,7 +46,7 @@ if (!$productId) {
         <!-- Product Header -->
         <div class="product-header-card">
             <div class="product-gallery">
-                <div class="main-image" id="mainImage" onclick="openImageViewer(0)">
+                <div class="main-image" id="mainImage" onclick="openImageViewer(0, 'product')">
                     <div class="image-placeholder"><i class="fas fa-box"></i></div>
                 </div>
                 <div class="thumbnail-list" id="thumbnailList"></div>
@@ -192,7 +192,7 @@ if (!$productId) {
 <div id="imageViewerModal" class="image-viewer-modal">
     <span class="close-viewer" onclick="closeImageViewer()">&times;</span>
     <button class="viewer-nav prev" onclick="navigateImage(-1)"><i class="fas fa-chevron-left"></i></button>
-    <img id="viewerImage" src="" alt="Product Image">
+    <img id="viewerImage" src="" alt="Image">
     <button class="viewer-nav next" onclick="navigateImage(1)"><i class="fas fa-chevron-right"></i></button>
     <div class="image-counter" id="imageCounter">1 / 1</div>
 </div>
@@ -201,6 +201,8 @@ if (!$productId) {
     const productId = <?= $productId ?>;
     let allProductImages = [];
     let currentImageIndex = 0;
+    let currentImageType = 'product'; // 'product' or 'variant'
+    let variantImagesList = [];
     
     // Load product details
     async function loadProductDetails() {
@@ -322,61 +324,86 @@ if (!$productId) {
         if (event) event.stopPropagation();
         document.getElementById('currentMainImage').src = src;
         currentImageIndex = index;
+        currentImageType = 'product';
         document.querySelectorAll('.thumbnail').forEach(thumb => thumb.classList.remove('active'));
         document.querySelectorAll('.thumbnail')[index].classList.add('active');
     }
     
-    function openImageViewer(index) {
-        if (allProductImages.length === 0) return;
+    function openImageViewer(index, type = 'product', variantImages = null) {
+        currentImageType = type;
         
-        currentImageIndex = index !== undefined ? index : currentImageIndex;
+        if (type === 'variant' && variantImages && variantImages.length > 0) {
+            variantImagesList = variantImages;
+            currentImageIndex = index !== undefined ? index : 0;
+        } else {
+            if (allProductImages.length === 0) return;
+            variantImagesList = [];
+            currentImageIndex = index !== undefined ? index : currentImageIndex;
+        }
+        
+        const imageArray = type === 'variant' ? variantImagesList : allProductImages;
+        if (imageArray.length === 0) return;
+        
         const modal = document.getElementById('imageViewerModal');
         const viewerImage = document.getElementById('viewerImage');
         const counter = document.getElementById('imageCounter');
         
-        viewerImage.src = allProductImages[currentImageIndex];
-        counter.textContent = `${currentImageIndex + 1} / ${allProductImages.length}`;
+        viewerImage.src = imageArray[currentImageIndex];
+        counter.textContent = `${currentImageIndex + 1} / ${imageArray.length}`;
         modal.style.display = 'flex';
         
         // Hide navigation if only one image
-        document.querySelector('.viewer-nav.prev').style.display = allProductImages.length > 1 ? 'flex' : 'none';
-        document.querySelector('.viewer-nav.next').style.display = allProductImages.length > 1 ? 'flex' : 'none';
+        document.querySelector('.viewer-nav.prev').style.display = imageArray.length > 1 ? 'flex' : 'none';
+        document.querySelector('.viewer-nav.next').style.display = imageArray.length > 1 ? 'flex' : 'none';
     }
     
     function closeImageViewer() {
         document.getElementById('imageViewerModal').style.display = 'none';
+        variantImagesList = [];
     }
     
     function navigateImage(direction) {
-        if (allProductImages.length === 0) return;
+        const imageArray = currentImageType === 'variant' ? variantImagesList : allProductImages;
+        if (imageArray.length === 0) return;
         
-        currentImageIndex = (currentImageIndex + direction + allProductImages.length) % allProductImages.length;
+        currentImageIndex = (currentImageIndex + direction + imageArray.length) % imageArray.length;
         const viewerImage = document.getElementById('viewerImage');
         const counter = document.getElementById('imageCounter');
         
-        viewerImage.src = allProductImages[currentImageIndex];
-        counter.textContent = `${currentImageIndex + 1} / ${allProductImages.length}`;
+        viewerImage.src = imageArray[currentImageIndex];
+        counter.textContent = `${currentImageIndex + 1} / ${imageArray.length}`;
         
-        // Also update the main image in background
-        const mainImg = document.getElementById('currentMainImage');
-        if (mainImg) {
-            mainImg.src = allProductImages[currentImageIndex];
-            document.querySelectorAll('.thumbnail').forEach((thumb, i) => {
-                thumb.classList.toggle('active', i === currentImageIndex);
-            });
+        // Also update the main image if it's a product image
+        if (currentImageType === 'product') {
+            const mainImg = document.getElementById('currentMainImage');
+            if (mainImg) {
+                mainImg.src = allProductImages[currentImageIndex];
+                document.querySelectorAll('.thumbnail').forEach((thumb, i) => {
+                    thumb.classList.toggle('active', i === currentImageIndex);
+                });
+            }
         }
     }
     
     function displayVariants(variants) {
         const tbody = document.getElementById('variantsBody');
         
-        tbody.innerHTML = variants.map(variant => {
+        tbody.innerHTML = variants.map((variant, variantIndex) => {
             let variantName = '';
             if (variant.options) {
                 variantName = Object.values(variant.options).join(' / ');
             } else if (variant.options_json_value) {
                 variantName = variant.options_json_value;
             }
+            
+            // Collect variant images
+            const variantImgs = [];
+            if (variant.image_urls_array && variant.image_urls_array.length > 0) {
+                variantImgs.push(...variant.image_urls_array);
+            }
+            
+            const hasImage = variantImgs.length > 0;
+            const firstImage = hasImage ? variantImgs[0] : '';
             
             return `
                 <tr>
@@ -385,9 +412,10 @@ if (!$productId) {
                     <td>₱${formatNumber(variant.price)}</td>
                     <td>${variant.stock}</td>
                     <td>
-                        <div class="variant-image">
-                            ${variant.image_urls_array && variant.image_urls_array[0] ? 
-                                `<img src="${variant.image_urls_array[0]}" alt="Variant" style="width:100%;height:100%;object-fit:cover;">` : 
+                        <div class="variant-image ${hasImage ? 'clickable' : ''}" 
+                             ${hasImage ? `onclick="openImageViewer(0, 'variant', ${JSON.stringify(variantImgs).replace(/"/g, '&quot;')})"` : ''}>
+                            ${hasImage ? 
+                                `<img src="${firstImage}" alt="Variant" style="width:100%;height:100%;object-fit:cover;">` : 
                                 '<i class="fas fa-image"></i>'
                             }
                         </div>
