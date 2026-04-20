@@ -135,8 +135,8 @@ require_once '../backend/session/auth_admin.php';
                             <th>Seller Info</th>
                             <th>Store</th>
                             <th>Plan</th>
-                            <th>Status</th>
-                            <th>Actions</th>
+                            <th>Approval Status</th>
+                            <th>Email Status</th>
                         </tr>
                     </thead>
                     <tbody id="sellersTableBody">
@@ -157,23 +157,6 @@ require_once '../backend/session/auth_admin.php';
             </div>
         </footer>
     </main>
-</div>
-
-<!-- Seller Details Modal -->
-<div id="sellerModal" class="modal">
-    <div class="modal-content modal-large">
-        <div class="modal-header">
-            <h3 id="modalTitle">Seller Details</h3>
-            <span class="close-modal" onclick="closeSellerModal()">&times;</span>
-        </div>
-        <div class="modal-body" id="sellerModalBody">
-            <!-- Dynamic content will be loaded here -->
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="closeSellerModal()">Close</button>
-            <button class="btn btn-primary" id="modalActionBtn">Approve Seller</button>
-        </div>
-    </div>
 </div>
 
 <!-- Logout Modal -->
@@ -203,7 +186,6 @@ require_once '../backend/session/auth_admin.php';
         pending: 0,
         rejected: 0
     };
-    let currentSeller = null;
     
     // Display current date
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
@@ -251,14 +233,19 @@ require_once '../backend/session/auth_admin.php';
                 
                 if (filteredSellers.length > 0) {
                     // Display filtered sellers in table
-                    tableBody.innerHTML = filteredSellers.map(seller => `
+                    tableBody.innerHTML = filteredSellers.map(seller => {
+                        // Determine email confirmation status
+                        const emailStatus = seller.is_confirmed ? 
+                            '<span class="status-badge status-confirmed"><i class="fas fa-check-circle"></i> Confirmed</span>' : 
+                            '<span class="status-badge status-unconfirmed"><i class="fas fa-clock"></i> Unconfirmed</span>';
+                        
+                        return `
                         <tr>
-                            <td>#${seller.id}</td>
+                            <td><strong>#${seller.id}</strong></td>
                             <td>
                                 <div class="seller-info">
                                     <strong>${escapeHtml(seller.full_name)}</strong>
                                     <small>${escapeHtml(seller.email)}</small>
-                                    ${seller.is_confirmed ? '<span class="badge badge-success">Confirmed</span>' : '<span class="badge badge-warning">Unconfirmed</span>'}
                                 </div>
                             </td>
                             <td>
@@ -272,25 +259,18 @@ require_once '../backend/session/auth_admin.php';
                             </td>
                             <td>
                                 <span class="plan-badge plan-${seller.seller_plan.toLowerCase()}">${seller.seller_plan}</span>
+                                <br>
+                                <small class="billing-type">${seller.seller_billing}</small>
                             </td>
                             <td>
                                 <span class="status-badge status-${seller.approval_status}">${seller.approval_status}</span>
                             </td>
                             <td>
-                                <button class="btn-icon" onclick="viewSellerDetails(${seller.id})" title="View Details">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                ${seller.approval_status === 'pending' ? `
-                                    <button class="btn-icon btn-success" onclick="approveSeller(${seller.id})" title="Approve">
-                                        <i class="fas fa-check"></i>
-                                    </button>
-                                    <button class="btn-icon btn-danger" onclick="rejectSeller(${seller.id})" title="Reject">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                ` : ''}
+                                ${emailStatus}
                             </td>
                         </tr>
-                    `).join('');
+                        `;
+                    }).join('');
                 } else {
                     tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No sellers found</td></tr>';
                 }
@@ -301,129 +281,6 @@ require_once '../backend/session/auth_admin.php';
             console.error('Error loading sellers:', error);
             tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Error loading sellers. Please try again.</td></tr>';
         }
-    }
-    
-    // Function to view seller details
-    function viewSellerDetails(sellerId) {
-        const seller = allSellers.find(s => s.id === sellerId);
-        if (!seller) return;
-        
-        currentSeller = seller;
-        
-        const modalBody = document.getElementById('sellerModalBody');
-        const modalTitle = document.getElementById('modalTitle');
-        const actionBtn = document.getElementById('modalActionBtn');
-        
-        modalTitle.textContent = `Seller Details - ${seller.full_name}`;
-        
-        // Build modal content
-        let html = `
-            <div class="seller-details">
-                <div class="detail-section">
-                    <h4>Seller Information</h4>
-                    <p><strong>ID:</strong> ${seller.id}</p>
-                    <p><strong>Full Name:</strong> ${escapeHtml(seller.full_name)}</p>
-                    <p><strong>Email:</strong> ${escapeHtml(seller.email)}</p>
-                    <p><strong>Plan:</strong> ${seller.seller_plan} (${seller.seller_billing})</p>
-                    <p><strong>Status:</strong> ${seller.approval_status}</p>
-                    <p><strong>Confirmed:</strong> ${seller.is_confirmed ? 'Yes' : 'No'}</p>
-                    <p><strong>Joined:</strong> ${new Date(seller.created_at).toLocaleDateString()}</p>
-                </div>
-        `;
-        
-        if (seller.store_name) {
-            html += `
-                <div class="detail-section">
-                    <h4>Store Information</h4>
-                    <p><strong>Store Name:</strong> ${escapeHtml(seller.store_name)}</p>
-                    <p><strong>Category:</strong> ${escapeHtml(seller.category)}</p>
-                    <p><strong>Description:</strong> ${escapeHtml(seller.description)}</p>
-                    <p><strong>Contact:</strong> ${escapeHtml(seller.contact_number)}</p>
-                    <p><strong>Owner:</strong> ${escapeHtml(seller.owner_full_name)}</p>
-                    <p><strong>ID Type:</strong> ${escapeHtml(seller.id_type)}</p>
-                </div>
-            `;
-            
-            if (seller.valid_id_files && seller.valid_id_files.length > 0) {
-                html += `
-                    <div class="detail-section">
-                        <h4>Valid ID Files</h4>
-                        <div class="file-list">
-                            ${seller.valid_id_files.map(file => `<a href="${file}" target="_blank" class="file-link">View ID</a>`).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-        }
-        
-        html += `</div>`;
-        
-        modalBody.innerHTML = html;
-        
-        // Update action button based on status
-        if (seller.approval_status === 'pending') {
-            actionBtn.textContent = 'Approve Seller';
-            actionBtn.className = 'btn btn-success';
-            actionBtn.onclick = () => approveSeller(seller.id);
-        } else {
-            actionBtn.style.display = 'none';
-        }
-        
-        document.getElementById('sellerModal').style.display = 'block';
-    }
-    
-    // Function to approve seller
-    function approveSeller(sellerId) {
-        if (confirm('Are you sure you want to approve this seller?')) {
-            updateSellerStatus(sellerId, 'approved');
-        }
-    }
-    
-    // Function to reject seller
-    function rejectSeller(sellerId) {
-        const reason = prompt('Please provide a reason for rejection:');
-        if (reason !== null) {
-            updateSellerStatus(sellerId, 'rejected', reason);
-        }
-    }
-    
-    // Function to update seller status
-    async function updateSellerStatus(sellerId, status, reason = '') {
-        try {
-            const response = await fetch('../backend/sellers/update_seller_status.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    seller_id: sellerId,
-                    status: status,
-                    reason: reason
-                })
-            });
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                alert(`Seller ${status} successfully!`);
-                closeSellerModal();
-                loadSellers(
-                    document.getElementById('searchSeller').value.toLowerCase().trim(),
-                    document.getElementById('statusFilter').value
-                );
-            } else {
-                alert('Failed to update seller status: ' + result.message);
-            }
-        } catch (error) {
-            console.error('Error updating seller:', error);
-            alert('Error updating seller status. Please try again.');
-        }
-    }
-    
-    // Function to close modal
-    function closeSellerModal() {
-        document.getElementById('sellerModal').style.display = 'none';
-        currentSeller = null;
     }
     
     // Helper function to escape HTML
@@ -446,14 +303,6 @@ require_once '../backend/session/auth_admin.php';
         const searchTerm = document.getElementById('searchSeller').value.toLowerCase().trim();
         loadSellers(searchTerm, statusFilter);
     });
-    
-    // Close modal when clicking outside
-    window.onclick = function(event) {
-        const modal = document.getElementById('sellerModal');
-        if (event.target === modal) {
-            closeSellerModal();
-        }
-    }
     
     // Load sellers when page loads
     document.addEventListener('DOMContentLoaded', () => {
