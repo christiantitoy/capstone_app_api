@@ -18,7 +18,7 @@ try {
     $stmt->execute();
     $activeBuyers = $stmt->fetch(PDO::FETCH_ASSOC)['active_buyers'];
 
-    // Query to get all buyers with their order count
+    // Query to get all buyers with their order count and addresses
     $sql = "
         SELECT 
             b.id, 
@@ -29,9 +29,17 @@ try {
             MAX(o.created_at) AS last_order_date,
             SUM(CASE WHEN o.status IN ('pending', 'pending_payment', 'packed', 'ready_for_pickup', 'shipped', 'assigned', 'reassigned') THEN 1 ELSE 0 END) AS active_orders_count,
             SUM(CASE WHEN o.status IN ('delivered', 'complete') THEN 1 ELSE 0 END) AS completed_orders_count,
-            SUM(o.total_amount) AS total_spent
+            SUM(o.total_amount) AS total_spent,
+            COUNT(DISTINCT ba.id) AS address_count,
+            (
+                SELECT ba2.id 
+                FROM buyer_addresses ba2 
+                WHERE ba2.buyer_id = b.id AND ba2.is_default = 1 
+                LIMIT 1
+            ) AS default_address_id
         FROM buyers b
         LEFT JOIN orders o ON b.id = o.buyer_id
+        LEFT JOIN buyer_addresses ba ON b.id = ba.buyer_id
         GROUP BY b.id, b.username, b.email, b.avatar_url
         ORDER BY b.id DESC
     ";
@@ -54,6 +62,6 @@ try {
         'message' => 'Database error: ' . $e->getMessage()
     ]);
 } finally {
-    $conn = null; // Close the database connection
+    $conn = null;
 }
 ?>

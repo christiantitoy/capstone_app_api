@@ -161,20 +161,8 @@ require_once '../backend/session/auth_admin.php';
     document.getElementById('currentDate').textContent = new Date().toLocaleDateString(undefined, options);
 
     // Function to view buyer details with more information
-    function viewBuyer(buyer) {
-        const orderInfo = buyer.order_count > 0 ? 
-            `\nTotal Orders: ${buyer.order_count}
-Active Orders: ${buyer.active_orders_count || 0}
-Completed Orders: ${buyer.completed_orders_count || 0}
-Total Spent: ₱${parseFloat(buyer.total_spent || 0).toFixed(2)}
-Last Order: ${buyer.last_order_date ? new Date(buyer.last_order_date).toLocaleDateString() : 'No orders yet'}` : 
-            '\nNo orders placed yet';
-            
-        alert(`Buyer Details:
-        
-ID: ${buyer.id}
-Username: ${buyer.username}
-Email: ${buyer.email}${orderInfo}`);
+    function viewBuyer(buyerId) {
+    window.location.href = `buyer_details.php?id=${buyerId}`;
     }
     
     // Function to fetch and display buyers
@@ -224,20 +212,7 @@ Email: ${buyer.email}${orderInfo}`);
                         };
                         
                         return `
-                        <div class="table-row" onclick="viewBuyer(${JSON.stringify(buyerData).replace(/"/g, '&quot;')})">
-                            <div class="col-id">${buyer.id}</div>
-                            <div class="col-username">
-                                ${escapeHtml(buyer.username)}
-                                ${buyer.order_count > 0 ? '<span class="badge badge-buyer">Buyer</span>' : ''}
-                            </div>
-                            <div class="col-email">${escapeHtml(buyer.email)}</div>
-                            <div class="col-avatar">
-                                ${buyer.avatar_url ? 
-                                    `<img src="${buyer.avatar_url}" alt="Avatar" class="avatar-img">` : 
-                                    `<div class="avatar-placeholder">${buyer.username.charAt(0).toUpperCase()}</div>`
-                                }
-                            </div>
-                        </div>
+                        <div class="table-row" onclick="viewBuyer(${buyer.id})">
                         `;
                     }).join('');
                 } else {
