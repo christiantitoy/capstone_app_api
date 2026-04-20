@@ -15,6 +15,11 @@ try {
     $stmt->execute();
     $totalSellers = $stmt->fetch(PDO::FETCH_ASSOC)['total_sellers'];
 
+    // Count total riders
+    $stmt = $conn->prepare("SELECT COUNT(*) AS total_riders FROM riders");
+    $stmt->execute();
+    $totalRiders = $stmt->fetch(PDO::FETCH_ASSOC)['total_riders'];
+
     // Count total products (approved only)
     $stmt = $conn->prepare("SELECT COUNT(*) AS total_products FROM items WHERE status = 'approved'");
     $stmt->execute();
@@ -72,6 +77,34 @@ try {
     $stmt->execute();
     $activeBuyers = $stmt->fetch(PDO::FETCH_ASSOC)['active_buyers'];
 
+    // Count riders by status
+    $stmt = $conn->prepare("
+        SELECT status, COUNT(*) AS count 
+        FROM riders 
+        GROUP BY status
+    ");
+    $stmt->execute();
+    $ridersByStatus = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $riderStatusCounts = [];
+    foreach ($ridersByStatus as $row) {
+        $riderStatusCounts[$row['status']] = (int) $row['count'];
+    }
+
+    // Count riders by verification status
+    $stmt = $conn->prepare("
+        SELECT verification_status, COUNT(*) AS count 
+        FROM riders 
+        GROUP BY verification_status
+    ");
+    $stmt->execute();
+    $ridersByVerification = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $riderVerificationCounts = [];
+    foreach ($ridersByVerification as $row) {
+        $riderVerificationCounts[$row['verification_status']] = (int) $row['count'];
+    }
+
     echo json_encode([
         'success' => true,
         'data' => [
@@ -84,6 +117,11 @@ try {
                 'confirmed'   => (int) $sellerConfirmation['confirmed_sellers'],
                 'unconfirmed' => (int) $sellerConfirmation['unconfirmed_sellers'],
                 'by_plan'     => $sellerPlanCounts,
+            ],
+            'riders' => [
+                'total' => (int) $totalRiders,
+                'by_status' => $riderStatusCounts,
+                'by_verification' => $riderVerificationCounts,
             ],
             'products' => [
                 'total_approved' => (int) $totalProducts,

@@ -187,16 +187,53 @@ require_once '../backend/session/auth_admin.php';
                 const data = response.data;
                 document.getElementById('totalBuyers').textContent   = data.buyers.total;
                 document.getElementById('totalSellers').textContent  = data.sellers.total;
+                document.getElementById('totalRiders').textContent   = data.riders.total;
                 document.getElementById('totalProducts').textContent = data.products.total_approved;
                 document.getElementById('totalOrders').textContent   = data.orders.total;
-                // totalRiders — update once riders backend is ready
+                
+                // Optional: Log rider statistics for debugging
+                console.log('Rider stats:', data.riders);
             }
         })
         .catch(err => console.error('Failed to load counts:', err));
 
     // ---------------------------------------------------------------------------------
 
-    
+    // Fetch pending approvals
+    fetch('/admin/backend/dashboard/getPendingApprovals.php')
+        .then(res => res.json())
+        .then(response => {
+            if (response.success && response.data) {
+                const tbody = document.getElementById('pendingApprovalsBody');
+                if (response.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No pending approvals</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = response.data.map(item => `
+                    <tr>
+                        <td>${item.type}</td>
+                        <td>${item.name}</td>
+                        <td>${item.date_submitted}</td>
+                        <td>
+                            <button class="btn-approve" onclick="handleApproval('${item.type}', ${item.id}, 'approve')">
+                                <i class="fas fa-check"></i> Approve
+                            </button>
+                            <button class="btn-reject" onclick="handleApproval('${item.type}', ${item.id}, 'reject')">
+                                <i class="fas fa-times"></i> Reject
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        })
+        .catch(err => console.error('Failed to load pending approvals:', err));
+
+    // Handle approval/rejection actions
+    function handleApproval(type, id, action) {
+        // Implement approval logic here
+        console.log(`${action} ${type} with ID: ${id}`);
+    }
 </script>
 
 </body>
