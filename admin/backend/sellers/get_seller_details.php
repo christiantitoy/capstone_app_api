@@ -15,7 +15,7 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 $sellerId = (int) $_GET['id'];
 
 try {
-    // Get seller details with store information
+    // Get seller details with store information - ADDED rejection_reason
     $sql = "
         SELECT 
             s.id,
@@ -28,6 +28,7 @@ try {
             s.seller_plan,
             s.approval_status,
             s.seller_billing,
+            s.rejection_reason,
             st.store_name,
             st.category,
             st.description,

@@ -242,6 +242,7 @@ if (!$sellerId) {
     function updateActionButtons(seller) {
         const actionContainer = document.getElementById('actionButtons');
         
+        // Only show buttons if seller is pending
         if (seller.approval_status === 'pending') {
             actionContainer.innerHTML = `
                 <button class="btn btn-success" onclick="approveSeller()">
@@ -251,19 +252,8 @@ if (!$sellerId) {
                     <i class="fas fa-times-circle"></i> Reject
                 </button>
             `;
-        } else if (seller.approval_status === 'approved') {
-            actionContainer.innerHTML = `
-                <button class="btn btn-danger" onclick="openRejectionModal()">
-                    <i class="fas fa-times-circle"></i> Reject
-                </button>
-            `;
-        } else if (seller.approval_status === 'rejected') {
-            actionContainer.innerHTML = `
-                <button class="btn btn-success" onclick="approveSeller()">
-                    <i class="fas fa-check-circle"></i> Approve
-                </button>
-            `;
         } else {
+            // Hide buttons for approved or rejected sellers
             actionContainer.innerHTML = '';
         }
     }
@@ -372,8 +362,10 @@ if (!$sellerId) {
     }
     
     function openRejectionModal() {
-        document.getElementById('rejectionModal').style.display = 'block';
+        const modal = document.getElementById('rejectionModal');
+        modal.style.display = 'flex';  // Use flex instead of block
         document.getElementById('rejectionReasonInput').value = '';
+        document.getElementById('rejectionReasonInput').focus();
     }
     
     function closeRejectionModal() {
@@ -487,18 +479,30 @@ if (!$sellerId) {
         }
     });
     
-    window.onclick = function(event) {
+   window.onclick = function(event) {
         const modal = document.getElementById('rejectionModal');
+        const bannerModal = document.getElementById('bannerViewerModal');
+        
         if (event.target === modal) {
             closeRejectionModal();
         }
+        if (event.target === bannerModal) {
+            closeBannerViewer();
+        }
     }
-    
-    // Keyboard navigation for modal
+
+    // Update keyboard navigation
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
-            closeBannerViewer();
-            closeRejectionModal();
+            const rejectionModal = document.getElementById('rejectionModal');
+            const bannerModal = document.getElementById('bannerViewerModal');
+            
+            if (rejectionModal.style.display === 'flex') {
+                closeRejectionModal();
+            }
+            if (bannerModal.style.display === 'flex') {
+                closeBannerViewer();
+            }
         }
     });
     

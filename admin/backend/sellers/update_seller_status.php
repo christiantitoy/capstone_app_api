@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $input = json_decode(file_get_contents('php://input'), true);
 $sellerId = $input['seller_id'] ?? null;
 $status = $input['status'] ?? null;
-$reason = $input['reason'] ?? '';
+$reason = $input['reason'] ?? null;
 
 if (!$sellerId || !$status) {
     echo json_encode(['success' => false, 'message' => 'Missing required fields']);
@@ -25,17 +25,36 @@ if (!in_array($status, ['approved', 'rejected', 'pending'])) {
     exit;
 }
 
+// Require reason when rejecting
+if ($status === 'rejected' && empty($reason)) {
+    echo json_encode(['success' => false, 'message' => 'Rejection reason is required']);
+    exit;
+}
+
 try {
     $conn->beginTransaction();
     
-    // Update seller approval status
-    $stmt = $conn->prepare("
-        UPDATE sellers 
-        SET approval_status = ?, 
-            updated_at = NOW() 
-        WHERE id = ?
-    ");
-    $stmt->execute([$status, $sellerId]);
+    if ($status === 'rejected') {
+        // Update with rejection reason
+        $stmt = $conn->prepare("
+            UPDATE sellers 
+            SET approval_status = ?, 
+                rejection_reason = ?,
+                updated_at = NOW() 
+            WHERE id = ?
+        ");
+        $stmt->execute([$status, $reason, $sellerId]);
+    } else {
+        // Update without reason (clear rejection reason if approved)
+        $stmt = $conn->prepare("
+            UPDATE sellers 
+            SET approval_status = ?, 
+                rejection_reason = NULL,
+                updated_at = NOW() 
+            WHERE id = ?
+        ");
+        $stmt->execute([$status, $sellerId]);
+    }
     
     // Log the action (optional - create admin_logs table if needed)
     $adminId = $_SESSION['admin_id'] ?? null;
