@@ -306,6 +306,24 @@ body {
     font-size: 18px;
 }
 
+/* Buyer badge */
+.badge-buyer {
+    display: inline-block;
+    background: #3498db;
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 12px;
+    margin-left: 8px;
+    font-weight: 500;
+}
+
+.col-username {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 /* Loading and Error States */
 .loading, .error, .no-data {
     text-align: center;
