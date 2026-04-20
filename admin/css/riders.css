@@ -499,3 +499,50 @@ td {
 .search-icon {
     color: #7f8c8d;
 }
+
+/* Update rider-table-header and rider-row to 5 columns */
+.rider-table-header {
+    display: grid;
+    grid-template-columns: 80px 200px 250px 120px 120px;
+    background: #f8f9fa;
+    padding: 12px;
+    font-weight: 600;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.rider-row {
+    display: grid;
+    grid-template-columns: 80px 200px 250px 120px 120px;
+    padding: 12px;
+    border-bottom: 1px solid #e9ecef;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.rider-row:hover {
+    background: #f8f9fa;
+}
+
+/* Filter controls */
+.filter-controls {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.filter-select {
+    padding: 8px 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: white;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+@media (max-width: 1200px) {
+    .rider-table-header,
+    .rider-row {
+        grid-template-columns: 70px 150px 200px 100px 100px;
+    }
+}

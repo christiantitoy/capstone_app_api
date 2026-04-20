@@ -135,7 +135,6 @@ require_once '../backend/session/auth_admin.php';
                         <div class="col-contact">Contact</div>
                         <div class="col-verification">Verification</div>
                         <div class="col-status">Status</div>
-                        <div class="col-actions">Actions</div>
                     </div>
                     
                     <div class="table-body" id="ridersTableBody">
@@ -229,28 +228,6 @@ require_once '../backend/session/auth_admin.php';
             const statusClass = getStatusClass(rider.status);
             const verificationClass = getVerificationClass(rider.verification_status);
             
-            // Determine action buttons based on verification status
-            let actionButtons = '';
-            if (rider.verification_status === 'pending') {
-                actionButtons = `
-                    <button class="approve-btn" onclick="event.stopPropagation(); approveRider(${rider.id})">Approve</button>
-                    <button class="reject-btn" onclick="event.stopPropagation(); rejectRider(${rider.id})">Reject</button>
-                `;
-            } else if (rider.verification_status === 'complete') {
-                actionButtons = `
-                    <button class="suspend-btn" onclick="event.stopPropagation(); suspendRider(${rider.id})">Suspend</button>
-                `;
-            } else if (rider.verification_status === 'rejected') {
-                actionButtons = `
-                    <button class="approve-btn" onclick="event.stopPropagation(); approveRider(${rider.id})">Approve</button>
-                `;
-            } else {
-                actionButtons = `
-                    <button class="approve-btn" onclick="event.stopPropagation(); approveRider(${rider.id})">Verify</button>
-                    <button class="reject-btn" onclick="event.stopPropagation(); rejectRider(${rider.id})">Reject</button>
-                `;
-            }
-            
             html += `
                 <div class="rider-row" onclick="viewRider(${rider.id})">
                     <div class="col-id">#${rider.id}</div>
@@ -271,9 +248,6 @@ require_once '../backend/session/auth_admin.php';
                             <i class="fas ${getStatusIcon(rider.status)}" style="margin-right: 5px;"></i>
                             ${rider.status}
                         </span>
-                    </div>
-                    <div class="col-actions">
-                        ${actionButtons}
                     </div>
                 </div>
             `;
@@ -327,71 +301,30 @@ require_once '../backend/session/auth_admin.php';
         return div.innerHTML;
     }
     
-    // Rider actions
-    function approveRider(riderId) {
-        if (confirm('Are you sure you want to approve this rider?')) {
-            updateRiderStatus(riderId, 'complete');
-        }
-    }
-    
-    function rejectRider(riderId) {
-        const reason = prompt('Please provide a reason for rejection:');
-        if (reason !== null) {
-            updateRiderStatus(riderId, 'rejected', reason);
-        }
-    }
-    
-    function suspendRider(riderId) {
-        if (confirm('Are you sure you want to suspend this rider?')) {
-            updateRiderStatus(riderId, 'suspended');
-        }
-    }
-    
-    async function updateRiderStatus(riderId, status, reason = '') {
-        try {
-            const response = await fetch('../backend/riders/update_rider_status.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    rider_id: riderId,
-                    verification_status: status,
-                    reason: reason
-                })
-            });
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                alert(`Rider status updated successfully!`);
-                loadRiders(); // Reload the list
-            } else {
-                alert('Failed to update rider status: ' + result.message);
-            }
-        } catch (error) {
-            console.error('Error updating rider:', error);
-            alert('Error updating rider status. Please try again.');
-        }
-    }
-    
-    // Search functionality
-    document.getElementById('searchRider').addEventListener('input', function(e) {
-        const searchTerm = e.target.value.toLowerCase();
+    // Search and filter functionality
+    function filterRiders() {
+        const searchTerm = document.getElementById('searchRider').value.toLowerCase();
+        const statusFilter = document.getElementById('statusFilter').value;
         
-        if (searchTerm === '') {
-            displayRiders(allRiders);
-            return;
+        let filtered = allRiders;
+        
+        if (statusFilter !== 'all') {
+            filtered = filtered.filter(r => r.status === statusFilter);
         }
         
-        const filtered = allRiders.filter(rider => 
-            rider.username.toLowerCase().includes(searchTerm) ||
-            rider.email.toLowerCase().includes(searchTerm) ||
-            rider.id.toString().includes(searchTerm)
-        );
+        if (searchTerm) {
+            filtered = filtered.filter(rider => 
+                rider.username.toLowerCase().includes(searchTerm) ||
+                rider.email.toLowerCase().includes(searchTerm) ||
+                rider.id.toString().includes(searchTerm)
+            );
+        }
         
         displayRiders(filtered);
-    });
+    }
+    
+    document.getElementById('searchRider').addEventListener('input', filterRiders);
+    document.getElementById('statusFilter').addEventListener('change', filterRiders);
     
     // Load riders when page loads
     loadRiders();
