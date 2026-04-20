@@ -146,17 +146,35 @@ require_once '../backend/session/auth_admin.php';
 
 <script src="/admin/js/logout.js"></script>
 
+<script src="/admin/js/logout.js"></script>
+
 <script>
     // Store original buyers data for filtering
     let allBuyers = [];
+    let buyerStatistics = {
+        total: 0,
+        active: 0
+    };
     
     // Display current date
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     document.getElementById('currentDate').textContent = new Date().toLocaleDateString(undefined, options);
 
-    // Function to view buyer details (for future development)
-    function viewBuyer(id, username, email) {
-        alert(`Buyer details will be implemented soon.\n\nID: ${id}\nUsername: ${username}\nEmail: ${email}`);
+    // Function to view buyer details with more information
+    function viewBuyer(buyer) {
+        const orderInfo = buyer.order_count > 0 ? 
+            `\nTotal Orders: ${buyer.order_count}
+Active Orders: ${buyer.active_orders_count || 0}
+Completed Orders: ${buyer.completed_orders_count || 0}
+Total Spent: ₱${parseFloat(buyer.total_spent || 0).toFixed(2)}
+Last Order: ${buyer.last_order_date ? new Date(buyer.last_order_date).toLocaleDateString() : 'No orders yet'}` : 
+            '\nNo orders placed yet';
+            
+        alert(`Buyer Details:
+        
+ID: ${buyer.id}
+Username: ${buyer.username}
+Email: ${buyer.email}${orderInfo}`);
     }
     
     // Function to fetch and display buyers
@@ -171,6 +189,12 @@ require_once '../backend/session/auth_admin.php';
                 // Store all buyers
                 allBuyers = result.data;
                 
+                // Store statistics
+                if (result.statistics) {
+                    buyerStatistics.total = result.statistics.total_buyers;
+                    buyerStatistics.active = result.statistics.active_buyers;
+                }
+                
                 // Filter buyers based on search term
                 let filteredBuyers = allBuyers;
                 if (searchTerm) {
@@ -180,16 +204,32 @@ require_once '../backend/session/auth_admin.php';
                     );
                 }
                 
-                // Update total buyers count
-                document.getElementById('totalBuyers').textContent = allBuyers.length;
-                document.getElementById('activeBuyers').textContent = filteredBuyers.length;
+                // Update statistics cards
+                document.getElementById('totalBuyers').textContent = buyerStatistics.total;
+                document.getElementById('activeBuyers').textContent = buyerStatistics.active;
                 
                 if (filteredBuyers.length > 0) {
                     // Display filtered buyers in table with clickable rows
-                    tableBody.innerHTML = filteredBuyers.map(buyer => `
-                        <div class="table-row" onclick="viewBuyer(${buyer.id}, '${escapeHtml(buyer.username)}', '${escapeHtml(buyer.email)}')">
+                    tableBody.innerHTML = filteredBuyers.map(buyer => {
+                        // Safely encode buyer data for onclick
+                        const buyerData = {
+                            id: buyer.id,
+                            username: buyer.username,
+                            email: buyer.email,
+                            order_count: buyer.order_count || 0,
+                            active_orders_count: buyer.active_orders_count || 0,
+                            completed_orders_count: buyer.completed_orders_count || 0,
+                            total_spent: buyer.total_spent || 0,
+                            last_order_date: buyer.last_order_date
+                        };
+                        
+                        return `
+                        <div class="table-row" onclick="viewBuyer(${JSON.stringify(buyerData).replace(/"/g, '&quot;')})">
                             <div class="col-id">${buyer.id}</div>
-                            <div class="col-username">${escapeHtml(buyer.username)}</div>
+                            <div class="col-username">
+                                ${escapeHtml(buyer.username)}
+                                ${buyer.order_count > 0 ? '<span class="badge badge-buyer">Buyer</span>' : ''}
+                            </div>
                             <div class="col-email">${escapeHtml(buyer.email)}</div>
                             <div class="col-avatar">
                                 ${buyer.avatar_url ? 
@@ -198,9 +238,10 @@ require_once '../backend/session/auth_admin.php';
                                 }
                             </div>
                         </div>
-                    `).join('');
+                        `;
+                    }).join('');
                 } else {
-                    tableBody.innerHTML = `<div class="no-data">No buyers found matching "${searchTerm}"</div>`;
+                    tableBody.innerHTML = `<div class="no-data">No buyers found matching "${escapeHtml(searchTerm)}"</div>`;
                 }
             } else {
                 tableBody.innerHTML = '<div class="no-data">No buyers found</div>';

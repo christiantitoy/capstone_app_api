@@ -1,5 +1,5 @@
 <?php
-// /admin/backend/getCount.php
+// /admin/backend/dashboard/getCount.php
 require_once '/var/www/html/connection/db_connection.php';
 
 header('Content-Type: application/json');
