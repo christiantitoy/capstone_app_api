@@ -271,9 +271,9 @@ require_once '../backend/session/auth_admin.php';
         displayProducts(filteredProducts);
     });
     
-    // View product function (for future development)
+    // Replace the viewProduct function with:
     function viewProduct(id) {
-        alert('View product functionality will be implemented soon. Product ID: ' + id);
+        window.location.href = `product_details.php?id=${id}`;
     }
     
     // Load products when page loads

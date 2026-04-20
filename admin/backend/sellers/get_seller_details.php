@@ -124,15 +124,16 @@ try {
     $stmt->execute([$sellerId]);
     $recentProducts = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Get order statistics for this seller
+    // Get order statistics for this seller using order_items and items
     $stmt = $conn->prepare("
         SELECT 
-            COUNT(DISTINCT o.id) AS total_orders,
-            COALESCE(SUM(o.total_amount), 0) AS total_revenue,
-            COUNT(DISTINCT o.buyer_id) AS unique_customers
-        FROM orders o
-        INNER JOIN order_items oi ON o.id = oi.order_id
-        INNER JOIN items i ON oi.item_id = i.id
+            COUNT(DISTINCT oi.order_id) AS total_orders,
+            COALESCE(SUM(oi.total_price), 0) AS total_revenue,
+            COUNT(DISTINCT o.buyer_id) AS unique_customers,
+            COALESCE(SUM(oi.quantity), 0) AS total_items_sold
+        FROM order_items oi
+        INNER JOIN items i ON oi.product_id = i.id
+        INNER JOIN orders o ON oi.order_id = o.id
         WHERE i.seller_id = ?
     ");
     $stmt->execute([$sellerId]);
@@ -156,7 +157,8 @@ try {
             'order_stats' => [
                 'total_orders' => (int) $orderStats['total_orders'],
                 'total_revenue' => (float) $orderStats['total_revenue'],
-                'unique_customers' => (int) $orderStats['unique_customers']
+                'unique_customers' => (int) $orderStats['unique_customers'],
+                'total_items_sold' => (int) $orderStats['total_items_sold']
             ],
             'recent_products' => $recentProducts
         ]
