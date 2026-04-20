@@ -90,7 +90,7 @@ require_once '../backend/session/auth_admin.php';
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon" style="background:#e67e2220;color:#e67e22">
+                <div class="stat-icon" style="background:#f39c1220;color:#f39c12">
                     <i class="fas fa-clock"></i>
                 </div>
                 <div class="stat-info">
@@ -99,8 +99,8 @@ require_once '../backend/session/auth_admin.php';
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon" style="background:#e74c3c20;color:#e74c3c">
-                    <i class="fas fa-truck"></i>
+                <div class="stat-icon" style="background:#2ecc7120;color:#2ecc71">
+                    <i class="fas fa-circle"></i>
                 </div>
                 <div class="stat-info">
                     <h3 id="activeRiders">0</h3>
@@ -113,9 +113,17 @@ require_once '../backend/session/auth_admin.php';
         <div class="full-width-section riders-list">
             <div class="section-header">
                 <h2>Riders List</h2>
-                <div class="search-container">
-                    <input type="text" class="search-field" id="searchRider" placeholder="Search rider...">
-                    <i class="fas fa-search search-icon"></i>
+                <div class="filter-controls">
+                    <select id="statusFilter" class="filter-select">
+                        <option value="all">All Riders</option>
+                        <option value="online">Online</option>
+                        <option value="offline">Offline</option>
+                        <option value="delivering">Delivering</option>
+                    </select>
+                    <div class="search-container">
+                        <input type="text" class="search-field" id="searchRider" placeholder="Search rider...">
+                        <i class="fas fa-search search-icon"></i>
+                    </div>
                 </div>
             </div>
 
@@ -125,7 +133,7 @@ require_once '../backend/session/auth_admin.php';
                         <div class="col-id">ID</div>
                         <div class="col-name">Name</div>
                         <div class="col-contact">Contact</div>
-                        <div class="col-vehicle">Vehicle</div>
+                        <div class="col-verification">Verification</div>
                         <div class="col-status">Status</div>
                         <div class="col-actions">Actions</div>
                     </div>
@@ -147,7 +155,6 @@ require_once '../backend/session/auth_admin.php';
         </footer>
     </main>
 </div>
-
 
 <!-- Logout Modal -->
 <div id="logoutModal" class="modal">
