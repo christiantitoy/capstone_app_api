@@ -87,57 +87,45 @@ try {
     $stmt->execute([$sellerId]);
     $employees = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Get product statistics
+    // Get product count only
     $stmt = $conn->prepare("
-        SELECT 
-            COUNT(*) AS total_products,
-            SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) AS approved_products,
-            SUM(CASE WHEN status = 'on_review' THEN 1 ELSE 0 END) AS pending_products,
-            SUM(CASE WHEN status = 'on_hold' THEN 1 ELSE 0 END) AS on_hold_products,
-            SUM(CASE WHEN status = 'removed' THEN 1 ELSE 0 END) AS removed_products,
-            COALESCE(SUM(stock), 0) AS total_stock,
-            COALESCE(SUM(sold), 0) AS total_sold,
-            COALESCE(SUM(price * stock), 0) AS inventory_value
+        SELECT COUNT(*) AS total_products
         FROM items
         WHERE seller_id = ?
     ");
     $stmt->execute([$sellerId]);
-    $productStats = $stmt->fetch(PDO::FETCH_ASSOC);
+    $productCount = $stmt->fetch(PDO::FETCH_ASSOC);
     
-    // Get recent products
+    // Get order statistics for this seller using sold_items
     $stmt = $conn->prepare("
         SELECT 
-            id,
-            product_name,
-            category,
-            price,
-            stock,
-            sold,
-            status,
-            main_image_url,
-            created_at
-        FROM items
-        WHERE seller_id = ?
-        ORDER BY created_at DESC
-        LIMIT 10
-    ");
-    $stmt->execute([$sellerId]);
-    $recentProducts = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Get order statistics for this seller using order_items and items
-    $stmt = $conn->prepare("
-        SELECT 
-            COUNT(DISTINCT oi.order_id) AS total_orders,
-            COALESCE(SUM(oi.total_price), 0) AS total_revenue,
-            COUNT(DISTINCT o.buyer_id) AS unique_customers,
-            COALESCE(SUM(oi.quantity), 0) AS total_items_sold
-        FROM order_items oi
+            COUNT(DISTINCT si.orders_id) AS total_orders,
+            COALESCE(SUM(oi.unit_price * oi.quantity), 0) AS total_revenue,
+            COUNT(DISTINCT o.buyer_id) AS unique_customers
+        FROM sold_items si
+        INNER JOIN order_items oi ON si.order_items_id = oi.id
+        INNER JOIN orders o ON si.orders_id = o.id
         INNER JOIN items i ON oi.product_id = i.id
-        INNER JOIN orders o ON oi.order_id = o.id
         WHERE i.seller_id = ?
     ");
     $stmt->execute([$sellerId]);
     $orderStats = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    // If no sold_items found, fallback to order_items only
+    if ($orderStats['total_orders'] == 0) {
+        $stmt = $conn->prepare("
+            SELECT 
+                COUNT(DISTINCT oi.order_id) AS total_orders,
+                COALESCE(SUM(oi.unit_price * oi.quantity), 0) AS total_revenue,
+                COUNT(DISTINCT o.buyer_id) AS unique_customers
+            FROM order_items oi
+            INNER JOIN items i ON oi.product_id = i.id
+            INNER JOIN orders o ON oi.order_id = o.id
+            WHERE i.seller_id = ?
+        ");
+        $stmt->execute([$sellerId]);
+        $orderStats = $stmt->fetch(PDO::FETCH_ASSOC);
+    }
     
     echo json_encode([
         'success' => true,
@@ -145,22 +133,13 @@ try {
             'seller' => $seller,
             'employees' => $employees,
             'product_stats' => [
-                'total_products' => (int) $productStats['total_products'],
-                'approved_products' => (int) $productStats['approved_products'],
-                'pending_products' => (int) $productStats['pending_products'],
-                'on_hold_products' => (int) $productStats['on_hold_products'],
-                'removed_products' => (int) $productStats['removed_products'],
-                'total_stock' => (int) $productStats['total_stock'],
-                'total_sold' => (int) $productStats['total_sold'],
-                'inventory_value' => (float) $productStats['inventory_value']
+                'total_products' => (int) $productCount['total_products']
             ],
             'order_stats' => [
-                'total_orders' => (int) $orderStats['total_orders'],
-                'total_revenue' => (float) $orderStats['total_revenue'],
-                'unique_customers' => (int) $orderStats['unique_customers'],
-                'total_items_sold' => (int) $orderStats['total_items_sold']
-            ],
-            'recent_products' => $recentProducts
+                'total_orders' => (int) ($orderStats['total_orders'] ?? 0),
+                'total_revenue' => (float) ($orderStats['total_revenue'] ?? 0),
+                'unique_customers' => (int) ($orderStats['unique_customers'] ?? 0)
+            ]
         ]
     ]);
     

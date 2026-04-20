@@ -656,3 +656,118 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: #555;
 }
+
+/* Banner Container - Facebook style */
+.banner-container {
+    width: 100%;
+    height: 250px;
+    overflow: hidden;
+    position: relative;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.banner-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 0.3s;
+}
+
+.banner-container img:hover {
+    opacity: 0.9;
+}
+
+.banner-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Profile Card - adjust for banner */
+.profile-card {
+    padding: 30px;
+    background: white;
+    border-bottom: 1px solid #e9ecef;
+    margin-top: -20px;
+    border-radius: 20px 20px 0 0;
+    position: relative;
+}
+
+/* Store Logo - larger and overlapping banner */
+.store-logo {
+    width: 100px;
+    height: 100px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 4px solid white;
+    background: #f8f9fa;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-top: -50px;
+}
+
+/* Image Viewer Modal */
+.image-viewer-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+}
+
+.image-viewer-modal img {
+    max-width: 90%;
+    max-height: 90%;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.close-viewer {
+    position: absolute;
+    top: 20px;
+    right: 40px;
+    color: white;
+    font-size: 40px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 10000;
+    transition: opacity 0.3s;
+}
+
+.close-viewer:hover {
+    opacity: 0.7;
+}
+
+/* Logo image fill */
+.logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Responsive banner */
+@media (max-width: 768px) {
+    .banner-container {
+        height: 180px;
+    }
+    
+    .store-logo {
+        width: 80px;
+        height: 80px;
+        margin-top: -40px;
+    }
+}
+
+@media (max-width: 480px) {
+    .banner-container {
+        height: 140px;
+    }
+}

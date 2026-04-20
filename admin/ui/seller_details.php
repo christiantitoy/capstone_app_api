@@ -43,6 +43,14 @@ if (!$sellerId) {
 
     <!-- Content -->
     <div id="sellerContent" style="display: none;">
+        <!-- Banner Image -->
+        <div class="banner-container" id="bannerContainer">
+            <div class="banner-placeholder" id="bannerPlaceholder">
+                <i class="fas fa-image"></i>
+            </div>
+            <img id="bannerImage" src="" alt="Store Banner" style="display: none;" onclick="openBannerViewer()">
+        </div>
+
         <!-- Seller Profile Card -->
         <div class="profile-card">
             <div class="profile-header">
@@ -126,76 +134,6 @@ if (!$sellerId) {
             </div>
         </div>
 
-        <!-- Product Statistics -->
-        <div class="stats-section">
-            <h3><i class="fas fa-box"></i> Product Statistics</h3>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:#3498db20;color:#3498db">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h4 id="approvedProducts">0</h4>
-                        <p>Approved</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:#f39c1220;color:#f39c12">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h4 id="pendingProducts">0</h4>
-                        <p>Pending Review</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:#e67e2220;color:#e67e22">
-                        <i class="fas fa-pause-circle"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h4 id="onHoldProducts">0</h4>
-                        <p>On Hold</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:#e74c3c20;color:#e74c3c">
-                        <i class="fas fa-times-circle"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h4 id="removedProducts">0</h4>
-                        <p>Removed</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:#27ae6020;color:#27ae60">
-                        <i class="fas fa-warehouse"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h4 id="totalStock">0</h4>
-                        <p>Total Stock</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:#9b59b620;color:#9b59b6">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h4 id="totalSold">0</h4>
-                        <p>Total Sold</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:#1abc9c20;color:#1abc9c">
-                        <i class="fas fa-dollar-sign"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h4 id="inventoryValue">₱0</h4>
-                        <p>Inventory Value</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Employees Section -->
         <div class="content-section">
             <div class="section-header">
@@ -221,35 +159,6 @@ if (!$sellerId) {
                 </table>
             </div>
         </div>
-
-        <!-- Recent Products Section -->
-        <div class="content-section">
-            <div class="section-header">
-                <h2><i class="fas fa-history"></i> Recent Products</h2>
-                <a href="products.php?seller_id=<?= $sellerId ?>" class="view-all-link">
-                    View All Products <i class="fas fa-chevron-right"></i>
-                </a>
-            </div>
-            <div class="table-container">
-                <table class="products-table">
-                    <thead>
-                        <tr>
-                            <th>Image</th>
-                            <th>Product Name</th>
-                            <th>Category</th>
-                            <th>Price</th>
-                            <th>Stock</th>
-                            <th>Sold</th>
-                            <th>Status</th>
-                            <th>Created</th>
-                        </tr>
-                    </thead>
-                    <tbody id="recentProductsBody">
-                        <!-- Products will be loaded here -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
     </div>
 
     <!-- Error State -->
@@ -261,8 +170,15 @@ if (!$sellerId) {
     </div>
 </div>
 
+<!-- Full Image Viewer Modal for Banner -->
+<div id="bannerViewerModal" class="image-viewer-modal">
+    <span class="close-viewer" onclick="closeBannerViewer()">&times;</span>
+    <img id="viewerBannerImage" src="" alt="Store Banner">
+</div>
+
 <script>
     const sellerId = <?= $sellerId ?>;
+    let bannerUrl = '';
     
     // Load seller details
     async function loadSellerDetails() {
@@ -298,7 +214,16 @@ if (!$sellerId) {
         const employees = data.employees;
         const productStats = data.product_stats;
         const orderStats = data.order_stats;
-        const recentProducts = data.recent_products;
+        
+        // Update banner
+        bannerUrl = seller.banner_url;
+        if (bannerUrl) {
+            document.getElementById('bannerPlaceholder').style.display = 'none';
+            const bannerImg = document.getElementById('bannerImage');
+            bannerImg.src = bannerUrl;
+            bannerImg.style.display = 'block';
+            bannerImg.style.cursor = 'pointer';
+        }
         
         // Update profile
         document.getElementById('storeName').textContent = seller.store_name || 'No store setup';
@@ -311,7 +236,7 @@ if (!$sellerId) {
         // Update store logo
         const logoContainer = document.getElementById('storeLogo');
         if (seller.logo_url) {
-            logoContainer.innerHTML = `<img src="${seller.logo_url}" alt="${seller.store_name}" class="logo-img">`;
+            logoContainer.innerHTML = `<img src="${seller.logo_url}" alt="${seller.store_name}" class="logo-img" style="width:100%;height:100%;object-fit:cover;">`;
         } else {
             logoContainer.innerHTML = `<div class="logo-placeholder"><i class="fas fa-store"></i></div>`;
         }
@@ -355,20 +280,8 @@ if (!$sellerId) {
                 `<p><strong>Coordinates:</strong> ${seller.latitude}, ${seller.longitude}</p>` : ''}
         `;
         
-        // Update product statistics
-        document.getElementById('approvedProducts').textContent = productStats.approved_products;
-        document.getElementById('pendingProducts').textContent = productStats.pending_products;
-        document.getElementById('onHoldProducts').textContent = productStats.on_hold_products;
-        document.getElementById('removedProducts').textContent = productStats.removed_products;
-        document.getElementById('totalStock').textContent = productStats.total_stock;
-        document.getElementById('totalSold').textContent = productStats.total_sold;
-        document.getElementById('inventoryValue').textContent = `₱${formatNumber(productStats.inventory_value)}`;
-        
         // Display employees
         displayEmployees(employees);
-        
-        // Display recent products
-        displayRecentProducts(recentProducts);
     }
     
     function displayEmployees(employees) {
@@ -400,47 +313,17 @@ if (!$sellerId) {
         }).join('');
     }
     
-    function displayRecentProducts(products) {
-        const tbody = document.getElementById('recentProductsBody');
-        
-        if (products.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No products found</td></tr>';
-            return;
+    function openBannerViewer() {
+        if (bannerUrl) {
+            const modal = document.getElementById('bannerViewerModal');
+            const viewerImg = document.getElementById('viewerBannerImage');
+            viewerImg.src = bannerUrl;
+            modal.style.display = 'flex';
         }
-        
-        tbody.innerHTML = products.map(product => {
-            const statusClass = getProductStatusClass(product.status);
-            
-            return `
-                <tr>
-                    <td>
-                        <div class="product-image">
-                            ${product.main_image_url ? 
-                                `<img src="${product.main_image_url}" alt="${product.product_name}">` : 
-                                '<div class="no-image"><i class="fas fa-image"></i></div>'
-                            }
-                        </div>
-                    </td>
-                    <td><strong>${escapeHtml(product.product_name)}</strong></td>
-                    <td>${escapeHtml(product.category)}</td>
-                    <td>₱${formatNumber(product.price)}</td>
-                    <td>${product.stock}</td>
-                    <td>${product.sold}</td>
-                    <td><span class="status-badge ${statusClass}">${product.status}</span></td>
-                    <td>${new Date(product.created_at).toLocaleDateString()}</td>
-                </tr>
-            `;
-        }).join('');
     }
     
-    function getProductStatusClass(status) {
-        const statusMap = {
-            'approved': 'status-approved',
-            'on_review': 'status-pending',
-            'on_hold': 'status-onhold',
-            'removed': 'status-removed'
-        };
-        return statusMap[status] || 'status-default';
+    function closeBannerViewer() {
+        document.getElementById('bannerViewerModal').style.display = 'none';
     }
     
     function formatRole(role) {
@@ -461,6 +344,20 @@ if (!$sellerId) {
         div.textContent = text;
         return div.innerHTML;
     }
+    
+    // Close modal when clicking outside
+    document.getElementById('bannerViewerModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeBannerViewer();
+        }
+    });
+    
+    // Keyboard navigation for modal
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeBannerViewer();
+        }
+    });
     
     // Load details on page load
     document.addEventListener('DOMContentLoaded', loadSellerDetails);
