@@ -681,3 +681,29 @@ body {
     font-weight: 600;
     color: #2c3e50;
 }
+
+/* Clickable row */
+.payout-row.clickable {
+    cursor: pointer;
+}
+
+.payout-row.clickable:hover {
+    background: #f0f4f8;
+}
+
+/* Status badge for Partial */
+.status-partial {
+    background: #f39c1220;
+    color: #f39c12;
+}
+
+/* Filter select */
+.filter-select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    background: white;
+    min-width: 120px;
+}

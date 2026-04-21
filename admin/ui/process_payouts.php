@@ -67,7 +67,7 @@ require_once '../backend/session/auth_admin.php';
         <header class="main-header">
             <div class="header-left">
                 <h1>Process Payouts</h1>
-                <p>GCash - Rider Delivery payments pending for seller payout</p>
+                <p>GCash - Rider Delivery payments for seller payout</p>
             </div>
             <div class="header-right">
                 <div class="date-display" id="currentDate"></div>
@@ -87,15 +87,24 @@ require_once '../backend/session/auth_admin.php';
             </div>
             <div class="stat-card">
                 <div class="stat-icon" style="background:#e67e2220;color:#e67e22">
-                    <i class="fas fa-box"></i>
+                    <i class="fas fa-clock"></i>
                 </div>
                 <div class="stat-info">
-                    <h3 id="totalItems">0</h3>
-                    <p>Total Items Sold</p>
+                    <h3 id="unpaidSellers">0</h3>
+                    <p>Unpaid Sellers</p>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon" style="background:#27ae6020;color:#27ae60">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="paidSellers">0</h3>
+                    <p>Paid Sellers</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#9b59b620;color:#9b59b6">
                     <i class="fas fa-money-bill-wave"></i>
                 </div>
                 <div class="stat-info">
@@ -108,8 +117,13 @@ require_once '../backend/session/auth_admin.php';
         <!-- SELLER PAYOUTS LIST -->
         <div class="full-width-section payouts-list">
             <div class="section-header">
-                <h2>Pending Seller Payouts</h2>
+                <h2>Seller Payouts</h2>
                 <div class="filter-container">
+                    <select id="statusFilter" class="filter-select">
+                        <option value="all">All Status</option>
+                        <option value="Unpaid">Unpaid</option>
+                        <option value="Paid">Paid</option>
+                    </select>
                     <div class="search-container">
                         <input type="text" class="search-field" id="searchSeller" placeholder="Search seller...">
                         <i class="fas fa-search search-icon"></i>
@@ -128,42 +142,11 @@ require_once '../backend/session/auth_admin.php';
                         <div class="col-items">Items</div>
                         <div class="col-amount">Payout Amount</div>
                         <div class="col-status">Status</div>
-                        <div class="col-action">Action</div>
+                        <div class="col-date">Last Updated</div>
                     </div>
                     
                     <div class="table-body" id="payoutsTableBody">
                         <div class="loading">Loading payouts...</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- SOLD ITEMS DETAILS -->
-        <div class="full-width-section order-items-section" id="soldItemsSection" style="display: none;">
-            <div class="section-header">
-                <h2>Sold Items - <span id="selectedSellerName"></span></h2>
-                <button class="btn btn-outline" onclick="closeSoldItems()">
-                    <i class="fas fa-times"></i> Close
-                </button>
-            </div>
-
-            <div class="table-container">
-                <div class="order-items-holder">
-                    <div class="order-items-header">
-                        <div class="col-order-id">Order #</div>
-                        <div class="col-product">Product</div>
-                        <div class="col-qty">Qty</div>
-                        <div class="col-price">Unit Price</div>
-                        <div class="col-total">Total</div>
-                        <div class="col-date">Sold Date</div>
-                    </div>
-                    
-                    <div class="table-body" id="soldItemsBody">
-                        <!-- Dynamic content -->
-                    </div>
-                    
-                    <div class="sold-items-total" id="soldItemsTotal">
-                        <!-- Total will be displayed here -->
                     </div>
                 </div>
             </div>
@@ -196,14 +179,10 @@ require_once '../backend/session/auth_admin.php';
     </div>
 </div>
 
-<!-- Notification Container -->
-<div id="notificationContainer"></div>
-
 <script src="/admin/js/logout.js"></script>
 
 <script>
     let allSellerSummary = [];
-    let allSoldItems = [];
     
     // Display current date
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
@@ -212,17 +191,22 @@ require_once '../backend/session/auth_admin.php';
     // Load payouts from backend
     async function loadPayouts() {
         try {
-            const response = await fetch('/admin/backend/payouts/get_payouts.php');
+            const response = await fetch('/admin/backend/payouts/get_all_payouts.php');
             const result = await response.json();
             
             if (result.success) {
                 allSellerSummary = result.data.seller_summary;
-                allSoldItems = result.data.sold_items;
                 
                 // Update stats
-                document.getElementById('totalSellers').textContent = result.data.totals.total_sellers;
-                document.getElementById('totalItems').textContent = result.data.totals.total_items;
-                document.getElementById('totalPayout').textContent = `₱${formatNumber(result.data.totals.total_payout)}`;
+                const totalSellers = allSellerSummary.length;
+                const unpaidSellers = allSellerSummary.filter(s => s.paid_status === 'Unpaid').length;
+                const paidSellers = allSellerSummary.filter(s => s.paid_status === 'Paid').length;
+                const totalPayout = allSellerSummary.reduce((sum, s) => sum + s.total_amount, 0);
+                
+                document.getElementById('totalSellers').textContent = totalSellers;
+                document.getElementById('unpaidSellers').textContent = unpaidSellers;
+                document.getElementById('paidSellers').textContent = paidSellers;
+                document.getElementById('totalPayout').textContent = `₱${formatNumber(totalPayout)}`;
                 
                 // Display payouts
                 displayPayouts(allSellerSummary);
@@ -240,7 +224,7 @@ require_once '../backend/session/auth_admin.php';
         const tbody = document.getElementById('payoutsTableBody');
         
         if (sellers.length === 0) {
-            tbody.innerHTML = '<div class="no-data">No pending payouts</div>';
+            tbody.innerHTML = '<div class="no-data">No payouts found</div>';
             return;
         }
         
@@ -249,12 +233,10 @@ require_once '../backend/session/auth_admin.php';
             const statusClass = seller.paid_status === 'Paid' ? 'status-processed' : 'status-pending';
             
             html += `
-                <div class="payout-row">
+                <div class="payout-row clickable" onclick="viewPayoutDetails(${seller.seller_id})">
                     <div class="col-seller">
                         <div class="seller-info">
-                            <a href="seller_details.php?id=${seller.seller_id}" class="seller-link">
-                                <strong>${escapeHtml(seller.seller_name || 'N/A')}</strong>
-                            </a>
+                            <strong>${escapeHtml(seller.seller_name || 'N/A')}</strong>
                             <small>${escapeHtml(seller.seller_email || 'No email')}</small>
                         </div>
                     </div>
@@ -270,13 +252,8 @@ require_once '../backend/session/auth_admin.php';
                     <div class="col-status">
                         <span class="status-badge ${statusClass}">${seller.paid_status}</span>
                     </div>
-                    <div class="col-action">
-                        <button class="btn-view-items" onclick="viewSoldItems(${seller.seller_id})">
-                            <i class="fas fa-eye"></i> View Items
-                        </button>
-                        <button class="btn-process" onclick="markAsPaid(${seller.seller_id})">
-                            <i class="fas fa-check"></i> Mark Paid
-                        </button>
+                    <div class="col-date">
+                        ${formatDate(seller.last_updated || seller.sold_items[0]?.sold_date)}
                     </div>
                 </div>
             `;
@@ -285,113 +262,21 @@ require_once '../backend/session/auth_admin.php';
         tbody.innerHTML = html;
     }
     
-    function viewSoldItems(sellerId) {
-        const seller = allSellerSummary.find(s => s.seller_id === sellerId);
-        if (!seller) return;
-        
-        document.getElementById('selectedSellerName').textContent = seller.seller_name;
-        
-        const itemsBody = document.getElementById('soldItemsBody');
-        const items = seller.sold_items;
-        
-        let html = '';
-        items.forEach(item => {
-            html += `
-                <div class="order-item-row">
-                    <div class="col-order-id">
-                        <a href="order_details.php?id=${item.orders_id}" class="order-link">#${item.orders_id}</a>
-                    </div>
-                    <div class="col-product">
-                        <div class="product-info">
-                            <strong>${escapeHtml(item.product_name)}</strong>
-                        </div>
-                    </div>
-                    <div class="col-qty">${item.quantity}</div>
-                    <div class="col-price">₱${formatNumber(item.unit_price)}</div>
-                    <div class="col-total">₱${formatNumber(item.item_total)}</div>
-                    <div class="col-date">${formatDate(item.sold_date)}</div>
-                </div>
-            `;
-        });
-        
-        itemsBody.innerHTML = html;
-        
-        // Show total
-        document.getElementById('soldItemsTotal').innerHTML = `
-            <div class="total-row">
-                <span>Total for ${escapeHtml(seller.seller_name)}:</span>
-                <strong>₱${formatNumber(seller.total_amount)}</strong>
-            </div>
-        `;
-        
-        document.getElementById('soldItemsSection').style.display = 'block';
-    }
-    
-    function closeSoldItems() {
-        document.getElementById('soldItemsSection').style.display = 'none';
-    }
-    
-    async function markAsPaid(sellerId) {
-        const seller = allSellerSummary.find(s => s.seller_id === sellerId);
-        if (!seller) return;
-        
-        if (!confirm(`Mark payout of ₱${formatNumber(seller.total_amount)} as paid for ${seller.seller_name}?`)) {
-            return;
-        }
-        
-        try {
-            const response = await fetch('/admin/backend/payouts/mark_payout_paid.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    seller_id: sellerId
-                })
-            });
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                showNotification('success', result.message);
-                // Reload payouts
-                loadPayouts();
-                closeSoldItems();
-            } else {
-                showNotification('error', 'Failed to mark as paid: ' + result.message);
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            showNotification('error', 'Error marking payout as paid');
-        }
-    }
-    
-    function showNotification(type, message) {
-        const container = document.getElementById('notificationContainer');
-        const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
-        
-        const icon = type === 'success' ? 'check-circle' : 'exclamation-circle';
-        
-        notification.innerHTML = `
-            <i class="fas fa-${icon}"></i>
-            <span>${message}</span>
-            <button class="notification-close" onclick="this.parentElement.remove()">&times;</button>
-        `;
-        
-        container.appendChild(notification);
-        
-        setTimeout(() => {
-            if (notification.parentElement) {
-                notification.remove();
-            }
-        }, 5000);
+    function viewPayoutDetails(sellerId) {
+        window.location.href = `payout_details.php?seller_id=${sellerId}`;
     }
     
     function exportPayouts() {
+        const statusFilter = document.getElementById('statusFilter').value;
+        let sellersToExport = allSellerSummary;
+        
+        if (statusFilter !== 'all') {
+            sellersToExport = allSellerSummary.filter(s => s.paid_status === statusFilter);
+        }
+        
         let csv = 'Seller Name,Seller Email,Store Name,Total Items,Payout Amount,Status\n';
         
-        allSellerSummary.forEach(seller => {
+        sellersToExport.forEach(seller => {
             csv += `"${seller.seller_name}","${seller.seller_email}","${seller.store_name || ''}",${seller.total_items},${seller.total_amount.toFixed(2)},"${seller.paid_status}"\n`;
         });
         
@@ -399,23 +284,35 @@ require_once '../backend/session/auth_admin.php';
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'pending_payouts.csv';
+        a.download = 'seller_payouts.csv';
         a.click();
         window.URL.revokeObjectURL(url);
     }
     
     // Filter functionality
-    document.getElementById('searchSeller').addEventListener('input', function(e) {
-        const searchTerm = e.target.value.toLowerCase();
+    function filterPayouts() {
+        const statusFilter = document.getElementById('statusFilter').value;
+        const searchTerm = document.getElementById('searchSeller').value.toLowerCase();
         
-        const filtered = allSellerSummary.filter(seller => 
-            (seller.seller_name && seller.seller_name.toLowerCase().includes(searchTerm)) ||
-            (seller.seller_email && seller.seller_email.toLowerCase().includes(searchTerm)) ||
-            (seller.store_name && seller.store_name.toLowerCase().includes(searchTerm))
-        );
+        let filtered = [...allSellerSummary];
+        
+        if (statusFilter !== 'all') {
+            filtered = filtered.filter(seller => seller.paid_status === statusFilter);
+        }
+        
+        if (searchTerm) {
+            filtered = filtered.filter(seller => 
+                (seller.seller_name && seller.seller_name.toLowerCase().includes(searchTerm)) ||
+                (seller.seller_email && seller.seller_email.toLowerCase().includes(searchTerm)) ||
+                (seller.store_name && seller.store_name.toLowerCase().includes(searchTerm))
+            );
+        }
         
         displayPayouts(filtered);
-    });
+    }
+    
+    document.getElementById('statusFilter').addEventListener('change', filterPayouts);
+    document.getElementById('searchSeller').addEventListener('input', filterPayouts);
     
     function formatNumber(num) {
         return parseFloat(num || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
