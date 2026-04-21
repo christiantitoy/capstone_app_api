@@ -491,7 +491,8 @@ body {
     .delivery_holder {
         min-width: 600px;
     }
-}
+} 
+
 .status-assigned {
     background: #e3f2fd;
     color: #3498db;
