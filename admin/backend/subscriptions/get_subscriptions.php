@@ -11,12 +11,11 @@ try {
             spp.id as payment_id,
             spp.seller_id,
             spp.seller_plan_id,
-            spp.gcash_number,
             spp.amount,
             spp.proof_image_url,
             spp.submitted_at,
             spp.reviewed_at,
-            spp.status as payment_status,
+            spp.status::text as payment_status,
             spp.notes,
             sp.plan,
             sp.billing,
@@ -31,7 +30,7 @@ try {
         INNER JOIN public.sellers_plan sp ON spp.seller_plan_id = sp.id
         INNER JOIN public.sellers s ON spp.seller_id = s.id
         LEFT JOIN public.stores st ON s.id = st.seller_id
-        WHERE spp.status = 'pending'
+        WHERE spp.status::text = 'pending'
         ORDER BY spp.submitted_at DESC
     ";
     
@@ -45,7 +44,7 @@ try {
             COUNT(*) as total_pending,
             COALESCE(SUM(amount), 0) as total_amount
         FROM public.seller_plan_payments
-        WHERE status = 'pending'
+        WHERE status::text = 'pending'
     ";
     $statusStmt = $conn->prepare($statusSql);
     $statusStmt->execute();
@@ -59,7 +58,7 @@ try {
             COALESCE(SUM(spp.amount), 0) as total
         FROM public.seller_plan_payments spp
         INNER JOIN public.sellers_plan sp ON spp.seller_plan_id = sp.id
-        WHERE spp.status = 'pending'
+        WHERE spp.status::text = 'pending'
         GROUP BY sp.plan
     ";
     $planStmt = $conn->prepare($planSql);
@@ -70,10 +69,10 @@ try {
         'success' => true,
         'data' => $subscriptions,
         'status_counts' => [
-            'total_pending' => (int)$statusCounts['total_pending'],
-            'total_amount' => floatval($statusCounts['total_amount'])
+            'total_pending' => (int)($statusCounts['total_pending'] ?? 0),
+            'total_amount' => floatval($statusCounts['total_amount'] ?? 0)
         ],
-        'plan_breakdown' => $planBreakdown
+        'plan_breakdown' => $planBreakdown ?: []
     ]);
     
 } catch (PDOException $e) {

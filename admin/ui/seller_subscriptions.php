@@ -44,18 +44,28 @@ require_once '../backend/session/auth_admin.php';
             <a href="/admin/ui/deliveries.php" class="nav-item">
                 <i class="fas fa-truck"></i><span>Deliveries</span>
             </a>
-            <a href="/admin/ui/process_payouts.php" class="nav-item">
-                <i class="fas fa-money-bill-wave"></i><span>Process Payouts</span>
-            </a>
-            <a href="/admin/ui/order_payments.php" class="nav-item">
-                <i class="fas fa-credit-card"></i><span>Order Payments</span>
-            </a>
-            <a href="/admin/ui/rider_remittances.php" class="nav-item">
-                <i class="fas fa-hand-holding-usd"></i><span>Rider Remittances</span>
-            </a>
-            <a href="/admin/ui/seller_subscriptions.php" class="nav-item active">
-                <i class="fas fa-crown"></i><span>Seller Subscriptions</span>
-            </a>
+            
+            <!-- Online Payments Dropdown -->
+            <div class="nav-dropdown">
+                <div class="nav-item nav-dropdown-toggle" onclick="toggleDropdown(this)">
+                    <i class="fas fa-wallet"></i><span>Online Payments</span>
+                    <i class="fas fa-chevron-down dropdown-arrow"></i>
+                </div>
+                <div class="dropdown-menu">
+                    <a href="/admin/ui/process_payouts.php" class="dropdown-item">
+                        <i class="fas fa-money-bill-wave"></i><span>Process Payouts</span>
+                    </a>
+                    <a href="/admin/ui/order_payments.php" class="dropdown-item">
+                        <i class="fas fa-credit-card"></i><span>Order Payments</span>
+                    </a>
+                    <a href="/admin/ui/rider_remittances.php" class="dropdown-item">
+                        <i class="fas fa-hand-holding-usd"></i><span>Rider Remittances</span>
+                    </a>
+                    <a href="/admin/ui/seller_subscriptions.php" class="dropdown-item active">
+                        <i class="fas fa-crown"></i><span>Seller Subscriptions</span>
+                    </a>
+                </div>
+            </div>
         </nav>
         <div class="sidebar-footer">
             <div class="user-profile">
@@ -147,9 +157,7 @@ require_once '../backend/session/auth_admin.php';
                         <div class="col-payment-id">Payment ID</div>
                         <div class="col-seller">Seller</div>
                         <div class="col-plan">Plan</div>
-                        <div class="col-billing">Billing</div>
                         <div class="col-amount">Amount</div>
-                        <div class="col-gcash">GCash</div>
                         <div class="col-date">Submitted</div>
                     </div>
                     
@@ -193,6 +201,21 @@ require_once '../backend/session/auth_admin.php';
     let allSubscriptions = [];
     let planBreakdown = [];
     
+    function toggleDropdown(element) {
+        const dropdown = element.closest('.nav-dropdown');
+        dropdown.classList.toggle('open');
+        localStorage.setItem('onlinePaymentsOpen', dropdown.classList.contains('open'));
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropdown = document.querySelector('.nav-dropdown');
+        const isOpen = localStorage.getItem('onlinePaymentsOpen') === 'true';
+        const hasActive = dropdown?.querySelector('.dropdown-item.active');
+        if (isOpen || hasActive) {
+            dropdown?.classList.add('open');
+        }
+    });
+    
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     document.getElementById('currentDate').textContent = new Date().toLocaleDateString(undefined, options);
     
@@ -208,7 +231,6 @@ require_once '../backend/session/auth_admin.php';
                 document.getElementById('totalPending').textContent = result.status_counts.total_pending;
                 document.getElementById('totalAmount').textContent = `₱${formatNumber(result.status_counts.total_amount)}`;
                 
-                // Update plan counts
                 const bronze = planBreakdown.find(p => p.plan === 'bronze');
                 const silver = planBreakdown.find(p => p.plan === 'silver');
                 const gold = planBreakdown.find(p => p.plan === 'gold');
@@ -250,14 +272,8 @@ require_once '../backend/session/auth_admin.php';
                     <div class="col-plan">
                         <span class="plan-badge ${planClass}">${capitalize(sub.plan)}</span>
                     </div>
-                    <div class="col-billing">
-                        <span class="billing-badge">${capitalize(sub.billing)}</span>
-                    </div>
                     <div class="col-amount">
                         <span class="amount">₱${formatNumber(sub.amount)}</span>
-                    </div>
-                    <div class="col-gcash">
-                        <span class="gcash-number">${escapeHtml(sub.gcash_number)}</span>
                     </div>
                     <div class="col-date">${formatDate(sub.submitted_at)}</div>
                 </div>
@@ -302,6 +318,7 @@ require_once '../backend/session/auth_admin.php';
     }
     
     function capitalize(str) {
+        if (!str) return '';
         return str.charAt(0).toUpperCase() + str.slice(1);
     }
     
