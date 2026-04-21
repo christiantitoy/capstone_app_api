@@ -657,17 +657,6 @@ body {
     }
 }
 
-/* Small button variant */
-.btn-small {
-    padding: 6px 12px;
-    font-size: 12px;
-}
-
-.btn-outline.btn-small:hover {
-    background: #3498db;
-    color: white;
-}
-
 /* Print */
 @media print {
     body { background: white; padding: 0; }

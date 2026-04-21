@@ -44,28 +44,18 @@ require_once '../backend/session/auth_admin.php';
             <a href="/admin/ui/deliveries.php" class="nav-item">
                 <i class="fas fa-truck"></i><span>Deliveries</span>
             </a>
-            
-            <!-- Online Payments Dropdown -->
-            <div class="nav-dropdown">
-                <div class="nav-item nav-dropdown-toggle" onclick="toggleDropdown(this)">
-                    <i class="fas fa-wallet"></i><span>Online Payments</span>
-                    <i class="fas fa-chevron-down dropdown-arrow"></i>
-                </div>
-                <div class="dropdown-menu">
-                    <a href="/admin/ui/process_payouts.php" class="dropdown-item">
-                        <i class="fas fa-money-bill-wave"></i><span>Process Payouts</span>
-                    </a>
-                    <a href="/admin/ui/order_payments.php" class="dropdown-item">
-                        <i class="fas fa-credit-card"></i><span>Order Payments</span>
-                    </a>
-                    <a href="/admin/ui/rider_remittances.php" class="dropdown-item">
-                        <i class="fas fa-hand-holding-usd"></i><span>Rider Remittances</span>
-                    </a>
-                    <a href="/admin/ui/seller_subscriptions.php" class="dropdown-item active">
-                        <i class="fas fa-crown"></i><span>Seller Subscriptions</span>
-                    </a>
-                </div>
-            </div>
+            <a href="/admin/ui/process_payouts.php" class="nav-item">
+                <i class="fas fa-money-bill-wave"></i><span>Process Payouts</span>
+            </a>
+            <a href="/admin/ui/order_payments.php" class="nav-item">
+                <i class="fas fa-credit-card"></i><span>Order Payments</span>
+            </a>
+            <a href="/admin/ui/rider_remittances.php" class="nav-item">
+                <i class="fas fa-hand-holding-usd"></i><span>Rider Remittances</span>
+            </a>
+            <a href="/admin/ui/seller_subscriptions.php" class="nav-item active">
+                <i class="fas fa-crown"></i><span>Seller Subscriptions</span>
+            </a>
         </nav>
         <div class="sidebar-footer">
             <div class="user-profile">
@@ -330,27 +320,6 @@ require_once '../backend/session/auth_admin.php';
         div.textContent = text;
         return div.innerHTML;
     }
-
-    // Toggle dropdown for Online Payments
-    function toggleDropdown(element) {
-        const dropdown = element.closest('.nav-dropdown');
-        dropdown.classList.toggle('open');
-        
-        // Store state in localStorage
-        const isOpen = dropdown.classList.contains('open');
-        localStorage.setItem('onlinePaymentsOpen', isOpen);
-    }
-
-    // Restore dropdown state on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        const dropdown = document.querySelector('.nav-dropdown');
-        const isOpen = localStorage.getItem('onlinePaymentsOpen') === 'true';
-        const hasActive = dropdown?.querySelector('.dropdown-item.active');
-        
-        if (isOpen || hasActive) {
-            dropdown?.classList.add('open');
-        }
-    });
     
     document.getElementById('planFilter').addEventListener('change', filterSubscriptions);
     document.getElementById('searchSubscription').addEventListener('input', filterSubscriptions);
