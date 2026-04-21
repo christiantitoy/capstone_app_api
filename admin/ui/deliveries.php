@@ -84,20 +84,11 @@ require_once '../backend/session/auth_admin.php';
             </div>
             <div class="stat-card">
                 <div class="stat-icon" style="background:#e67e2220;color:#e67e22">
-                    <i class="fas fa-clock"></i>
-                </div>
-                <div class="stat-info">
-                    <h3 id="assignedDeliveries">0</h3>
-                    <p>Assigned</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon" style="background:#3498db20;color:#3498db">
                     <i class="fas fa-motorcycle"></i>
                 </div>
                 <div class="stat-info">
-                    <h3 id="deliveringDeliveries">0</h3>
-                    <p>Delivering</p>
+                    <h3 id="activeDeliveries">0</h3>
+                    <p>Active Deliveries</p>
                 </div>
             </div>
             <div class="stat-card">
@@ -109,6 +100,15 @@ require_once '../backend/session/auth_admin.php';
                     <p>Completed</p>
                 </div>
             </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#e74c3c20;color:#e74c3c">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="cancelledDeliveries">0</h3>
+                    <p>Cancelled</p>
+                </div>
+            </div>
         </section>
 
         <!-- DELIVERIES LIST SECTION -->
@@ -118,6 +118,7 @@ require_once '../backend/session/auth_admin.php';
                 <div class="filter-container">
                     <select id="statusFilter" class="filter-select">
                         <option value="all">All Deliveries</option>
+                        <option value="active">Active Deliveries</option>
                         <option value="assigned">Assigned</option>
                         <option value="picked_up">Picked Up</option>
                         <option value="delivering">Delivering</option>
@@ -195,11 +196,19 @@ require_once '../backend/session/auth_admin.php';
             if (result.success) {
                 allDeliveries = result.data;
                 
+                // Calculate stats
+                const total = allDeliveries.length;
+                const completed = allDeliveries.filter(d => d.delivery_status === 'completed').length;
+                const cancelled = allDeliveries.filter(d => d.delivery_status === 'cancelled').length;
+                const abandoned = allDeliveries.filter(d => d.delivery_status === 'abandoned').length;
+                // Active = not completed, not cancelled, not abandoned
+                const active = total - completed - cancelled - abandoned;
+                
                 // Update stats
-                document.getElementById('totalDeliveries').textContent = result.status_counts.total;
-                document.getElementById('assignedDeliveries').textContent = result.status_counts.assigned;
-                document.getElementById('deliveringDeliveries').textContent = result.status_counts.delivering;
-                document.getElementById('completedDeliveries').textContent = result.status_counts.completed;
+                document.getElementById('totalDeliveries').textContent = total;
+                document.getElementById('activeDeliveries').textContent = active;
+                document.getElementById('completedDeliveries').textContent = completed;
+                document.getElementById('cancelledDeliveries').textContent = cancelled + abandoned;
                 
                 // Display deliveries
                 displayDeliveries(allDeliveries);
@@ -296,23 +305,6 @@ require_once '../backend/session/auth_admin.php';
         return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     }
     
-    function formatDate(dateString) {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        const today = new Date();
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
-        
-        if (date.toDateString() === today.toDateString()) {
-            return 'Today ' + date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-        } else if (date.toDateString() === yesterday.toDateString()) {
-            return 'Yesterday ' + date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-        } else {
-            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + 
-                   date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-        }
-    }
-    
     // Get status class for styling
     function getStatusClass(status) {
         switch(status) {
@@ -356,7 +348,16 @@ require_once '../backend/session/auth_admin.php';
         
         // Filter by status
         if (statusFilter !== 'all') {
-            filteredDeliveries = filteredDeliveries.filter(delivery => delivery.delivery_status === statusFilter);
+            if (statusFilter === 'active') {
+                // Active = not completed, not cancelled, not abandoned
+                filteredDeliveries = filteredDeliveries.filter(delivery => 
+                    delivery.delivery_status !== 'completed' && 
+                    delivery.delivery_status !== 'cancelled' && 
+                    delivery.delivery_status !== 'abandoned'
+                );
+            } else {
+                filteredDeliveries = filteredDeliveries.filter(delivery => delivery.delivery_status === statusFilter);
+            }
         }
         
         // Filter by search term
@@ -374,8 +375,8 @@ require_once '../backend/session/auth_admin.php';
     }
 
     function viewDelivery(id) {
-    window.location.href = `delivery_details.php?id=${id}`;
-}
+        window.location.href = `delivery_details.php?id=${id}`;
+    }
     
     // Event listeners for filters
     document.getElementById('statusFilter').addEventListener('change', filterDeliveries);
