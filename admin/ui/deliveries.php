@@ -231,7 +231,7 @@ require_once '../backend/session/auth_admin.php';
             let timelineHtml = formatTimeline(delivery);
             
             html += `
-                <div class="delivery-row">
+                <div class="delivery-row" onclick="viewDelivery(${delivery.delivery_id})">
                     <div class="col-delivery-id">#${delivery.delivery_id}</div>
                     <div class="col-order-id">
                         <span class="order-link">#${delivery.order_id}</span>
@@ -372,6 +372,10 @@ require_once '../backend/session/auth_admin.php';
         
         displayDeliveries(filteredDeliveries);
     }
+
+    function viewDelivery(id) {
+    window.location.href = `delivery_details.php?id=${id}`;
+}
     
     // Event listeners for filters
     document.getElementById('statusFilter').addEventListener('change', filterDeliveries);

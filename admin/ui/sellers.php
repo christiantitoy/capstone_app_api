@@ -42,6 +42,9 @@ require_once '../backend/session/auth_admin.php';
             <a href="/admin/ui/orders.php" class="nav-item">
                 <i class="fas fa-shopping-cart"></i><span>Orders</span>
             </a>
+            <a href="/admin/ui/deliveries.php" class="nav-item">
+                <i class="fas fa-truck"></i><span>Deliveries</span>
+            </a>
         </nav>
         <div class="sidebar-footer">
             <div class="user-profile">
