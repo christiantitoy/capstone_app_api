@@ -351,10 +351,6 @@ if (!$riderId) {
         document.getElementById('riderId').textContent = '#' + rider.id;
         document.getElementById('memberSince').textContent = new Date(rider.created_at).toLocaleDateString();
         
-        // Update total deliveries in quick stats
-        const totalDeliveries = rider.delivery_stats?.total_deliveries || 0;
-        document.getElementById('totalDeliveries').textContent = totalDeliveries;
-        
         // Update badges
         updateBadges(rider);
         
@@ -373,134 +369,16 @@ if (!$riderId) {
         
         // Account Information
         document.getElementById('accountInfo').innerHTML = `
-            <p><strong>Status:</strong> <span class="status-badge status-${rider.status}">${formatStatus(rider.status)}</span></p>
+            <p><strong>Status:</strong> <span class="status-badge status-${rider.status}">${rider.status}</span></p>
             <p><strong>Verification:</strong> <span class="status-badge status-${rider.verification_status}">${formatVerificationStatus(rider.verification_status)}</span></p>
-            ${rider.rejection_reason && rider.verification_status === 'rejected' ? 
-                `<p><strong>Rejection Reason:</strong> <span style="color: #e74c3c;">${escapeHtml(rider.rejection_reason)}</span></p>` : ''}
         `;
         
-        // Performance Stats with delivery data
-        const stats = rider.delivery_stats || {};
-        const ratings = rider.rating_stats || {};
-        
+        // Performance Stats
         document.getElementById('performanceStats').innerHTML = `
-            <div class="stats-grid-inner">
-                <div class="stat-row">
-                    <span class="stat-label">Total Deliveries:</span>
-                    <span class="stat-value-small">${stats.total_deliveries || 0}</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Completed:</span>
-                    <span class="stat-value-small" style="color: #27ae60;">${stats.completed_deliveries || 0}</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Active/Delivering:</span>
-                    <span class="stat-value-small" style="color: #e67e22;">${stats.active_deliveries || 0}</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Assigned:</span>
-                    <span class="stat-value-small" style="color: #3498db;">${stats.assigned_deliveries || 0}</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Picked Up:</span>
-                    <span class="stat-value-small" style="color: #9b59b6;">${stats.picked_up_deliveries || 0}</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Cancelled:</span>
-                    <span class="stat-value-small" style="color: #e74c3c;">${stats.cancelled_deliveries || 0}</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Avg Delivery Time:</span>
-                    <span class="stat-value-small">${stats.avg_delivery_time_minutes || 0} min</span>
-                </div>
-                <div class="stat-divider"></div>
-                <div class="stat-row">
-                    <span class="stat-label">Rating:</span>
-                    <span class="stat-value-small">
-                        ${ratings.average_rating ? 
-                            `${ratings.average_rating} / 5.0 (${ratings.total_ratings} reviews)` : 
-                            'No ratings yet'}
-                    </span>
-                </div>
-            </div>
+            <p><strong>Total Deliveries:</strong> ${rider.total_deliveries || 0}</p>
+            <p><strong>Completed Deliveries:</strong> ${rider.completed_deliveries || 0}</p>
+            <p><strong>Rating:</strong> ${rider.rating ? rider.rating + ' / 5.0' : 'N/A'}</p>
         `;
-        
-        // Add recent deliveries section if there are any
-        if (rider.recent_deliveries && rider.recent_deliveries.length > 0) {
-            addRecentDeliveriesSection(rider.recent_deliveries);
-        }
-    }
-
-    function addRecentDeliveriesSection(deliveries) {
-        // Check if section already exists
-        let recentSection = document.getElementById('recentDeliveriesSection');
-        
-        if (!recentSection) {
-            // Create new section
-            recentSection = document.createElement('div');
-            recentSection.id = 'recentDeliveriesSection';
-            recentSection.className = 'info-section';
-            recentSection.innerHTML = `
-                <div class="section-header">
-                    <h3><i class="fas fa-history"></i> Recent Deliveries</h3>
-                </div>
-                <div class="table-container">
-                    <table class="deliveries-table">
-                        <thead>
-                            <tr>
-                                <th>Order ID</th>
-                                <th>Status</th>
-                                <th>Assigned</th>
-                                <th>Completed</th>
-                                <th>Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody id="recentDeliveriesBody"></tbody>
-                    </table>
-                </div>
-            `;
-            
-            // Insert after info-grid
-            const infoGrid = document.querySelector('.info-grid');
-            infoGrid.parentNode.insertBefore(recentSection, infoGrid.nextSibling);
-        }
-        
-        const tbody = document.getElementById('recentDeliveriesBody');
-        tbody.innerHTML = deliveries.map(delivery => `
-            <tr>
-                <td><strong>#${delivery.order_id}</strong></td>
-                <td><span class="delivery-status status-${delivery.status}">${formatDeliveryStatus(delivery.status)}</span></td>
-                <td>${delivery.assigned_at ? new Date(delivery.assigned_at).toLocaleString() : '-'}</td>
-                <td>${delivery.completed_at ? new Date(delivery.completed_at).toLocaleString() : '-'}</td>
-                <td>₱${parseFloat(delivery.total_amount || 0).toFixed(2)}</td>
-            </tr>
-        `).join('');
-    }
-
-    function formatStatus(status) {
-        return status.charAt(0).toUpperCase() + status.slice(1);
-    }
-
-    function formatDeliveryStatus(status) {
-        const formats = {
-            'assigned': 'Assigned',
-            'picked_up': 'Picked Up',
-            'delivering': 'Delivering',
-            'completed': 'Completed',
-            'cancelled': 'Cancelled',
-            'abandoned': 'Abandoned'
-        };
-        return formats[status] || status;
-    }
-
-    function formatVerificationStatus(status) {
-        const formats = {
-            'complete': 'Verified',
-            'pending': 'Pending',
-            'rejected': 'Rejected',
-            'none': 'Unverified'
-        };
-        return formats[status] || status;
     }
     
     function updateBadges(rider) {

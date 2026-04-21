@@ -29,6 +29,7 @@ if (!$productId) {
         </a>
         <h1>Product Details</h1>
         <div class="header-actions">
+            <div id="actionButtons"></div>
             <button class="btn btn-outline" onclick="window.print()">
                 <i class="fas fa-print"></i> Print
             </button>
@@ -77,6 +78,13 @@ if (!$productId) {
                         <span class="label">Sold</span>
                         <span class="value" id="productSold">0</span>
                     </div>
+                </div>
+                <!-- Status Reason (if on_hold or removed) -->
+                <div id="statusReasonContainer" style="display: none; margin-top: 15px;">
+                    <p style="color: #e74c3c; font-size: 14px; margin-bottom: 5px;">
+                        <i class="fas fa-exclamation-circle"></i> <span id="statusReasonLabel">Reason:</span>
+                    </p>
+                    <p id="statusReason" style="background: #fdf0f0; padding: 10px; border-radius: 8px; font-size: 14px; color: #2c3e50;"></p>
                 </div>
             </div>
         </div>
@@ -197,12 +205,49 @@ if (!$productId) {
     <div class="image-counter" id="imageCounter">1 / 1</div>
 </div>
 
+<!-- Status Update Modal -->
+<div id="statusModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">
+                <i id="modalIcon" class="fas"></i>
+                <span id="modalTitleText">Update Product Status</span>
+            </h3>
+            <span class="close-modal" onclick="closeStatusModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div id="modalMessage"></div>
+            <form id="statusUpdateForm">
+                <input type="hidden" id="modalAction">
+                
+                <div class="form-group">
+                    <label>Product: <span id="modalProductName"></span></label>
+                </div>
+                
+                <div class="form-group" id="statusReasonGroup" style="display: none;">
+                    <label for="statusReasonInput">Reason <span class="required">*</span></label>
+                    <textarea id="statusReasonInput" class="form-control" rows="4" placeholder="Please provide a reason for this action..."></textarea>
+                    <small class="form-text">This reason will be recorded for future reference.</small>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeStatusModal()">Cancel</button>
+            <button class="btn" id="confirmStatusBtn" onclick="confirmStatusUpdate()">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Container -->
+<div id="notificationContainer"></div>
+
 <script>
     const productId = <?= $productId ?>;
     let allProductImages = [];
     let currentImageIndex = 0;
-    let currentImageType = 'product'; // 'product' or 'variant'
+    let currentImageType = 'product';
     let variantImagesList = [];
+    let currentProduct = null;
     
     // Load product details
     async function loadProductDetails() {
@@ -216,7 +261,9 @@ if (!$productId) {
             
             if (result.success) {
                 const data = result.data;
+                currentProduct = data.product;
                 displayProductDetails(data);
+                updateActionButtons(currentProduct);
                 
                 loadingState.style.display = 'none';
                 productContent.style.display = 'block';
@@ -231,6 +278,211 @@ if (!$productId) {
             errorState.style.display = 'block';
             document.getElementById('errorMessage').textContent = error.message;
         }
+    }
+    
+    function updateActionButtons(product) {
+        const actionContainer = document.getElementById('actionButtons');
+        
+        let buttons = '';
+        
+        // Show different buttons based on current status
+        if (product.status === 'on_review') {
+            buttons = `
+                <button class="btn btn-success" onclick="openStatusModal('approve')">
+                    <i class="fas fa-check-circle"></i> Approve
+                </button>
+                <button class="btn btn-warning" onclick="openStatusModal('on_hold')">
+                    <i class="fas fa-pause-circle"></i> Put On Hold
+                </button>
+                <button class="btn btn-danger" onclick="openStatusModal('remove')">
+                    <i class="fas fa-trash"></i> Remove
+                </button>
+            `;
+        } else if (product.status === 'approved') {
+            buttons = `
+                <button class="btn btn-warning" onclick="openStatusModal('on_hold')">
+                    <i class="fas fa-pause-circle"></i> Put On Hold
+                </button>
+                <button class="btn btn-danger" onclick="openStatusModal('remove')">
+                    <i class="fas fa-trash"></i> Remove
+                </button>
+            `;
+        } else if (product.status === 'on_hold') {
+            buttons = `
+                <button class="btn btn-success" onclick="openStatusModal('approve')">
+                    <i class="fas fa-check-circle"></i> Approve
+                </button>
+                <button class="btn btn-danger" onclick="openStatusModal('remove')">
+                    <i class="fas fa-trash"></i> Remove
+                </button>
+            `;
+        } else if (product.status === 'removed') {
+            buttons = `
+                <button class="btn btn-success" onclick="openStatusModal('approve')">
+                    <i class="fas fa-check-circle"></i> Restore
+                </button>
+            `;
+        }
+        
+        actionContainer.innerHTML = buttons;
+    }
+    
+    function openStatusModal(action) {
+        const modal = document.getElementById('statusModal');
+        const modalTitle = document.getElementById('modalTitleText');
+        const modalIcon = document.getElementById('modalIcon');
+        const modalMessage = document.getElementById('modalMessage');
+        const modalAction = document.getElementById('modalAction');
+        const modalProductName = document.getElementById('modalProductName');
+        const reasonGroup = document.getElementById('statusReasonGroup');
+        const reasonLabel = document.getElementById('statusReasonLabel');
+        const confirmBtn = document.getElementById('confirmStatusBtn');
+        
+        modalAction.value = action;
+        modalProductName.textContent = currentProduct.product_name;
+        
+        const actionConfig = {
+            'approve': {
+                title: currentProduct.status === 'removed' ? 'Restore Product' : 'Approve Product',
+                icon: 'fa-check-circle',
+                iconColor: '#27ae60',
+                message: currentProduct.status === 'removed' ? 
+                    'Are you sure you want to restore this product? It will be visible to customers again.' :
+                    'Are you sure you want to approve this product? It will be visible to customers.',
+                messageType: 'success',
+                showReason: false,
+                btnClass: 'btn-success',
+                btnText: currentProduct.status === 'removed' ? 'Restore Product' : 'Approve Product'
+            },
+            'on_hold': {
+                title: 'Put Product On Hold',
+                icon: 'fa-pause-circle',
+                iconColor: '#f39c12',
+                message: 'Are you sure you want to put this product on hold? It will be hidden from customers.',
+                messageType: 'warning',
+                showReason: true,
+                btnClass: 'btn-warning',
+                btnText: 'Put On Hold'
+            },
+            'remove': {
+                title: 'Remove Product',
+                icon: 'fa-trash',
+                iconColor: '#e74c3c',
+                message: 'Are you sure you want to remove this product? This action requires a reason.',
+                messageType: 'danger',
+                showReason: true,
+                btnClass: 'btn-danger',
+                btnText: 'Remove Product'
+            }
+        };
+        
+        const config = actionConfig[action];
+        
+        modalTitle.textContent = config.title;
+        modalIcon.className = `fas ${config.icon}`;
+        modalIcon.style.color = config.iconColor;
+        modalMessage.innerHTML = `
+            <div class="message-box message-${config.messageType}">
+                <i class="fas fa-info-circle"></i>
+                <p>${config.message}</p>
+            </div>
+        `;
+        
+        reasonGroup.style.display = config.showReason ? 'block' : 'none';
+        if (config.showReason) {
+            document.getElementById('statusReasonInput').value = '';
+        }
+        
+        confirmBtn.className = `btn ${config.btnClass}`;
+        confirmBtn.innerHTML = `<i class="fas fa-${config.icon.split('-')[1] || 'check'}"></i> ${config.btnText}`;
+        
+        modal.style.display = 'flex';
+        if (config.showReason) {
+            document.getElementById('statusReasonInput').focus();
+        }
+    }
+    
+    function closeStatusModal() {
+        document.getElementById('statusModal').style.display = 'none';
+        document.getElementById('statusReasonInput').value = '';
+    }
+    
+    async function confirmStatusUpdate() {
+        const action = document.getElementById('modalAction').value;
+        const reason = (action === 'on_hold' || action === 'remove') ? 
+            document.getElementById('statusReasonInput').value.trim() : '';
+        
+        if ((action === 'on_hold' || action === 'remove') && !reason) {
+            showNotification('error', 'Please provide a reason for this action.');
+            return;
+        }
+        
+        const statusMap = {
+            'approve': 'approved',
+            'on_hold': 'on_hold',
+            'remove': 'removed'
+        };
+        
+        const status = statusMap[action];
+        const confirmBtn = document.getElementById('confirmStatusBtn');
+        const originalText = confirmBtn.innerHTML;
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        
+        try {
+            const response = await fetch('../backend/products/update_product_status.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    product_id: productId,
+                    status: status,
+                    reason: reason
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                closeStatusModal();
+                showNotification('success', result.message);
+                
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                showNotification('error', 'Failed to update product status: ' + result.message);
+            }
+        } catch (error) {
+            console.error('Error updating product:', error);
+            showNotification('error', 'An error occurred while updating product status.');
+        } finally {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = originalText;
+        }
+    }
+    
+    function showNotification(type, message) {
+        const container = document.getElementById('notificationContainer');
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        
+        const icon = type === 'success' ? 'check-circle' : 'exclamation-circle';
+        
+        notification.innerHTML = `
+            <i class="fas fa-${icon}"></i>
+            <span>${message}</span>
+            <button class="notification-close" onclick="this.parentElement.remove()">&times;</button>
+        `;
+        
+        container.appendChild(notification);
+        
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, 5000);
     }
     
     function displayProductDetails(data) {
@@ -251,8 +503,16 @@ if (!$productId) {
         
         // Status badge
         const statusBadge = document.getElementById('productStatus');
-        statusBadge.textContent = product.status.replace('_', ' ');
+        statusBadge.textContent = formatStatus(product.status);
         statusBadge.className = `status-badge status-${product.status}`;
+        
+        // Show status reason if on_hold or removed
+        if ((product.status === 'on_hold' || product.status === 'removed') && product.status_reason) {
+            document.getElementById('statusReasonContainer').style.display = 'block';
+            document.getElementById('statusReasonLabel').textContent = 
+                product.status === 'on_hold' ? 'On Hold Reason:' : 'Removal Reason:';
+            document.getElementById('statusReason').textContent = product.status_reason;
+        }
         
         // Description
         document.getElementById('productDescription').innerHTML = `<p>${escapeHtml(product.product_description) || 'No description available'}</p>`;
@@ -292,6 +552,16 @@ if (!$productId) {
             document.getElementById('variantCount').textContent = `${variants.length} variant${variants.length !== 1 ? 's' : ''}`;
             displayVariants(variants);
         }
+    }
+    
+    function formatStatus(status) {
+        const formats = {
+            'approved': 'Approved',
+            'on_hold': 'On Hold',
+            'removed': 'Removed',
+            'on_review': 'On Review'
+        };
+        return formats[status] || status;
     }
     
     function displayImages(product) {
@@ -352,7 +622,6 @@ if (!$productId) {
         counter.textContent = `${currentImageIndex + 1} / ${imageArray.length}`;
         modal.style.display = 'flex';
         
-        // Hide navigation if only one image
         document.querySelector('.viewer-nav.prev').style.display = imageArray.length > 1 ? 'flex' : 'none';
         document.querySelector('.viewer-nav.next').style.display = imageArray.length > 1 ? 'flex' : 'none';
     }
@@ -373,7 +642,6 @@ if (!$productId) {
         viewerImage.src = imageArray[currentImageIndex];
         counter.textContent = `${currentImageIndex + 1} / ${imageArray.length}`;
         
-        // Also update the main image if it's a product image
         if (currentImageType === 'product') {
             const mainImg = document.getElementById('currentMainImage');
             if (mainImg) {
@@ -396,7 +664,6 @@ if (!$productId) {
                 variantName = variant.options_json_value;
             }
             
-            // Collect variant images
             const variantImgs = [];
             if (variant.image_urls_array && variant.image_urls_array.length > 0) {
                 variantImgs.push(...variant.image_urls_array);
@@ -444,28 +711,41 @@ if (!$productId) {
         return div.innerHTML;
     }
     
-    // Keyboard navigation for image viewer
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const statusModal = document.getElementById('statusModal');
+        const imageModal = document.getElementById('imageViewerModal');
+        
+        if (event.target === statusModal) {
+            closeStatusModal();
+        }
+        if (event.target === imageModal) {
+            closeImageViewer();
+        }
+    }
+    
     document.addEventListener('keydown', function(e) {
-        const modal = document.getElementById('imageViewerModal');
-        if (modal.style.display === 'flex') {
+        const imageModal = document.getElementById('imageViewerModal');
+        const statusModal = document.getElementById('statusModal');
+        
+        if (e.key === 'Escape') {
+            if (imageModal.style.display === 'flex') {
+                closeImageViewer();
+            }
+            if (statusModal.style.display === 'flex') {
+                closeStatusModal();
+            }
+        }
+        
+        if (imageModal.style.display === 'flex') {
             if (e.key === 'ArrowLeft') {
                 navigateImage(-1);
             } else if (e.key === 'ArrowRight') {
                 navigateImage(1);
-            } else if (e.key === 'Escape') {
-                closeImageViewer();
             }
         }
     });
     
-    // Close modal when clicking outside the image
-    document.getElementById('imageViewerModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeImageViewer();
-        }
-    });
-    
-    // Load details on page load
     document.addEventListener('DOMContentLoaded', loadProductDetails);
 </script>
 
