@@ -285,14 +285,11 @@ if (!$productId) {
         
         let buttons = '';
         
-        // Show different buttons based on current status
+        // Show different buttons based on current status (without On Hold)
         if (product.status === 'on_review') {
             buttons = `
                 <button class="btn btn-success" onclick="openStatusModal('approve')">
                     <i class="fas fa-check-circle"></i> Approve
-                </button>
-                <button class="btn btn-warning" onclick="openStatusModal('on_hold')">
-                    <i class="fas fa-pause-circle"></i> Put On Hold
                 </button>
                 <button class="btn btn-danger" onclick="openStatusModal('remove')">
                     <i class="fas fa-trash"></i> Remove
@@ -300,18 +297,6 @@ if (!$productId) {
             `;
         } else if (product.status === 'approved') {
             buttons = `
-                <button class="btn btn-warning" onclick="openStatusModal('on_hold')">
-                    <i class="fas fa-pause-circle"></i> Put On Hold
-                </button>
-                <button class="btn btn-danger" onclick="openStatusModal('remove')">
-                    <i class="fas fa-trash"></i> Remove
-                </button>
-            `;
-        } else if (product.status === 'on_hold') {
-            buttons = `
-                <button class="btn btn-success" onclick="openStatusModal('approve')">
-                    <i class="fas fa-check-circle"></i> Approve
-                </button>
                 <button class="btn btn-danger" onclick="openStatusModal('remove')">
                     <i class="fas fa-trash"></i> Remove
                 </button>
@@ -335,7 +320,6 @@ if (!$productId) {
         const modalAction = document.getElementById('modalAction');
         const modalProductName = document.getElementById('modalProductName');
         const reasonGroup = document.getElementById('statusReasonGroup');
-        const reasonLabel = document.getElementById('statusReasonLabel');
         const confirmBtn = document.getElementById('confirmStatusBtn');
         
         modalAction.value = action;
@@ -354,16 +338,6 @@ if (!$productId) {
                 btnClass: 'btn-success',
                 btnText: currentProduct.status === 'removed' ? 'Restore Product' : 'Approve Product'
             },
-            'on_hold': {
-                title: 'Put Product On Hold',
-                icon: 'fa-pause-circle',
-                iconColor: '#f39c12',
-                message: 'Are you sure you want to put this product on hold? It will be hidden from customers.',
-                messageType: 'warning',
-                showReason: true,
-                btnClass: 'btn-warning',
-                btnText: 'Put On Hold'
-            },
             'remove': {
                 title: 'Remove Product',
                 icon: 'fa-trash',
@@ -378,27 +352,29 @@ if (!$productId) {
         
         const config = actionConfig[action];
         
-        modalTitle.textContent = config.title;
-        modalIcon.className = `fas ${config.icon}`;
-        modalIcon.style.color = config.iconColor;
-        modalMessage.innerHTML = `
-            <div class="message-box message-${config.messageType}">
-                <i class="fas fa-info-circle"></i>
-                <p>${config.message}</p>
-            </div>
-        `;
-        
-        reasonGroup.style.display = config.showReason ? 'block' : 'none';
-        if (config.showReason) {
-            document.getElementById('statusReasonInput').value = '';
-        }
-        
-        confirmBtn.className = `btn ${config.btnClass}`;
-        confirmBtn.innerHTML = `<i class="fas fa-${config.icon.split('-')[1] || 'check'}"></i> ${config.btnText}`;
-        
-        modal.style.display = 'flex';
-        if (config.showReason) {
-            document.getElementById('statusReasonInput').focus();
+        if (config) {
+            modalTitle.textContent = config.title;
+            modalIcon.className = `fas ${config.icon}`;
+            modalIcon.style.color = config.iconColor;
+            modalMessage.innerHTML = `
+                <div class="message-box message-${config.messageType}">
+                    <i class="fas fa-info-circle"></i>
+                    <p>${config.message}</p>
+                </div>
+            `;
+            
+            reasonGroup.style.display = config.showReason ? 'block' : 'none';
+            if (config.showReason) {
+                document.getElementById('statusReasonInput').value = '';
+            }
+            
+            confirmBtn.className = `btn ${config.btnClass}`;
+            confirmBtn.innerHTML = `<i class="fas fa-${config.icon.split('-')[1] || 'check'}"></i> ${config.btnText}`;
+            
+            modal.style.display = 'flex';
+            if (config.showReason) {
+                document.getElementById('statusReasonInput').focus();
+            }
         }
     }
     
@@ -409,17 +385,16 @@ if (!$productId) {
     
     async function confirmStatusUpdate() {
         const action = document.getElementById('modalAction').value;
-        const reason = (action === 'on_hold' || action === 'remove') ? 
+        const reason = action === 'remove' ? 
             document.getElementById('statusReasonInput').value.trim() : '';
         
-        if ((action === 'on_hold' || action === 'remove') && !reason) {
-            showNotification('error', 'Please provide a reason for this action.');
+        if (action === 'remove' && !reason) {
+            showNotification('error', 'Please provide a reason for removing this product.');
             return;
         }
         
         const statusMap = {
             'approve': 'approved',
-            'on_hold': 'on_hold',
             'remove': 'removed'
         };
         
@@ -506,11 +481,10 @@ if (!$productId) {
         statusBadge.textContent = formatStatus(product.status);
         statusBadge.className = `status-badge status-${product.status}`;
         
-        // Show status reason if on_hold or removed
-        if ((product.status === 'on_hold' || product.status === 'removed') && product.status_reason) {
+        // Show status reason if removed
+        if (product.status === 'removed' && product.status_reason) {
             document.getElementById('statusReasonContainer').style.display = 'block';
-            document.getElementById('statusReasonLabel').textContent = 
-                product.status === 'on_hold' ? 'On Hold Reason:' : 'Removal Reason:';
+            document.getElementById('statusReasonLabel').textContent = 'Removal Reason:';
             document.getElementById('statusReason').textContent = product.status_reason;
         }
         

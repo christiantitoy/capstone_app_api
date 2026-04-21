@@ -666,3 +666,107 @@ body {
     }
 }
 
+/* Performance Stats Grid */
+.stats-grid-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.stat-row:last-child {
+    border-bottom: none;
+}
+
+.stat-label {
+    color: #7f8c8d;
+    font-size: 13px;
+}
+
+.stat-value-small {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 14px;
+}
+
+/* Verification Documents Section */
+.verification-docs-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.verification-info {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.verification-info p {
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.verification-info p:last-child {
+    margin-bottom: 0;
+}
+
+.document-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.doc-card {
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.doc-card:hover {
+    border-color: #3498db;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.doc-card i {
+    font-size: 32px;
+    color: #3498db;
+    margin-bottom: 10px;
+}
+
+.doc-card span {
+    display: block;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.doc-card small {
+    font-size: 11px;
+    color: #7f8c8d;
+}
+
+/* Verification Doc Status Badge */
+.badge-approved {
+    background: #27ae6020;
+    color: #27ae60;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .document-cards {
+        grid-template-columns: 1fr;
+    }
+}

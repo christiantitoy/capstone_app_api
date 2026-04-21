@@ -351,6 +351,10 @@ if (!$riderId) {
         document.getElementById('riderId').textContent = '#' + rider.id;
         document.getElementById('memberSince').textContent = new Date(rider.created_at).toLocaleDateString();
         
+        // Update total deliveries in quick stats
+        const totalDeliveries = rider.delivery_stats?.total_deliveries || 0;
+        document.getElementById('totalDeliveries').textContent = totalDeliveries;
+        
         // Update badges
         updateBadges(rider);
         
@@ -369,16 +373,123 @@ if (!$riderId) {
         
         // Account Information
         document.getElementById('accountInfo').innerHTML = `
-            <p><strong>Status:</strong> <span class="status-badge status-${rider.status}">${rider.status}</span></p>
+            <p><strong>Status:</strong> <span class="status-badge status-${rider.status}">${formatStatus(rider.status)}</span></p>
             <p><strong>Verification:</strong> <span class="status-badge status-${rider.verification_status}">${formatVerificationStatus(rider.verification_status)}</span></p>
+            ${rider.rejection_reason && rider.verification_status === 'rejected' ? 
+                `<p><strong>Rejection Reason:</strong> <span style="color: #e74c3c;">${escapeHtml(rider.rejection_reason)}</span></p>` : ''}
         `;
         
-        // Performance Stats
+        // Performance Stats with delivery data
+        const stats = rider.delivery_stats || {};
+        const completedPercent = stats.total_deliveries > 0 
+            ? ((stats.completed_deliveries / stats.total_deliveries) * 100).toFixed(1)
+            : 0;
+        
         document.getElementById('performanceStats').innerHTML = `
-            <p><strong>Total Deliveries:</strong> ${rider.total_deliveries || 0}</p>
-            <p><strong>Completed Deliveries:</strong> ${rider.completed_deliveries || 0}</p>
-            <p><strong>Rating:</strong> ${rider.rating ? rider.rating + ' / 5.0' : 'N/A'}</p>
+            <div class="stats-grid-inner">
+                <div class="stat-row">
+                    <span class="stat-label">Total Deliveries:</span>
+                    <span class="stat-value-small">${stats.total_deliveries || 0}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Completed Deliveries:</span>
+                    <span class="stat-value-small" style="color: #27ae60;">${stats.completed_deliveries || 0}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Completion Rate:</span>
+                    <span class="stat-value-small">${completedPercent}%</span>
+                </div>
+            </div>
         `;
+        
+        // Add verification documents section if exists
+        if (rider.verification) {
+            addVerificationDocumentsSection(rider.verification);
+        }
+    }
+
+    function addVerificationDocumentsSection(verification) {
+        // Check if section already exists
+        let verifySection = document.getElementById('verificationSection');
+        
+        if (!verifySection) {
+            // Create new section
+            verifySection = document.createElement('div');
+            verifySection.id = 'verificationSection';
+            verifySection.className = 'info-section';
+            verifySection.innerHTML = `
+                <div class="section-header">
+                    <h3><i class="fas fa-id-card"></i> Verification Documents</h3>
+                    <span class="badge badge-${verification.status}">${formatVerificationDocStatus(verification.status)}</span>
+                </div>
+                <div class="verification-docs-grid" id="verificationDocsGrid"></div>
+            `;
+            
+            // Insert after info-grid
+            const infoGrid = document.querySelector('.info-grid');
+            infoGrid.parentNode.insertBefore(verifySection, infoGrid.nextSibling);
+        }
+        
+        const docsGrid = document.getElementById('verificationDocsGrid');
+        docsGrid.innerHTML = `
+            <div class="verification-info">
+                <p><strong>ID Type:</strong> ${escapeHtml(verification.id_type || 'N/A')}</p>
+                <p><strong>ID Number:</strong> ${escapeHtml(verification.id_number || 'N/A')}</p>
+                <p><strong>Submitted:</strong> ${verification.submitted_at ? new Date(verification.submitted_at).toLocaleString() : 'N/A'}</p>
+                ${verification.reviewed_at ? `<p><strong>Reviewed:</strong> ${new Date(verification.reviewed_at).toLocaleString()}</p>` : ''}
+            </div>
+            <div class="document-cards">
+                ${verification.id_front_url ? `
+                    <div class="doc-card" onclick="openDocumentViewer('${verification.id_front_url}', 'ID Front')">
+                        <i class="fas fa-id-card"></i>
+                        <span>ID Front</span>
+                        <small>Click to view</small>
+                    </div>
+                ` : ''}
+                ${verification.id_back_url ? `
+                    <div class="doc-card" onclick="openDocumentViewer('${verification.id_back_url}', 'ID Back')">
+                        <i class="fas fa-id-card"></i>
+                        <span>ID Back</span>
+                        <small>Click to view</small>
+                    </div>
+                ` : ''}
+                ${verification.barangay_clearance_url ? `
+                    <div class="doc-card" onclick="openDocumentViewer('${verification.barangay_clearance_url}', 'Barangay Clearance')">
+                        <i class="fas fa-file-alt"></i>
+                        <span>Barangay Clearance</span>
+                        <small>Click to view</small>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    function openDocumentViewer(url, title) {
+        // Open document in new tab
+        window.open(url, '_blank');
+    }
+
+    function formatVerificationDocStatus(status) {
+        const formats = {
+            'pending': 'Pending Review',
+            'approved': 'Approved',
+            'rejected': 'Rejected'
+        };
+        return formats[status] || status;
+    }
+
+    function formatStatus(status) {
+        return status.charAt(0).toUpperCase() + status.slice(1);
+    }
+
+    function formatVerificationStatus(status) {
+        const formats = {
+            'complete': 'Verified',
+            'pending': 'Pending',
+            'rejected': 'Rejected',
+            'none': 'Unverified'
+        };
+        return formats[status] || status;
     }
     
     function updateBadges(rider) {
@@ -427,4 +538,4 @@ if (!$riderId) {
 </script>
 
 </body>
-</html>
+</html> 
