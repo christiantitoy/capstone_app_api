@@ -184,24 +184,41 @@ if (!$sellerId) {
     <img id="viewerBannerImage" src="" alt="Store Banner">
 </div>
 
-<!-- Rejection Reason Modal -->
-<div id="rejectionModal" class="modal">
+<!-- Status Update Modal (Approve/Reject) -->
+<div id="statusModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3><i class="fas fa-times-circle" style="color: #e74c3c;"></i> Reject Seller</h3>
-            <span class="close-modal" onclick="closeRejectionModal()">&times;</span>
+            <h3 id="modalTitle">
+                <i id="modalIcon" class="fas"></i>
+                <span id="modalTitleText">Update Seller Status</span>
+            </h3>
+            <span class="close-modal" onclick="closeStatusModal()">&times;</span>
         </div>
         <div class="modal-body">
-            <p>Please provide a reason for rejecting this seller:</p>
-            <textarea id="rejectionReasonInput" rows="4" placeholder="Enter rejection reason..."></textarea>
-            <p class="modal-note">This reason will be recorded and the seller will be notified.</p>
+            <div id="modalMessage"></div>
+            <form id="statusUpdateForm">
+                <input type="hidden" id="modalAction">
+                
+                <div class="form-group">
+                    <label>Seller: <span id="modalSellerName"></span></label>
+                </div>
+                
+                <div class="form-group" id="rejectionReasonGroup" style="display: none;">
+                    <label for="rejectionReasonInput">Rejection Reason <span class="required">*</span></label>
+                    <textarea id="rejectionReasonInput" class="form-control" rows="4" placeholder="Please provide a reason for rejecting this seller..."></textarea>
+                    <small class="form-text">This reason will be recorded and the seller will be notified.</small>
+                </div>
+            </form>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="closeRejectionModal()">Cancel</button>
-            <button class="btn btn-danger" onclick="confirmReject()">Confirm Rejection</button>
+            <button class="btn btn-secondary" onclick="closeStatusModal()">Cancel</button>
+            <button class="btn" id="confirmStatusBtn" onclick="confirmStatusUpdate()">Confirm</button>
         </div>
     </div>
 </div>
+
+<!-- Notification Container -->
+<div id="notificationContainer"></div>
 
 <script>
     const sellerId = <?= $sellerId ?>;
@@ -242,20 +259,155 @@ if (!$sellerId) {
     function updateActionButtons(seller) {
         const actionContainer = document.getElementById('actionButtons');
         
-        // Only show buttons if seller is pending
+        // Show appropriate buttons based on status
         if (seller.approval_status === 'pending') {
             actionContainer.innerHTML = `
-                <button class="btn btn-success" onclick="approveSeller()">
-                    <i class="fas fa-check-circle"></i> Approve
+                <button class="btn btn-success" onclick="openStatusModal('approve')">
+                    <i class="fas fa-check-circle"></i> Approve Seller
                 </button>
-                <button class="btn btn-danger" onclick="openRejectionModal()">
-                    <i class="fas fa-times-circle"></i> Reject
+                <button class="btn btn-danger" onclick="openStatusModal('reject')">
+                    <i class="fas fa-times-circle"></i> Reject Seller
+                </button>
+            `;
+        } else if (seller.approval_status === 'approved') {
+            actionContainer.innerHTML = `
+                <button class="btn btn-danger" onclick="openStatusModal('reject')">
+                    <i class="fas fa-times-circle"></i> Reject Seller
+                </button>
+            `;
+        } else if (seller.approval_status === 'rejected') {
+            actionContainer.innerHTML = `
+                <button class="btn btn-success" onclick="openStatusModal('approve')">
+                    <i class="fas fa-check-circle"></i> Approve Seller
                 </button>
             `;
         } else {
-            // Hide buttons for approved or rejected sellers
             actionContainer.innerHTML = '';
         }
+    }
+    
+    function openStatusModal(action) {
+        const modal = document.getElementById('statusModal');
+        const modalTitle = document.getElementById('modalTitleText');
+        const modalIcon = document.getElementById('modalIcon');
+        const modalMessage = document.getElementById('modalMessage');
+        const modalAction = document.getElementById('modalAction');
+        const modalSellerName = document.getElementById('modalSellerName');
+        const rejectionGroup = document.getElementById('rejectionReasonGroup');
+        const confirmBtn = document.getElementById('confirmStatusBtn');
+        
+        modalAction.value = action;
+        modalSellerName.textContent = currentSeller.full_name;
+        
+        if (action === 'approve') {
+            modalTitle.textContent = 'Approve Seller';
+            modalIcon.className = 'fas fa-check-circle';
+            modalIcon.style.color = '#27ae60';
+            modalMessage.innerHTML = `
+                <div class="message-box message-success">
+                    <i class="fas fa-info-circle"></i>
+                    <p>Are you sure you want to approve this seller? They will be able to start selling on the platform immediately.</p>
+                </div>
+            `;
+            rejectionGroup.style.display = 'none';
+            confirmBtn.className = 'btn btn-success';
+            confirmBtn.innerHTML = '<i class="fas fa-check"></i> Approve Seller';
+        } else {
+            modalTitle.textContent = 'Reject Seller';
+            modalIcon.className = 'fas fa-times-circle';
+            modalIcon.style.color = '#e74c3c';
+            modalMessage.innerHTML = `
+                <div class="message-box message-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Are you sure you want to reject this seller? This action requires a rejection reason.</p>
+                </div>
+            `;
+            rejectionGroup.style.display = 'block';
+            document.getElementById('rejectionReasonInput').value = '';
+            confirmBtn.className = 'btn btn-danger';
+            confirmBtn.innerHTML = '<i class="fas fa-times"></i> Reject Seller';
+        }
+        
+        modal.style.display = 'flex';
+        document.getElementById('rejectionReasonInput').focus();
+    }
+    
+    function closeStatusModal() {
+        document.getElementById('statusModal').style.display = 'none';
+        document.getElementById('rejectionReasonInput').value = '';
+    }
+    
+    async function confirmStatusUpdate() {
+        const action = document.getElementById('modalAction').value;
+        const status = action === 'approve' ? 'approved' : 'rejected';
+        const reason = action === 'reject' ? document.getElementById('rejectionReasonInput').value.trim() : '';
+        
+        if (action === 'reject' && !reason) {
+            showNotification('error', 'Please provide a reason for rejection.');
+            return;
+        }
+        
+        const confirmBtn = document.getElementById('confirmStatusBtn');
+        const originalText = confirmBtn.innerHTML;
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        
+        try {
+            const response = await fetch('../backend/sellers/update_seller_status.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    seller_id: sellerId,
+                    status: status,
+                    reason: reason
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                closeStatusModal();
+                showNotification('success', `Seller ${status} successfully!`);
+                
+                // Reload the page after a short delay
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                showNotification('error', 'Failed to update seller status: ' + result.message);
+            }
+        } catch (error) {
+            console.error('Error updating seller:', error);
+            showNotification('error', 'An error occurred while updating seller status. Please try again.');
+        } finally {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = originalText;
+        }
+    }
+    
+    function showNotification(type, message) {
+        const container = document.getElementById('notificationContainer');
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        
+        const icon = type === 'success' ? 'check-circle' : 'exclamation-circle';
+        
+        notification.innerHTML = `
+            <i class="fas fa-${icon}"></i>
+            <span>${message}</span>
+            <button class="notification-close" onclick="this.parentElement.remove()">&times;</button>
+        `;
+        
+        container.appendChild(notification);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, 5000);
     }
     
     function displaySellerDetails(data) {
@@ -355,62 +507,6 @@ if (!$sellerId) {
         emailBadge.className = `badge badge-email ${seller.is_confirmed ? 'badge-confirmed' : 'badge-unconfirmed'}`;
     }
     
-    function approveSeller() {
-        if (confirm('Are you sure you want to approve this seller?')) {
-            updateSellerStatus('approved');
-        }
-    }
-    
-    function openRejectionModal() {
-        const modal = document.getElementById('rejectionModal');
-        modal.style.display = 'flex';  // Use flex instead of block
-        document.getElementById('rejectionReasonInput').value = '';
-        document.getElementById('rejectionReasonInput').focus();
-    }
-    
-    function closeRejectionModal() {
-        document.getElementById('rejectionModal').style.display = 'none';
-    }
-    
-    function confirmReject() {
-        const reason = document.getElementById('rejectionReasonInput').value.trim();
-        if (!reason) {
-            alert('Please provide a reason for rejection.');
-            return;
-        }
-        updateSellerStatus('rejected', reason);
-    }
-    
-    async function updateSellerStatus(status, reason = '') {
-        try {
-            const response = await fetch('../backend/sellers/update_seller_status.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    seller_id: sellerId,
-                    status: status,
-                    reason: reason
-                })
-            });
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                alert(`Seller ${status} successfully!`);
-                closeRejectionModal();
-                // Reload the page to show updated status
-                location.reload();
-            } else {
-                alert('Failed to update seller status: ' + result.message);
-            }
-        } catch (error) {
-            console.error('Error updating seller:', error);
-            alert('Error updating seller status. Please try again.');
-        }
-    }
-    
     function displayEmployees(employees) {
         const employeeCount = document.getElementById('employeeCount');
         const tbody = document.getElementById('employeesBody');
@@ -473,18 +569,12 @@ if (!$sellerId) {
     }
     
     // Close modal when clicking outside
-    document.getElementById('bannerViewerModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeBannerViewer();
-        }
-    });
-    
-   window.onclick = function(event) {
-        const modal = document.getElementById('rejectionModal');
+    window.onclick = function(event) {
+        const statusModal = document.getElementById('statusModal');
         const bannerModal = document.getElementById('bannerViewerModal');
         
-        if (event.target === modal) {
-            closeRejectionModal();
+        if (event.target === statusModal) {
+            closeStatusModal();
         }
         if (event.target === bannerModal) {
             closeBannerViewer();
@@ -494,11 +584,11 @@ if (!$sellerId) {
     // Update keyboard navigation
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
-            const rejectionModal = document.getElementById('rejectionModal');
+            const statusModal = document.getElementById('statusModal');
             const bannerModal = document.getElementById('bannerViewerModal');
             
-            if (rejectionModal.style.display === 'flex') {
-                closeRejectionModal();
+            if (statusModal.style.display === 'flex') {
+                closeStatusModal();
             }
             if (bannerModal.style.display === 'flex') {
                 closeBannerViewer();
