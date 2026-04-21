@@ -34,8 +34,19 @@ if ($status === 'rejected' && empty($reason)) {
 try {
     $conn->beginTransaction();
     
+    // Get the order_id from the payment proof
+    $stmt = $conn->prepare("SELECT order_id FROM payment_proofs WHERE id = ?");
+    $stmt->execute([$proofId]);
+    $paymentProof = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$paymentProof) {
+        throw new Exception('Payment proof not found');
+    }
+    
+    $orderId = $paymentProof['order_id'];
+    
     if ($status === 'rejected') {
-        // Update with rejection reason
+        // Update payment proof with rejection reason
         $stmt = $conn->prepare("
             UPDATE payment_proofs 
             SET status = ?, 
@@ -43,8 +54,19 @@ try {
             WHERE id = ?
         ");
         $stmt->execute([$status, $reason, $proofId]);
+        
+        // Update order status to 'cancelled'
+        $stmt = $conn->prepare("
+            UPDATE orders 
+            SET status = 'cancelled', 
+                updated_at = NOW()
+            WHERE id = ?
+        ");
+        $stmt->execute([$orderId]);
+        
+        $orderMessage = "Order #{$orderId} has been cancelled";
     } else {
-        // Update without reason
+        // Update payment proof (clear rejection reason if verified)
         $stmt = $conn->prepare("
             UPDATE payment_proofs 
             SET status = ?, 
@@ -52,13 +74,25 @@ try {
             WHERE id = ?
         ");
         $stmt->execute([$status, $proofId]);
+        
+        // Update order status to 'pending' (not pending_payment)
+        $stmt = $conn->prepare("
+            UPDATE orders 
+            SET status = 'pending', 
+                updated_at = NOW()
+            WHERE id = ?
+        ");
+        $stmt->execute([$orderId]);
+        
+        $orderMessage = "Order #{$orderId} status updated to pending";
     }
     
     $conn->commit();
     
     echo json_encode([
         'success' => true,
-        'message' => "Payment proof {$status} successfully!"
+        'message' => "Payment proof {$status} successfully! {$orderMessage}",
+        'order_id' => $orderId
     ]);
     
 } catch (PDOException $e) {
@@ -66,6 +100,12 @@ try {
     echo json_encode([
         'success' => false,
         'message' => 'Database error: ' . $e->getMessage()
+    ]);
+} catch (Exception $e) {
+    $conn->rollBack();
+    echo json_encode([
+        'success' => false,
+        'message' => 'Error: ' . $e->getMessage()
     ]);
 } finally {
     $conn = null;
