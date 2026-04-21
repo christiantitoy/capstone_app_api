@@ -277,16 +277,20 @@ if (!$sellerId) {
     function openMarkPaidModal() {
         document.getElementById('modalSellerName').textContent = sellerInfo.seller_name;
         document.getElementById('modalPayoutAmount').textContent = `₱${formatNumber(sellerInfo.unpaid_amount)}`;
-        document.getElementById('markPaidModal').style.display = 'flex';
         
+        const modal = document.getElementById('markPaidModal');
+        modal.style.display = 'flex';  // ← keep this, it already works
+        document.body.style.overflow = 'hidden'; // prevent background scroll
+
         // Reset form
         document.getElementById('gcashNumber').value = '';
         removeImage(null);
         uploadedProofUrl = '';
     }
-    
+
     function closeMarkPaidModal() {
         document.getElementById('markPaidModal').style.display = 'none';
+        document.body.style.overflow = ''; // restore scroll
     }
     
     function handleFileSelect(event) {
