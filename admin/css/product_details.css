@@ -524,9 +524,172 @@ body {
     gap: 10px;
 }
 
-.btn btn-danger {
+/* Remove Button Style */
+.btn-danger {
     background: #e74c3c;
     color: white;
+    border: none;
+}
+
+.btn-danger:hover {
+    background: #c0392b;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+}
+
+.btn-danger:active {
+    transform: translateY(0);
+}
+
+/* Success Button (Approve/Restore) */
+.btn-success {
+    background: #27ae60;
+    color: white;
+    border: none;
+}
+
+.btn-success:hover {
+    background: #229954;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(39, 174, 96, 0.3);
+}
+
+.btn-success:active {
+    transform: translateY(0);
+}
+
+/* Secondary Button (Cancel) */
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+    border: none;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+}
+
+/* Modal Remove Confirmation Specific Styles */
+#statusModal .modal-header .fa-trash {
+    color: #e74c3c;
+}
+
+#statusModal .modal-header .fa-check-circle {
+    color: #27ae60;
+}
+
+/* Message Box for Remove Confirmation */
+.message-danger {
+    background: #fdf0f0;
+    border-left: 4px solid #e74c3c;
+    border-radius: 8px;
+}
+
+.message-danger i {
+    color: #e74c3c;
+}
+
+.message-danger p {
+    color: #2c3e50;
+}
+
+/* Message Box for Approve/Restore */
+.message-success {
+    background: #e8f8f0;
+    border-left: 4px solid #27ae60;
+    border-radius: 8px;
+}
+
+.message-success i {
+    color: #27ae60;
+}
+
+.message-success p {
+    color: #2c3e50;
+}
+
+/* Textarea styling for removal reason */
+#statusReasonInput {
+    border-color: #e74c3c;
+}
+
+#statusReasonInput:focus {
+    border-color: #e74c3c;
+    box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+}
+
+/* Required field indicator */
+.required {
+    color: #e74c3c;
+    font-weight: 600;
+}
+
+/* Modal button hover states */
+.modal-footer .btn-danger:hover {
+    background: #c0392b;
+}
+
+.modal-footer .btn-success:hover {
+    background: #229954;
+}
+
+.modal-footer .btn-secondary:hover {
+    background: #7f8c8d;
+}
+
+/* Disabled button state */
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Loading spinner in button */
+.btn .fa-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Action buttons container */
+.header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+#actionButtons {
+    display: flex;
+    gap: 10px;
+}
+
+/* Status reason container styling */
+#statusReasonContainer {
+    background: #fdf0f0;
+    padding: 12px 15px;
+    border-radius: 8px;
+    border-left: 4px solid #e74c3c;
+    margin-top: 15px !important;
+}
+
+#statusReasonContainer p:first-child {
+    color: #e74c3c;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+#statusReason {
+    background: white !important;
+    padding: 12px !important;
+    border-radius: 6px !important;
+    font-size: 14px;
+    color: #2c3e50;
+    line-height: 1.5;
+    border: 1px solid #f5c6cb;
 }
 
 /* Print */
