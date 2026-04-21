@@ -275,23 +275,33 @@ if (!$sellerId) {
     }
     
     function openMarkPaidModal() {
-        document.getElementById('modalSellerName').textContent = sellerInfo.seller_name;
-        document.getElementById('modalPayoutAmount').textContent = `₱${formatNumber(sellerInfo.unpaid_amount)}`;
-        
-        const modal = document.getElementById('markPaidModal');
-        modal.style.display = 'flex';  // ← keep this, it already works
-        document.body.style.overflow = 'hidden'; // prevent background scroll
+    // Set modal content
+    document.getElementById('modalSellerName').textContent = sellerInfo.seller_name;
+    document.getElementById('modalPayoutAmount').textContent = `₱${formatNumber(sellerInfo.unpaid_amount)}`;
+    
+    // Reset form
+    document.getElementById('gcashNumber').value = '';
+    removeImage(null);
+    uploadedProofUrl = '';
+    
+    // Show modal
+    const modal = document.getElementById('markPaidModal');
+    modal.style.display = 'flex';
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
 
-        // Reset form
-        document.getElementById('gcashNumber').value = '';
-        removeImage(null);
-        uploadedProofUrl = '';
-    }
-
-    function closeMarkPaidModal() {
-        document.getElementById('markPaidModal').style.display = 'none';
-        document.body.style.overflow = ''; // restore scroll
-    }
+function closeMarkPaidModal() {
+    const modal = document.getElementById('markPaidModal');
+    modal.style.display = 'none';
+    modal.classList.remove('show');
+    document.body.style.overflow = '';
+    
+    // Reset form when closing
+    document.getElementById('gcashNumber').value = '';
+    removeImage(null);
+    uploadedProofUrl = '';
+}
     
     function handleFileSelect(event) {
     const file = event.target.files[0];
@@ -477,11 +487,11 @@ if (!$sellerId) {
     
     // Close modal when clicking outside
     window.onclick = function(event) {
-        const modal = document.getElementById('markPaidModal');
-        if (event.target === modal) {
-            closeMarkPaidModal();
-        }
+    const modal = document.getElementById('markPaidModal');
+    if (event.target === modal) {
+        closeMarkPaidModal();
     }
+}
     
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
@@ -504,6 +514,13 @@ if (!$sellerId) {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('markPaidModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('show');
     }
     
     document.addEventListener('DOMContentLoaded', loadPayoutDetails);

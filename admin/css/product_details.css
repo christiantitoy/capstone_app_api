@@ -1255,9 +1255,9 @@ body {
     letter-spacing: 1px;
 }
 
-/* Modal Styles */
+/* Modal Styles - Hidden by default */
 .modal {
-    display: none;
+    display: none !important; /* Force hide by default */
     position: fixed;
     top: 0;
     left: 0;
@@ -1267,12 +1267,21 @@ body {
     z-index: 10000;
     justify-content: center;
     align-items: center;
-    padding: 20px;
 }
 
 .modal.show {
-    display: flex;
+    display: flex !important;
 }
+
+/* When modal is opened via JavaScript inline style */
+.modal[style*="display: flex"] {
+    display: flex !important;
+}
+
+.modal[style*="display: none"] {
+    display: none !important;
+}
+
 
 .modal-content {
     background: white;
