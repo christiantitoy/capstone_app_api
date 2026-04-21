@@ -136,10 +136,9 @@ require_once '../backend/session/auth_admin.php';
                 <div class="delivery_holder">
                     <div class="delivery-table-header">
                         <div class="col-delivery-id">Delivery ID</div>
-                        <div class="col-order-id">Order ID</div>
+                        <div class="col-order-id">Order #</div>
                         <div class="col-rider">Rider</div>
                         <div class="col-buyer">Buyer</div>
-                        <div class="col-amount">Amount</div>
                         <div class="col-status">Status</div>
                         <div class="col-timeline">Timeline</div>
                     </div>
@@ -251,7 +250,6 @@ require_once '../backend/session/auth_admin.php';
                             <small>${escapeHtml(delivery.buyer_email || 'No email')}</small>
                         </div>
                     </div>
-                    <div class="col-amount">₱${parseFloat(delivery.order_total || 0).toFixed(2)}</div>
                     <div class="col-status">
                         <span class="status-badge ${statusClass}">${statusText}</span>
                     </div>
@@ -270,32 +268,49 @@ require_once '../backend/session/auth_admin.php';
         let timeline = [];
         
         if (delivery.assigned_at) {
-            timeline.push(`<span class="timeline-item"><i class="fas fa-user-plus"></i> ${formatDate(delivery.assigned_at)}</span>`);
+            timeline.push(`<span class="timeline-item"><i class="fas fa-user-plus"></i> ${formatTime(delivery.assigned_at)}</span>`);
         }
         if (delivery.picked_up_at) {
-            timeline.push(`<span class="timeline-item"><i class="fas fa-box"></i> ${formatDate(delivery.picked_up_at)}</span>`);
+            timeline.push(`<span class="timeline-item"><i class="fas fa-box"></i> ${formatTime(delivery.picked_up_at)}</span>`);
         }
         if (delivery.completed_at) {
-            timeline.push(`<span class="timeline-item completed"><i class="fas fa-check-circle"></i> ${formatDate(delivery.completed_at)}</span>`);
+            timeline.push(`<span class="timeline-item completed"><i class="fas fa-check-circle"></i> ${formatTime(delivery.completed_at)}</span>`);
         }
         if (delivery.cancelled_at) {
-            timeline.push(`<span class="timeline-item cancelled"><i class="fas fa-times-circle"></i> ${formatDate(delivery.cancelled_at)}</span>`);
+            timeline.push(`<span class="timeline-item cancelled"><i class="fas fa-times-circle"></i> ${formatTime(delivery.cancelled_at)}</span>`);
         }
         if (delivery.abandoned_at) {
-            timeline.push(`<span class="timeline-item abandoned"><i class="fas fa-exclamation-circle"></i> ${formatDate(delivery.abandoned_at)}</span>`);
+            timeline.push(`<span class="timeline-item abandoned"><i class="fas fa-exclamation-circle"></i> ${formatTime(delivery.abandoned_at)}</span>`);
         }
         
         if (timeline.length === 0) {
-            return '<span class="timeline-item">No timeline yet</span>';
+            return '<span class="timeline-item">—</span>';
         }
         
         return timeline.slice(0, 2).join('');
     }
     
+    function formatTime(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    }
+    
     function formatDate(dateString) {
         if (!dateString) return '';
         const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        
+        if (date.toDateString() === today.toDateString()) {
+            return 'Today ' + date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        } else if (date.toDateString() === yesterday.toDateString()) {
+            return 'Yesterday ' + date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        } else {
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + 
+                   date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        }
     }
     
     // Get status class for styling
