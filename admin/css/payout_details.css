@@ -593,3 +593,303 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: #555;
 }
+
+/* Modal Styles - Hidden by default */
+.modal {
+    display: none !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal.show {
+    display: flex !important;
+}
+
+.modal[style*="display: flex"] {
+    display: flex !important;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    animation: modalSlideIn 0.3s ease;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    padding: 20px 25px;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    font-size: 18px;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+}
+
+.close-modal {
+    font-size: 24px;
+    cursor: pointer;
+    color: #7f8c8d;
+    transition: color 0.2s;
+    background: none;
+    border: none;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-modal:hover {
+    color: #2c3e50;
+}
+
+.modal-body {
+    padding: 25px;
+}
+
+.modal-footer {
+    padding: 20px 25px;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Larger Modal */
+.modal-lg {
+    max-width: 550px;
+}
+
+/* Payout Summary in Modal */
+.payout-summary-modal {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.payout-summary-modal p {
+    margin-bottom: 8px;
+}
+
+.payout-summary-modal p:last-child {
+    margin-bottom: 0;
+}
+
+/* Form Styles */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.form-text {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+    color: #7f8c8d;
+}
+
+.required {
+    color: #e74c3c;
+}
+
+/* File Upload Area */
+.file-upload-area {
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.3s, background 0.3s;
+    position: relative;
+    min-height: 150px;
+    background: #fafafa;
+}
+
+.file-upload-area:hover {
+    border-color: #3498db;
+    background: #f0f8ff;
+}
+
+#uploadPlaceholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+#uploadPlaceholder i {
+    font-size: 48px;
+    color: #3498db;
+}
+
+#uploadPlaceholder p {
+    margin: 0;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+#uploadPlaceholder small {
+    color: #7f8c8d;
+}
+
+#imagePreview {
+    position: relative;
+    width: 100%;
+}
+
+#imagePreview img {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 8px;
+    object-fit: contain;
+}
+
+.btn-remove-image {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: background 0.3s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.btn-remove-image:hover {
+    background: #c0392b;
+}
+
+/* GCash Number Input */
+#gcashNumber {
+    font-family: monospace;
+    letter-spacing: 1px;
+}
+
+/* Secondary Button */
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+    border: none;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+}
+
+/* Disabled button state */
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Loading spinner in button */
+.btn .fa-spinner {
+    animation: spin 1s linear infinite;
+}
+
+/* Message Boxes */
+.message-box {
+    padding: 15px;
+    border-radius: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.message-success {
+    background: #27ae6020;
+    border-left: 4px solid #27ae60;
+}
+
+.message-success i {
+    color: #27ae60;
+    font-size: 20px;
+}
+
+.message-danger {
+    background: #e74c3c20;
+    border-left: 4px solid #e74c3c;
+}
+
+.message-danger i {
+    color: #e74c3c;
+    font-size: 20px;
+}
+
+.message-box p {
+    margin: 0;
+    flex: 1;
+    color: #2c3e50;
+    line-height: 1.5;
+}
+
+/* Action buttons container */
+#actionButtons {
+    display: flex;
+    gap: 10px;
+}
