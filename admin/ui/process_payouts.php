@@ -67,7 +67,7 @@ require_once '../backend/session/auth_admin.php';
         <header class="main-header">
             <div class="header-left">
                 <h1>Process Payouts</h1>
-                <p>GCash - Rider Delivery payments ready for seller payout</p>
+                <p>GCash - Rider Delivery payments pending for seller payout</p>
             </div>
             <div class="header-right">
                 <div class="date-display" id="currentDate"></div>
@@ -87,11 +87,11 @@ require_once '../backend/session/auth_admin.php';
             </div>
             <div class="stat-card">
                 <div class="stat-icon" style="background:#e67e2220;color:#e67e22">
-                    <i class="fas fa-shopping-cart"></i>
+                    <i class="fas fa-box"></i>
                 </div>
                 <div class="stat-info">
-                    <h3 id="totalOrders">0</h3>
-                    <p>Completed Orders</p>
+                    <h3 id="totalItems">0</h3>
+                    <p>Total Items Sold</p>
                 </div>
             </div>
             <div class="stat-card">
@@ -108,7 +108,7 @@ require_once '../backend/session/auth_admin.php';
         <!-- SELLER PAYOUTS LIST -->
         <div class="full-width-section payouts-list">
             <div class="section-header">
-                <h2>Seller Payouts Summary</h2>
+                <h2>Pending Seller Payouts</h2>
                 <div class="filter-container">
                     <div class="search-container">
                         <input type="text" class="search-field" id="searchSeller" placeholder="Search seller...">
@@ -125,7 +125,7 @@ require_once '../backend/session/auth_admin.php';
                     <div class="payout-table-header">
                         <div class="col-seller">Seller</div>
                         <div class="col-store">Store</div>
-                        <div class="col-orders">Orders</div>
+                        <div class="col-items">Items</div>
                         <div class="col-amount">Payout Amount</div>
                         <div class="col-status">Status</div>
                         <div class="col-action">Action</div>
@@ -138,11 +138,11 @@ require_once '../backend/session/auth_admin.php';
             </div>
         </div>
 
-        <!-- ORDER ITEMS DETAILS -->
-        <div class="full-width-section order-items-section" id="orderItemsSection" style="display: none;">
+        <!-- SOLD ITEMS DETAILS -->
+        <div class="full-width-section order-items-section" id="soldItemsSection" style="display: none;">
             <div class="section-header">
-                <h2>Order Items - <span id="selectedSellerName"></span></h2>
-                <button class="btn btn-outline" onclick="closeOrderItems()">
+                <h2>Sold Items - <span id="selectedSellerName"></span></h2>
+                <button class="btn btn-outline" onclick="closeSoldItems()">
                     <i class="fas fa-times"></i> Close
                 </button>
             </div>
@@ -150,16 +150,20 @@ require_once '../backend/session/auth_admin.php';
             <div class="table-container">
                 <div class="order-items-holder">
                     <div class="order-items-header">
-                        <div class="col-order-id">Order ID</div>
+                        <div class="col-order-id">Order #</div>
                         <div class="col-product">Product</div>
                         <div class="col-qty">Qty</div>
                         <div class="col-price">Unit Price</div>
                         <div class="col-total">Total</div>
-                        <div class="col-date">Order Date</div>
+                        <div class="col-date">Sold Date</div>
                     </div>
                     
-                    <div class="table-body" id="orderItemsBody">
+                    <div class="table-body" id="soldItemsBody">
                         <!-- Dynamic content -->
+                    </div>
+                    
+                    <div class="sold-items-total" id="soldItemsTotal">
+                        <!-- Total will be displayed here -->
                     </div>
                 </div>
             </div>
@@ -192,11 +196,14 @@ require_once '../backend/session/auth_admin.php';
     </div>
 </div>
 
+<!-- Notification Container -->
+<div id="notificationContainer"></div>
+
 <script src="/admin/js/logout.js"></script>
 
 <script>
     let allSellerSummary = [];
-    let allItems = [];
+    let allSoldItems = [];
     
     // Display current date
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
@@ -210,11 +217,11 @@ require_once '../backend/session/auth_admin.php';
             
             if (result.success) {
                 allSellerSummary = result.data.seller_summary;
-                allItems = result.data.items;
+                allSoldItems = result.data.sold_items;
                 
                 // Update stats
                 document.getElementById('totalSellers').textContent = result.data.totals.total_sellers;
-                document.getElementById('totalOrders').textContent = result.data.totals.total_orders;
+                document.getElementById('totalItems').textContent = result.data.totals.total_items;
                 document.getElementById('totalPayout').textContent = `₱${formatNumber(result.data.totals.total_payout)}`;
                 
                 // Display payouts
@@ -233,12 +240,14 @@ require_once '../backend/session/auth_admin.php';
         const tbody = document.getElementById('payoutsTableBody');
         
         if (sellers.length === 0) {
-            tbody.innerHTML = '<div class="no-data">No payouts pending</div>';
+            tbody.innerHTML = '<div class="no-data">No pending payouts</div>';
             return;
         }
         
         let html = '';
         sellers.forEach(seller => {
+            const statusClass = seller.paid_status === 'Paid' ? 'status-processed' : 'status-pending';
+            
             html += `
                 <div class="payout-row">
                     <div class="col-seller">
@@ -252,21 +261,21 @@ require_once '../backend/session/auth_admin.php';
                     <div class="col-store">
                         <span>${escapeHtml(seller.store_name || 'No store')}</span>
                     </div>
-                    <div class="col-orders">
-                        <span class="order-count">${seller.total_orders}</span>
+                    <div class="col-items">
+                        <span class="item-count">${seller.total_items}</span>
                     </div>
                     <div class="col-amount">
-                        <span class="payout-amount">₱${formatNumber(seller.total_sales)}</span>
+                        <span class="payout-amount">₱${formatNumber(seller.total_amount)}</span>
                     </div>
                     <div class="col-status">
-                        <span class="status-badge status-pending">Pending</span>
+                        <span class="status-badge ${statusClass}">${seller.paid_status}</span>
                     </div>
                     <div class="col-action">
-                        <button class="btn-view-items" onclick="viewOrderItems(${seller.seller_id})">
+                        <button class="btn-view-items" onclick="viewSoldItems(${seller.seller_id})">
                             <i class="fas fa-eye"></i> View Items
                         </button>
-                        <button class="btn-process" onclick="processPayout(${seller.seller_id})">
-                            <i class="fas fa-check"></i> Process
+                        <button class="btn-process" onclick="markAsPaid(${seller.seller_id})">
+                            <i class="fas fa-check"></i> Mark Paid
                         </button>
                     </div>
                 </div>
@@ -276,21 +285,21 @@ require_once '../backend/session/auth_admin.php';
         tbody.innerHTML = html;
     }
     
-    function viewOrderItems(sellerId) {
+    function viewSoldItems(sellerId) {
         const seller = allSellerSummary.find(s => s.seller_id === sellerId);
         if (!seller) return;
         
         document.getElementById('selectedSellerName').textContent = seller.seller_name;
         
-        const itemsBody = document.getElementById('orderItemsBody');
-        const items = seller.items;
+        const itemsBody = document.getElementById('soldItemsBody');
+        const items = seller.sold_items;
         
         let html = '';
         items.forEach(item => {
             html += `
                 <div class="order-item-row">
                     <div class="col-order-id">
-                        <a href="order_details.php?id=${item.order_id}" class="order-link">#${item.order_id}</a>
+                        <a href="order_details.php?id=${item.orders_id}" class="order-link">#${item.orders_id}</a>
                     </div>
                     <div class="col-product">
                         <div class="product-info">
@@ -299,42 +308,98 @@ require_once '../backend/session/auth_admin.php';
                     </div>
                     <div class="col-qty">${item.quantity}</div>
                     <div class="col-price">₱${formatNumber(item.unit_price)}</div>
-                    <div class="col-total">₱${formatNumber(item.total_price)}</div>
-                    <div class="col-date">${formatDate(item.order_date)}</div>
+                    <div class="col-total">₱${formatNumber(item.item_total)}</div>
+                    <div class="col-date">${formatDate(item.sold_date)}</div>
                 </div>
             `;
         });
         
         itemsBody.innerHTML = html;
-        document.getElementById('orderItemsSection').style.display = 'block';
+        
+        // Show total
+        document.getElementById('soldItemsTotal').innerHTML = `
+            <div class="total-row">
+                <span>Total for ${escapeHtml(seller.seller_name)}:</span>
+                <strong>₱${formatNumber(seller.total_amount)}</strong>
+            </div>
+        `;
+        
+        document.getElementById('soldItemsSection').style.display = 'block';
     }
     
-    function closeOrderItems() {
-        document.getElementById('orderItemsSection').style.display = 'none';
+    function closeSoldItems() {
+        document.getElementById('soldItemsSection').style.display = 'none';
     }
     
-    function processPayout(sellerId) {
+    async function markAsPaid(sellerId) {
         const seller = allSellerSummary.find(s => s.seller_id === sellerId);
         if (!seller) return;
         
-        if (confirm(`Mark payout of ₱${formatNumber(seller.total_sales)} as processed for ${seller.seller_name}?`)) {
-            // TODO: Implement payout processing endpoint
-            alert('Payout processing will be implemented soon.');
+        if (!confirm(`Mark payout of ₱${formatNumber(seller.total_amount)} as paid for ${seller.seller_name}?`)) {
+            return;
+        }
+        
+        try {
+            const response = await fetch('/admin/backend/payouts/mark_payout_paid.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    seller_id: sellerId
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showNotification('success', result.message);
+                // Reload payouts
+                loadPayouts();
+                closeSoldItems();
+            } else {
+                showNotification('error', 'Failed to mark as paid: ' + result.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showNotification('error', 'Error marking payout as paid');
         }
     }
     
+    function showNotification(type, message) {
+        const container = document.getElementById('notificationContainer');
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        
+        const icon = type === 'success' ? 'check-circle' : 'exclamation-circle';
+        
+        notification.innerHTML = `
+            <i class="fas fa-${icon}"></i>
+            <span>${message}</span>
+            <button class="notification-close" onclick="this.parentElement.remove()">&times;</button>
+        `;
+        
+        container.appendChild(notification);
+        
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, 5000);
+    }
+    
     function exportPayouts() {
-        let csv = 'Seller Name,Seller Email,Store Name,Total Orders,Payout Amount\n';
+        let csv = 'Seller Name,Seller Email,Store Name,Total Items,Payout Amount,Status\n';
         
         allSellerSummary.forEach(seller => {
-            csv += `"${seller.seller_name}","${seller.seller_email}","${seller.store_name || ''}",${seller.total_orders},${seller.total_sales.toFixed(2)}\n`;
+            csv += `"${seller.seller_name}","${seller.seller_email}","${seller.store_name || ''}",${seller.total_items},${seller.total_amount.toFixed(2)},"${seller.paid_status}"\n`;
         });
         
         const blob = new Blob([csv], { type: 'text/csv' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'payouts.csv';
+        a.download = 'pending_payouts.csv';
         a.click();
         window.URL.revokeObjectURL(url);
     }

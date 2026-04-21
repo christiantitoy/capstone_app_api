@@ -5,50 +5,53 @@ require_once '/var/www/html/connection/db_connection.php';
 header('Content-Type: application/json');
 
 try {
-    // Get orders with GCash - Rider Delivery payment method
-    // that are delivered or completed
+    // Get sold items with NULL paid_status and GCash payment method
     $sql = "
         SELECT 
-            o.id as order_id,
-            o.buyer_id,
+            si.id as sold_item_id,
+            si.order_deliveries_id,
+            si.order_items_id,
+            si.orders_id,
+            si.created_at as sold_date,
+            si.paid_status,
             o.payment_method,
-            o.total_amount,
+            o.total_amount as order_total,
             o.status as order_status,
-            o.created_at as order_date,
-            o.updated_at,
-            oi.id as item_id,
             oi.product_id,
-            oi.variation_id,
             oi.quantity,
             oi.unit_price,
-            oi.total_price,
+            oi.total_price as item_total,
             i.seller_id,
             i.product_name,
             s.full_name as seller_name,
             s.email as seller_email,
             st.store_name,
+            od.rider_id,
             od.status as delivery_status,
-            od.completed_at as delivery_completed
-        FROM public.orders o
-        INNER JOIN public.order_items oi ON o.id = oi.order_id
+            r.username as rider_name
+        FROM public.sold_items si
+        INNER JOIN public.orders o ON si.orders_id = o.id
+        INNER JOIN public.order_items oi ON si.order_items_id = oi.id
         INNER JOIN public.items i ON oi.product_id = i.id
         INNER JOIN public.sellers s ON i.seller_id = s.id
         LEFT JOIN public.stores st ON s.id = st.seller_id
-        LEFT JOIN public.order_deliveries od ON o.id = od.order_id
-        WHERE o.payment_method = 'gcash'
+        LEFT JOIN public.order_deliveries od ON si.order_deliveries_id = od.id
+        LEFT JOIN public.riders r ON od.rider_id = r.id
+        WHERE si.paid_status IS NULL
+          AND o.payment_method = 'gcash'
           AND o.status IN ('delivered', 'complete')
-        ORDER BY o.id DESC, i.seller_id
+        ORDER BY s.id, si.created_at DESC
     ";
     
     $stmt = $conn->prepare($sql);
     $stmt->execute();
-    $payoutItems = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $soldItems = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     // Group by seller for summary
     $sellerSummary = [];
-    $orderGroups = [];
+    $sellerItems = [];
     
-    foreach ($payoutItems as $item) {
+    foreach ($soldItems as $item) {
         $sellerId = $item['seller_id'];
         
         if (!isset($sellerSummary[$sellerId])) {
@@ -57,37 +60,33 @@ try {
                 'seller_name' => $item['seller_name'],
                 'seller_email' => $item['seller_email'],
                 'store_name' => $item['store_name'],
-                'total_sales' => 0,
-                'total_orders' => 0,
-                'items' => []
+                'total_amount' => 0,
+                'total_items' => 0,
+                'paid_status' => 'Unpaid',
+                'sold_items' => []
             ];
         }
         
-        $sellerSummary[$sellerId]['total_sales'] += floatval($item['total_price']);
-        
-        // Track unique orders
-        if (!isset($orderGroups[$item['order_id']])) {
-            $orderGroups[$item['order_id']] = true;
-            $sellerSummary[$sellerId]['total_orders']++;
-        }
-        
-        $sellerSummary[$sellerId]['items'][] = $item;
+        // Add item total to seller's total amount
+        $sellerSummary[$sellerId]['total_amount'] += floatval($item['item_total']);
+        $sellerSummary[$sellerId]['total_items']++;
+        $sellerSummary[$sellerId]['sold_items'][] = $item;
     }
     
     // Calculate totals
-    $totalPayout = array_sum(array_column($sellerSummary, 'total_sales'));
-    $totalOrders = count($orderGroups);
+    $totalPayout = array_sum(array_column($sellerSummary, 'total_amount'));
     $totalSellers = count($sellerSummary);
+    $totalItems = count($soldItems);
     
     echo json_encode([
         'success' => true,
         'data' => [
-            'items' => $payoutItems,
+            'sold_items' => $soldItems,
             'seller_summary' => array_values($sellerSummary),
             'totals' => [
                 'total_payout' => $totalPayout,
-                'total_orders' => $totalOrders,
-                'total_sellers' => $totalSellers
+                'total_sellers' => $totalSellers,
+                'total_items' => $totalItems
             ]
         ]
     ]);
