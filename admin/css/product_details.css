@@ -519,6 +519,16 @@ body {
     }
 }
 
+.header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn btn-danger {
+    background: #e74c3c;
+    color: white;
+}
+
 /* Print */
 @media print {
     body { background: white; padding: 0; }

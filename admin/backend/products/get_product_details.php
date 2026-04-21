@@ -33,6 +33,7 @@ try {
             i.updated_at,
             i.employee_id,
             i.sold,
+            i.remove_reason,
             s.full_name as seller_name,
             s.email as seller_email,
             s.seller_plan,
@@ -110,26 +111,6 @@ try {
     $stmt->execute([$productId]);
     $orderStats = $stmt->fetch(PDO::FETCH_ASSOC);
     
-    // Get recent orders containing this product
-    $stmt = $conn->prepare("
-        SELECT 
-            o.id as order_id,
-            o.buyer_id,
-            o.created_at as order_date,
-            o.status as order_status,
-            oi.quantity,
-            oi.unit_price as price_at_time,
-            b.username as buyer_name
-        FROM order_items oi
-        INNER JOIN orders o ON oi.order_id = o.id
-        LEFT JOIN buyers b ON o.buyer_id = b.id
-        WHERE oi.product_id = ?
-        ORDER BY o.created_at DESC
-        LIMIT 10
-    ");
-    $stmt->execute([$productId]);
-    $recentOrders = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
     // Get employee info if assigned
     $employee = null;
     if ($product['employee_id']) {
@@ -156,7 +137,6 @@ try {
                 'times_ordered' => (int) $orderStats['times_ordered'],
                 'total_quantity_sold' => (int) $orderStats['total_quantity_sold']
             ],
-            'recent_orders' => $recentOrders,
             'employee' => $employee
         ]
     ]);

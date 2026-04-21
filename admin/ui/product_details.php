@@ -482,10 +482,10 @@ if (!$productId) {
         statusBadge.className = `status-badge status-${product.status}`;
         
         // Show status reason if removed
-        if (product.status === 'removed' && product.status_reason) {
+        if (product.status === 'removed' && product.remove_reason) {
             document.getElementById('statusReasonContainer').style.display = 'block';
             document.getElementById('statusReasonLabel').textContent = 'Removal Reason:';
-            document.getElementById('statusReason').textContent = product.status_reason;
+            document.getElementById('statusReason').textContent = product.remove_reason;
         }
         
         // Description

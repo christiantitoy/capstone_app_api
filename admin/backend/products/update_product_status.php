@@ -20,36 +20,36 @@ if (!$productId || !$status) {
     exit;
 }
 
-if (!in_array($status, ['approved', 'on_hold', 'removed', 'on_review'])) {
+if (!in_array($status, ['approved', 'removed'])) {
     echo json_encode(['success' => false, 'message' => 'Invalid status']);
     exit;
 }
 
-// Require reason when removing or putting on hold
-if (($status === 'removed' || $status === 'on_hold') && empty($reason)) {
-    echo json_encode(['success' => false, 'message' => 'Reason is required for this action']);
+// Require reason when removing
+if ($status === 'removed' && empty($reason)) {
+    echo json_encode(['success' => false, 'message' => 'Removal reason is required']);
     exit;
 }
 
 try {
     $conn->beginTransaction();
     
-    if ($status === 'removed' || $status === 'on_hold') {
-        // Update with reason
+    if ($status === 'removed') {
+        // Update with removal reason
         $stmt = $conn->prepare("
             UPDATE items 
             SET status = ?, 
-                status_reason = ?,
+                remove_reason = ?,
                 updated_at = NOW() 
             WHERE id = ?
         ");
         $stmt->execute([$status, $reason, $productId]);
     } else {
-        // Update without reason (clear status reason if approved)
+        // Update without reason (clear remove_reason if approved/restored)
         $stmt = $conn->prepare("
             UPDATE items 
             SET status = ?, 
-                status_reason = NULL,
+                remove_reason = NULL,
                 updated_at = NOW() 
             WHERE id = ?
         ");
@@ -60,7 +60,7 @@ try {
     
     echo json_encode([
         'success' => true,
-        'message' => "Product status updated to {$status}"
+        'message' => $status === 'approved' ? 'Product restored successfully!' : 'Product removed successfully!'
     ]);
     
 } catch (PDOException $e) {
