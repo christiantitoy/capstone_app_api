@@ -33,16 +33,10 @@ try {
             sp.created_at as plan_created,
             s.full_name as seller_name,
             s.email as seller_email,
-            s.approval_status as seller_status,
-            st.store_name,
-            st.logo_url as store_logo,
-            st.store_description,
-            st.contact_number,
-            st.category
+            s.approval_status as seller_status
         FROM public.seller_plan_payments spp
         INNER JOIN public.sellers_plan sp ON spp.seller_plan_id = sp.id
         INNER JOIN public.sellers s ON spp.seller_id = s.id
-        LEFT JOIN public.stores st ON s.id = st.seller_id
         WHERE spp.id = ?
     ";
     
@@ -54,6 +48,21 @@ try {
         echo json_encode(['success' => false, 'message' => 'Payment not found']);
         exit;
     }
+    
+    // Get seller's store info separately (just basic info)
+    $storeSql = "
+        SELECT 
+            store_name,
+            logo_url
+        FROM public.stores
+        WHERE seller_id = ?
+    ";
+    $storeStmt = $conn->prepare($storeSql);
+    $storeStmt->execute([$payment['seller_id']]);
+    $store = $storeStmt->fetch(PDO::FETCH_ASSOC);
+    
+    $payment['store_name'] = $store['store_name'] ?? null;
+    $payment['store_logo'] = $store['logo_url'] ?? null;
     
     // Get seller's previous subscriptions
     $historySql = "
@@ -82,7 +91,7 @@ try {
         'success' => true,
         'data' => [
             'payment' => $payment,
-            'history' => $subscriptionHistory
+            'history' => $subscriptionHistory ?: []
         ]
     ]);
     

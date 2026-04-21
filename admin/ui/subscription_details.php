@@ -67,10 +67,6 @@ if (!$paymentId) {
                     <span class="value" id="sellerEmail">-</span>
                 </div>
                 <div class="detail-item">
-                    <span class="label">Contact</span>
-                    <span class="value" id="contactNumber">-</span>
-                </div>
-                <div class="detail-item">
                     <span class="label">Plan</span>
                     <span class="value" id="planInfo">-</span>
                 </div>
@@ -85,6 +81,14 @@ if (!$paymentId) {
                 <div class="detail-item">
                     <span class="label">Amount</span>
                     <span class="value" id="amount">₱0.00</span>
+                </div>
+                <div class="detail-item">
+                    <span class="label"></span>
+                    <span class="value">
+                        <a href="#" id="viewSellerBtn" class="btn btn-outline btn-small">
+                            <i class="fas fa-store"></i> View Seller
+                        </a>
+                    </span>
                 </div>
             </div>
             
@@ -211,15 +215,17 @@ if (!$paymentId) {
         document.getElementById('paymentId').textContent = payment.payment_id;
         document.getElementById('submittedDate').textContent = formatDateTime(payment.submitted_at);
         document.getElementById('reviewedDate').textContent = payment.reviewed_at ? formatDateTime(payment.reviewed_at) : 'Not reviewed';
-        document.getElementById('sellerName').textContent = payment.seller_name;
+        document.getElementById('sellerName').textContent = payment.seller_name || 'N/A';
         document.getElementById('storeName').textContent = payment.store_name || 'No store';
-        document.getElementById('sellerEmail').textContent = payment.seller_email;
-        document.getElementById('contactNumber').textContent = payment.contact_number || 'N/A';
+        document.getElementById('sellerEmail').textContent = payment.seller_email || 'N/A';
         document.getElementById('planInfo').innerHTML = `<span class="plan-badge plan-${payment.plan}">${capitalize(payment.plan)}</span>`;
         document.getElementById('billingInfo').textContent = capitalize(payment.billing);
         document.getElementById('gcashNumber').textContent = payment.gcash_number;
         document.getElementById('amount').textContent = `₱${formatNumber(payment.amount)}`;
         document.getElementById('proofImg').src = payment.proof_image_url;
+        
+        // Set seller details link
+        document.getElementById('viewSellerBtn').href = `seller_details.php?id=${payment.seller_id}`;
         
         const statusBadge = document.getElementById('paymentStatus');
         statusBadge.textContent = capitalize(payment.payment_status);
@@ -353,6 +359,7 @@ if (!$paymentId) {
     }
     
     function capitalize(str) {
+        if (!str) return '';
         return str.charAt(0).toUpperCase() + str.slice(1);
     }
     
