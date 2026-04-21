@@ -529,3 +529,79 @@ body {
         width: 100%;
     }
 }
+
+/* Online Payments Dropdown */
+.nav-dropdown {
+    position: relative;
+}
+
+.nav-dropdown-toggle {
+    cursor: pointer;
+    justify-content: space-between;
+}
+
+.nav-dropdown-toggle .dropdown-arrow {
+    margin-left: auto;
+    font-size: 12px;
+    transition: transform 0.3s ease;
+}
+
+.nav-dropdown.open .nav-dropdown-toggle .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.dropdown-menu {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.nav-dropdown.open .dropdown-menu {
+    max-height: 300px;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 20px 10px 56px;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    transition: all 0.3s;
+    font-size: 14px;
+}
+
+.dropdown-item:hover {
+    background: rgba(52, 152, 219, 0.2);
+    color: white;
+}
+
+.dropdown-item.active {
+    background: #3498db;
+    color: white;
+    border-left: 4px solid white;
+}
+
+.dropdown-item i {
+    width: 24px;
+    margin-right: 12px;
+    font-size: 16px;
+}
+
+/* Keep dropdown open if any child is active */
+.nav-dropdown:has(.dropdown-item.active) .dropdown-menu {
+    max-height: 300px;
+}
+
+.nav-dropdown:has(.dropdown-item.active) .nav-dropdown-toggle .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+/* For browsers that don't support :has */
+.nav-dropdown.open .dropdown-menu {
+    max-height: 300px;
+}
+
+.nav-dropdown.open .nav-dropdown-toggle .dropdown-arrow {
+    transform: rotate(180deg);
+}
