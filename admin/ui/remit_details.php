@@ -221,40 +221,44 @@ if (!$remitId) {
     }
     
     function displayEarnings(earnings) {
-        const tbody = document.getElementById('earningsBody');
-        
-        if (earnings.length === 0) {
-            tbody.innerHTML = '<div class="no-data">No earnings found</div>';
-            return;
-        }
-        
-        let html = '';
-        earnings.forEach(earning => {
-            html += `
-                <div class="earning-row">
-                    <div class="col-order">
-                        <a href="order_details.php?id=${earning.order_id}" class="order-link">#${earning.order_id}</a>
-                    </div>
-                    <div class="col-buyer">
-                        <div class="buyer-info">
-                            <strong>${escapeHtml(earning.buyer_name || 'N/A')}</strong>
-                            <small>${escapeHtml(earning.buyer_email || '')}</small>
-                        </div>
-                    </div>
-                    <div class="col-shipping">₱${formatNumber(earning.shipping_fee)}</div>
-                    <div class="col-cod">₱${formatNumber(earning.total_amount)}</div>
-                    <div class="col-status">
-                        <span class="status-badge ${earning.is_remitted ? 'status-confirmed' : 'status-pending'}">
-                            ${earning.is_remitted ? 'Remitted' : 'Pending'}
-                        </span>
-                    </div>
-                    <div class="col-date">${formatDate(earning.created_at)}</div>
-                </div>
-            `;
-        });
-        
-        tbody.innerHTML = html;
+    const tbody = document.getElementById('earningsBody');
+    
+    if (earnings.length === 0) {
+        tbody.innerHTML = '<div class="no-data">No earnings found</div>';
+        return;
     }
+    
+    let html = '';
+    earnings.forEach(earning => {
+        // COD amount = subtotal + platform_fee (excluding shipping_fee)
+        const codAmount = earning.calculated_cod_amount || 
+                         (parseFloat(earning.subtotal || 0) + parseFloat(earning.platform_fee || 0));
+        
+        html += `
+            <div class="earning-row">
+                <div class="col-order">
+                    <a href="order_details.php?id=${earning.order_id}" class="order-link">#${earning.order_id}</a>
+                </div>
+                <div class="col-buyer">
+                    <div class="buyer-info">
+                        <strong>${escapeHtml(earning.buyer_name || 'N/A')}</strong>
+                        <small>${escapeHtml(earning.buyer_email || '')}</small>
+                    </div>
+                </div>
+                <div class="col-shipping">₱${formatNumber(earning.shipping_fee)}</div>
+                <div class="col-cod">₱${formatNumber(codAmount)}</div>
+                <div class="col-status">
+                    <span class="status-badge ${earning.is_remitted ? 'status-confirmed' : 'status-pending'}">
+                        ${earning.is_remitted ? 'Remitted' : 'Pending'}
+                    </span>
+                </div>
+                <div class="col-date">${formatDate(earning.created_at)}</div>
+            </div>
+        `;
+    });
+    
+    tbody.innerHTML = html;
+}
     
     function viewFullImage() {
         document.getElementById('viewerImage').src = proofImageUrl;

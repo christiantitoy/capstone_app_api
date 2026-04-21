@@ -268,15 +268,15 @@ body {
     border-color: #3498db;
 }
 
-/* Remittance Table */
+/* Updated table columns without Date column */
 .remittance_holder {
     width: 100%;
-    min-width: 900px;
+    min-width: 800px;
 }
 
 .remittance-table-header {
     display: grid;
-    grid-template-columns: 80px minmax(180px, 1.5fr) 150px 100px 130px 110px 140px;
+    grid-template-columns: 80px minmax(180px, 1.5fr) 150px 100px 130px 110px;
     background: #f8f9fa;
     padding: 12px 15px;
     font-weight: 600;
@@ -286,7 +286,7 @@ body {
 
 .remittance-row {
     display: grid;
-    grid-template-columns: 80px minmax(180px, 1.5fr) 150px 100px 130px 110px 140px;
+    grid-template-columns: 80px minmax(180px, 1.5fr) 150px 100px 130px 110px;
     padding: 15px;
     border-bottom: 1px solid #e9ecef;
     align-items: center;

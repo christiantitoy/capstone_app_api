@@ -23,6 +23,7 @@ try {
             rp.proof_image_url,
             rp.status as remit_status,
             rp.submitted_at,
+            rp.rejection_reason,
             r.username as rider_name,
             r.email as rider_email,
             r.status as rider_status,
@@ -54,14 +55,18 @@ try {
                 re.order_id,
                 re.delivery_id,
                 re.shipping_fee,
-                re.total_amount,
+                re.total_amount as cod_amount,
                 re.created_at,
                 re.is_remitted,
+                o.subtotal,
+                o.platform_fee,
                 o.total_amount as order_total,
                 o.payment_method,
                 o.status as order_status,
                 b.username as buyer_name,
-                b.email as buyer_email
+                b.email as buyer_email,
+                -- COD amount = subtotal + platform_fee (excluding shipping_fee)
+                (o.subtotal + o.platform_fee) as calculated_cod_amount
             FROM public.rider_earnings re
             INNER JOIN public.orders o ON re.order_id = o.id
             LEFT JOIN public.buyers b ON o.buyer_id = b.id
@@ -77,9 +82,10 @@ try {
     }
     
     // Calculate summary
+    // Total COD amount = sum of (subtotal + platform_fee) for all earnings
     $totalCOD = 0;
     foreach ($earnings as $earning) {
-        $totalCOD += floatval($earning['total_amount']);
+        $totalCOD += floatval($earning['calculated_cod_amount']);
     }
     
     echo json_encode([

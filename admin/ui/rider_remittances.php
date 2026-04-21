@@ -44,18 +44,28 @@ require_once '../backend/session/auth_admin.php';
             <a href="/admin/ui/deliveries.php" class="nav-item">
                 <i class="fas fa-truck"></i><span>Deliveries</span>
             </a>
-           <a href="/admin/ui/process_payouts.php" class="nav-item">
-                <i class="fas fa-money-bill-wave"></i><span>Process Payouts</span>
-            </a>
-            <a href="/admin/ui/order_payments.php" class="nav-item">
-                <i class="fas fa-credit-card"></i><span>Order Payments</span>
-            </a>
-            <a href="/admin/ui/rider_remittances.php" class="nav-item">
-                <i class="fas fa-hand-holding-usd"></i><span>Rider Remittances</span>
-            </a>
-            <a href="/admin/ui/seller_subscriptions.php" class="nav-item">
-                <i class="fas fa-crown"></i><span>Seller Subscriptions</span>
-            </a>
+            
+            <!-- Online Payments Dropdown -->
+            <div class="nav-dropdown">
+                <div class="nav-item nav-dropdown-toggle" onclick="toggleDropdown(this)">
+                    <i class="fas fa-wallet"></i><span>Online Payments</span>
+                    <i class="fas fa-chevron-down dropdown-arrow"></i>
+                </div>
+                <div class="dropdown-menu">
+                    <a href="/admin/ui/process_payouts.php" class="dropdown-item">
+                        <i class="fas fa-money-bill-wave"></i><span>Process Payouts</span>
+                    </a>
+                    <a href="/admin/ui/order_payments.php" class="dropdown-item">
+                        <i class="fas fa-credit-card"></i><span>Order Payments</span>
+                    </a>
+                    <a href="/admin/ui/rider_remittances.php" class="dropdown-item active">
+                        <i class="fas fa-hand-holding-usd"></i><span>Rider Remittances</span>
+                    </a>
+                    <a href="/admin/ui/seller_subscriptions.php" class="dropdown-item">
+                        <i class="fas fa-crown"></i><span>Seller Subscriptions</span>
+                    </a>
+                </div>
+            </div>
         </nav>
         <div class="sidebar-footer">
             <div class="user-profile">
@@ -150,7 +160,6 @@ require_once '../backend/session/auth_admin.php';
                         <div class="col-earnings">Earnings</div>
                         <div class="col-amount">Amount</div>
                         <div class="col-status">Status</div>
-                        <div class="col-date">Submitted</div>
                     </div>
                     
                     <div class="table-body" id="remittancesTableBody">
@@ -191,6 +200,21 @@ require_once '../backend/session/auth_admin.php';
 
 <script>
     let allRemittances = [];
+    
+    function toggleDropdown(element) {
+        const dropdown = element.closest('.nav-dropdown');
+        dropdown.classList.toggle('open');
+        localStorage.setItem('onlinePaymentsOpen', dropdown.classList.contains('open'));
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropdown = document.querySelector('.nav-dropdown');
+        const isOpen = localStorage.getItem('onlinePaymentsOpen') === 'true';
+        const hasActive = dropdown?.querySelector('.dropdown-item.active');
+        if (isOpen || hasActive) {
+            dropdown?.classList.add('open');
+        }
+    });
     
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     document.getElementById('currentDate').textContent = new Date().toLocaleDateString(undefined, options);
@@ -252,7 +276,6 @@ require_once '../backend/session/auth_admin.php';
                     <div class="col-status">
                         <span class="status-badge ${statusClass}">${statusText}</span>
                     </div>
-                    <div class="col-date">${formatDateTime(remit.submitted_at)}</div>
                 </div>
             `;
         });
@@ -300,12 +323,6 @@ require_once '../backend/session/auth_admin.php';
     
     function formatNumber(num) {
         return parseFloat(num || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    }
-    
-    function formatDateTime(dateString) {
-        if (!dateString) return 'N/A';
-        const date = new Date(dateString);
-        return date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     }
     
     function escapeHtml(text) {
