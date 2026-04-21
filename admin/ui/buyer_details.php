@@ -52,7 +52,9 @@ if (!$buyerId) {
                 <div class="profile-info">
                     <h2 id="buyerName">-</h2>
                     <p id="buyerEmail">-</p>
-                    <span class="badge" id="buyerSince">Member since -</span>
+                    <div class="badges-container">
+                        <span class="badge badge-member" id="buyerSince">Member since -</span>
+                    </div>
                 </div>
             </div>
             
@@ -77,62 +79,23 @@ if (!$buyerId) {
             </div>
         </div>
 
-        <!-- Order Statistics -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <i class="fas fa-shopping-bag"></i>
-                <div class="stat-content">
-                    <h3 id="statTotalOrders">0</h3>
-                    <p>Total Orders</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-hourglass-half"></i>
-                <div class="stat-content">
-                    <h3 id="statActiveOrders">0</h3>
-                    <p>Active Orders</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-check-circle"></i>
-                <div class="stat-content">
-                    <h3 id="statCompletedOrders">0</h3>
-                    <p>Completed Orders</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-times-circle"></i>
-                <div class="stat-content">
-                    <h3 id="statCancelledOrders">0</h3>
-                    <p>Cancelled Orders</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-clock"></i>
-                <div class="stat-content">
-                    <h3 id="statLastOrder">-</h3>
-                    <p>Last Order</p>
-                </div>
-            </div>
-        </div>
-
         <!-- Addresses Section -->
-        <div class="content-section">
+        <div class="info-section">
             <div class="section-header">
-                <h2><i class="fas fa-map-marker-alt"></i> Shipping Addresses</h2>
+                <h3><i class="fas fa-map-marker-alt"></i> Shipping Addresses</h3>
                 <span class="badge" id="addressCount">0 addresses</span>
             </div>
-            <div id="addressesList" class="addresses-grid">
+            <div class="addresses-grid" id="addressesList">
                 <!-- Addresses will be loaded here -->
             </div>
         </div>
 
         <!-- Recent Orders Section -->
-        <div class="content-section">
+        <div class="info-section">
             <div class="section-header">
-                <h2><i class="fas fa-history"></i> Recent Orders</h2>
-                <a href="orders.php?buyer_id=<?= $buyerId ?>" class="view-all-link">
-                    View All Orders <i class="fas fa-chevron-right"></i>
+                <h3><i class="fas fa-history"></i> Recent Orders</h3>
+                <a href="orders.php?buyer_id=<?= $buyerId ?>" class="view-link">
+                    View All Orders <i class="fas fa-arrow-right"></i>
                 </a>
             </div>
             <div class="table-container">
@@ -141,9 +104,9 @@ if (!$buyerId) {
                         <tr>
                             <th>Order ID</th>
                             <th>Date</th>
+                            <th>Items</th>
                             <th>Amount</th>
                             <th>Status</th>
-                            <th>Last Updated</th>
                         </tr>
                     </thead>
                     <tbody id="recentOrdersBody">
@@ -214,35 +177,22 @@ if (!$buyerId) {
             });
             document.getElementById('buyerSince').textContent = `Member since ${sinceDate}`;
         } else {
-            document.getElementById('buyerSince').textContent = 'No orders yet';
+            document.getElementById('buyerSince').textContent = 'New member';
         }
         
         // Update avatar
         const avatarContainer = document.getElementById('buyerAvatar');
         if (buyer.avatar_url) {
-            avatarContainer.innerHTML = `<img src="${buyer.avatar_url}" alt="${buyer.username}" class="avatar-img">`;
+            avatarContainer.innerHTML = `<img src="${buyer.avatar_url}" alt="${escapeHtml(buyer.username)}" class="avatar-img">`;
         } else {
             avatarContainer.innerHTML = `<div class="avatar-placeholder">${buyer.username.charAt(0).toUpperCase()}</div>`;
         }
         
         // Update quick stats
-        document.getElementById('totalOrders').textContent = orderStats.total_orders;
-        document.getElementById('totalSpent').textContent = `₱${formatNumber(orderStats.total_spent)}`;
-        document.getElementById('activeOrders').textContent = orderStats.active_orders;
-        document.getElementById('completedOrders').textContent = orderStats.completed_orders;
-        
-        // Update stat cards
-        document.getElementById('statTotalOrders').textContent = orderStats.total_orders;
-        document.getElementById('statActiveOrders').textContent = orderStats.active_orders;
-        document.getElementById('statCompletedOrders').textContent = orderStats.completed_orders;
-        document.getElementById('statCancelledOrders').textContent = orderStats.cancelled_orders;
-        
-        if (orderStats.last_order_date) {
-            const lastOrder = new Date(orderStats.last_order_date).toLocaleDateString();
-            document.getElementById('statLastOrder').textContent = lastOrder;
-        } else {
-            document.getElementById('statLastOrder').textContent = 'No orders';
-        }
+        document.getElementById('totalOrders').textContent = orderStats.total_orders || 0;
+        document.getElementById('totalSpent').textContent = `₱${formatNumber(orderStats.total_spent || 0)}`;
+        document.getElementById('activeOrders').textContent = orderStats.active_orders || 0;
+        document.getElementById('completedOrders').textContent = orderStats.completed_orders || 0;
         
         // Display addresses
         displayAddresses(addresses);
@@ -258,7 +208,7 @@ if (!$buyerId) {
         addressCount.textContent = `${addresses.length} address${addresses.length !== 1 ? 'es' : ''}`;
         
         if (addresses.length === 0) {
-            addressesList.innerHTML = '<div class="no-data">No addresses found</div>';
+            addressesList.innerHTML = '<div class="no-data"><i class="fas fa-map-marker-alt"></i> No addresses found</div>';
             return;
         }
         
@@ -266,26 +216,25 @@ if (!$buyerId) {
             const isDefault = addr.is_default == 1;
             return `
                 <div class="address-card ${isDefault ? 'default' : ''}">
-                    ${isDefault ? '<span class="default-badge"><i class="fas fa-star"></i> Default</span>' : ''}
+                    ${isDefault ? '<span class="default-badge"><i class="fas fa-check-circle"></i> Default</span>' : ''}
                     <div class="address-header">
-                        <i class="fas fa-user"></i>
+                        <i class="fas fa-user-circle"></i>
                         <strong>${escapeHtml(addr.recipient_name)}</strong>
                     </div>
                     <div class="address-detail">
-                        <i class="fas fa-phone"></i>
+                        <i class="fas fa-phone-alt"></i>
                         <span>${escapeHtml(addr.phone_number)}</span>
-                    </div>
-                    <div class="address-detail">
-                        <i class="fas fa-map-pin"></i>
-                        <span>${escapeHtml(addr.gps_location)}</span>
                     </div>
                     <div class="address-detail full-address">
                         <i class="fas fa-location-dot"></i>
-                        <span>${escapeHtml(addr.full_address || 'No full address provided')}</span>
+                        <span>${escapeHtml(addr.full_address || 'No address provided')}</span>
                     </div>
-                    <div class="address-footer">
-                        <small>Added: ${new Date(addr.created_at).toLocaleDateString()}</small>
-                    </div>
+                    ${addr.gps_location ? `
+                        <div class="address-detail">
+                            <i class="fas fa-map-pin"></i>
+                            <span>${escapeHtml(addr.gps_location)}</span>
+                        </div>
+                    ` : ''}
                 </div>
             `;
         }).join('');
@@ -295,43 +244,72 @@ if (!$buyerId) {
         const tbody = document.getElementById('recentOrdersBody');
         
         if (orders.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No orders found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #7f8c8d;"><i class="fas fa-shopping-bag"></i> No orders found</td></tr>';
             return;
         }
         
         tbody.innerHTML = orders.map(order => {
             const statusClass = getStatusClass(order.status);
+            const statusText = formatStatus(order.status);
+            
             return `
-                <tr>
+                <tr class="clickable-row" onclick="viewOrder(${order.id})">
                     <td><strong>#${order.id}</strong></td>
-                    <td>${new Date(order.created_at).toLocaleDateString()}</td>
+                    <td>${formatDate(order.created_at)}</td>
+                    <td>${order.item_count || 0} items</td>
                     <td>₱${formatNumber(order.total_amount)}</td>
-                    <td><span class="status-badge ${statusClass}">${order.status}</span></td>
-                    <td>${new Date(order.updated_at).toLocaleString()}</td>
+                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                 </tr>
             `;
         }).join('');
+    }
+    
+    function viewOrder(orderId) {
+        window.location.href = `order_details.php?id=${orderId}`;
     }
     
     function getStatusClass(status) {
         const statusMap = {
             'pending': 'status-pending',
             'pending_payment': 'status-pending',
-            'packed': 'status-processing',
-            'ready_for_pickup': 'status-processing',
+            'packed': 'status-packed',
+            'ready_for_pickup': 'status-ready',
             'shipped': 'status-shipped',
             'assigned': 'status-shipped',
             'reassigned': 'status-shipped',
             'delivered': 'status-delivered',
-            'complete': 'status-delivered',
+            'complete': 'status-completed',
             'cancelled': 'status-cancelled',
             'locked': 'status-locked'
         };
-        return statusMap[status] || 'status-default';
+        return statusMap[status] || 'status-pending';
+    }
+    
+    function formatStatus(status) {
+        const formats = {
+            'pending': 'Pending',
+            'pending_payment': 'Pending Payment',
+            'packed': 'Packed',
+            'ready_for_pickup': 'Ready',
+            'shipped': 'Shipped',
+            'assigned': 'Assigned',
+            'reassigned': 'Reassigned',
+            'delivered': 'Delivered',
+            'complete': 'Completed',
+            'cancelled': 'Cancelled',
+            'locked': 'Locked'
+        };
+        return formats[status] || status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     }
     
     function formatNumber(num) {
         return parseFloat(num || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+    
+    function formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     }
     
     function escapeHtml(text) {
