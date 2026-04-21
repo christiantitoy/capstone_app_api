@@ -259,7 +259,7 @@ if (!$sellerId) {
     function updateActionButtons(seller) {
         const actionContainer = document.getElementById('actionButtons');
         
-        // Show appropriate buttons based on status
+        // Only show buttons if seller is pending
         if (seller.approval_status === 'pending') {
             actionContainer.innerHTML = `
                 <button class="btn btn-success" onclick="openStatusModal('approve')">
@@ -269,19 +269,8 @@ if (!$sellerId) {
                     <i class="fas fa-times-circle"></i> Reject Seller
                 </button>
             `;
-        } else if (seller.approval_status === 'approved') {
-            actionContainer.innerHTML = `
-                <button class="btn btn-danger" onclick="openStatusModal('reject')">
-                    <i class="fas fa-times-circle"></i> Reject Seller
-                </button>
-            `;
-        } else if (seller.approval_status === 'rejected') {
-            actionContainer.innerHTML = `
-                <button class="btn btn-success" onclick="openStatusModal('approve')">
-                    <i class="fas fa-check-circle"></i> Approve Seller
-                </button>
-            `;
         } else {
+            // Hide buttons for approved or rejected sellers
             actionContainer.innerHTML = '';
         }
     }

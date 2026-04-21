@@ -13,28 +13,46 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $input = json_decode(file_get_contents('php://input'), true);
 $riderId = $input['rider_id'] ?? null;
 $verificationStatus = $input['verification_status'] ?? null;
-$reason = $input['reason'] ?? '';
+$reason = $input['reason'] ?? null;
 
 if (!$riderId || !$verificationStatus) {
     echo json_encode(['success' => false, 'message' => 'Missing required fields']);
     exit;
 }
 
-if (!in_array($verificationStatus, ['complete', 'rejected', 'pending', 'none', 'suspended'])) {
+if (!in_array($verificationStatus, ['complete', 'rejected', 'pending', 'none'])) {
     echo json_encode(['success' => false, 'message' => 'Invalid verification status']);
+    exit;
+}
+
+// Require reason when rejecting
+if ($verificationStatus === 'rejected' && empty($reason)) {
+    echo json_encode(['success' => false, 'message' => 'Rejection reason is required']);
     exit;
 }
 
 try {
     $conn->beginTransaction();
     
-    // Update rider verification status
-    $stmt = $conn->prepare("
-        UPDATE riders 
-        SET verification_status = ?
-        WHERE id = ?
-    ");
-    $stmt->execute([$verificationStatus, $riderId]);
+    if ($verificationStatus === 'rejected') {
+        // Update with rejection reason
+        $stmt = $conn->prepare("
+            UPDATE riders 
+            SET verification_status = ?, 
+                rejection_reason = ?
+            WHERE id = ?
+        ");
+        $stmt->execute([$verificationStatus, $reason, $riderId]);
+    } else {
+        // Update without reason (clear rejection reason if approved)
+        $stmt = $conn->prepare("
+            UPDATE riders 
+            SET verification_status = ?, 
+                rejection_reason = NULL
+            WHERE id = ?
+        ");
+        $stmt->execute([$verificationStatus, $riderId]);
+    }
     
     $conn->commit();
     
