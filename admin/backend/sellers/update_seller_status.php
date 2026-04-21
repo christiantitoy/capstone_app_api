@@ -56,17 +56,6 @@ try {
         $stmt->execute([$status, $sellerId]);
     }
     
-    // Log the action (optional - create admin_logs table if needed)
-    $adminId = $_SESSION['admin_id'] ?? null;
-    if ($adminId) {
-        $stmt = $conn->prepare("
-            INSERT INTO admin_logs (admin_id, action, target_type, target_id, details, created_at)
-            VALUES (?, ?, 'seller', ?, ?, NOW())
-        ");
-        $details = json_encode(['status' => $status, 'reason' => $reason]);
-        $stmt->execute([$adminId, "update_seller_status", $sellerId, $details]);
-    }
-    
     $conn->commit();
     
     echo json_encode([
