@@ -559,3 +559,67 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: #555;
 }
+
+/* Additional Status Badge Styles */
+.status-ready {
+    background: #fff3e0;
+    color: #e67e22;
+}
+
+.status-pending {
+    background: #fff3e0;
+    color: #e67e22;
+}
+
+.status-packed {
+    background: #e3f2fd;
+    color: #3498db;
+}
+
+.status-shipped {
+    background: #e8f5e9;
+    color: #27ae60;
+}
+
+.status-delivered {
+    background: #c8e6c9;
+    color: #2e7d32;
+}
+
+.status-cancelled {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.status-complete {
+    background: #c8e6c9;
+    color: #2e7d32;
+}
+
+.status-locked {
+    background: #f3e5f5;
+    color: #6a1b9a;
+}
+
+.status-assigned {
+    background: #e0f2f1;
+    color: #00695c;
+}
+
+/* Product ID Badge */
+.product-id-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #e3f2fd;
+    color: #3498db;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    margin-right: 4px;
+    margin-bottom: 4px;
+}
+
+/* Fix for filter select width */
+.filter-select {
+    min-width: 150px;
+}

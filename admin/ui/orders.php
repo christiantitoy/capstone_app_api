@@ -222,7 +222,7 @@ require_once '../backend/session/auth_admin.php';
         orders.forEach(order => {
             // Set status badge class
             let statusClass = getStatusClass(order.status);
-            let statusText = order.status.charAt(0).toUpperCase() + order.status.slice(1);
+            let statusText = formatStatusText(order.status);
             
             // Format date
             const orderDate = new Date(order.created_at);
@@ -244,12 +244,12 @@ require_once '../backend/session/auth_admin.php';
                     <div class="col-product-ids">
                         <div class="product-ids">
                             ${order.product_ids ? order.product_ids.split(',').map(id => 
-                                `<span class="product-id-badge">${id.trim()}</span>`
-                            ).join('') : 'No products'}
+                                `<span class="product-id-badge">#${id.trim()}</span>`
+                            ).join('') : '<span class="product-id-badge">No products</span>'}
                         </div>
                         <small>${order.total_items} item(s)</small>
                     </div>
-                    <div class="col-amount">₱${parseFloat(order.total_amount).toFixed(2)}</div>
+                    <div class="col-amount">₱${parseFloat(order.total_amount || 0).toFixed(2)}</div>
                     <div class="col-status">
                         <span class="status-badge ${statusClass}">${statusText}</span>
                     </div>
@@ -265,15 +265,35 @@ require_once '../backend/session/auth_admin.php';
     function getStatusClass(status) {
         switch(status) {
             case 'pending': return 'status-pending';
+            case 'pending_payment': return 'status-pending';
             case 'packed': return 'status-packed';
+            case 'ready_for_pickup': return 'status-ready';
             case 'shipped': return 'status-shipped';
             case 'delivered': return 'status-delivered';
             case 'cancelled': return 'status-cancelled';
             case 'complete': return 'status-complete';
             case 'locked': return 'status-locked';
             case 'assigned': return 'status-assigned';
+            case 'reassigned': return 'status-assigned';
             default: return 'status-pending';
         }
+    }
+
+    function formatStatusText(status) {
+        const formats = {
+            'pending': 'Pending',
+            'pending_payment': 'Pending Payment',
+            'packed': 'Packed',
+            'ready_for_pickup': 'Ready for Pickup',
+            'shipped': 'Shipped',
+            'delivered': 'Delivered',
+            'cancelled': 'Cancelled',
+            'complete': 'Complete',
+            'locked': 'Locked',
+            'assigned': 'Assigned',
+            'reassigned': 'Reassigned'
+        };
+        return formats[status] || status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     }
     
     // Helper function to escape HTML
