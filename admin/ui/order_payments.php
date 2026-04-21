@@ -44,18 +44,28 @@ require_once '../backend/session/auth_admin.php';
             <a href="/admin/ui/deliveries.php" class="nav-item">
                 <i class="fas fa-truck"></i><span>Deliveries</span>
             </a>
-            <a href="/admin/ui/process_payouts.php" class="nav-item">
-                <i class="fas fa-money-bill-wave"></i><span>Process Payouts</span>
-            </a>
-            <a href="/admin/ui/order_payments.php" class="nav-item active">
-                <i class="fas fa-credit-card"></i><span>Order Payments</span>
-            </a>
-            <a href="/admin/ui/rider_remittances.php" class="nav-item">
-                <i class="fas fa-hand-holding-usd"></i><span>Rider Remittances</span>
-            </a>
-            <a href="/admin/ui/seller_subscriptions.php" class="nav-item">
-                <i class="fas fa-crown"></i><span>Seller Subscriptions</span>
-            </a>
+            
+            <!-- Online Payments Dropdown -->
+            <div class="nav-dropdown">
+                <div class="nav-item nav-dropdown-toggle" onclick="toggleDropdown(this)">
+                    <i class="fas fa-wallet"></i><span>Online Payments</span>
+                    <i class="fas fa-chevron-down dropdown-arrow"></i>
+                </div>
+                <div class="dropdown-menu">
+                    <a href="/admin/ui/process_payouts.php" class="dropdown-item">
+                        <i class="fas fa-money-bill-wave"></i><span>Process Payouts</span>
+                    </a>
+                    <a href="/admin/ui/order_payments.php" class="dropdown-item active">
+                        <i class="fas fa-credit-card"></i><span>Order Payments</span>
+                    </a>
+                    <a href="/admin/ui/rider_remittances.php" class="dropdown-item">
+                        <i class="fas fa-hand-holding-usd"></i><span>Rider Remittances</span>
+                    </a>
+                    <a href="/admin/ui/seller_subscriptions.php" class="dropdown-item">
+                        <i class="fas fa-crown"></i><span>Seller Subscriptions</span>
+                    </a>
+                </div>
+            </div>
         </nav>
         <div class="sidebar-footer">
             <div class="user-profile">
@@ -135,7 +145,7 @@ require_once '../backend/session/auth_admin.php';
                         <option value="rejected">Rejected</option>
                     </select>
                     <div class="search-container">
-                        <input type="text" class="search-field" id="searchPayment" placeholder="Search order or buyer...">
+                        <input type="text" class="search-field" id="searchPayment" placeholder="Search buyer or GCash...">
                         <i class="fas fa-search search-icon"></i>
                     </div>
                 </div>
@@ -145,13 +155,11 @@ require_once '../backend/session/auth_admin.php';
                 <div class="payment_holder">
                     <div class="payment-table-header">
                         <div class="col-proof-id">Proof ID</div>
-                        <div class="col-order">Order #</div>
                         <div class="col-buyer">Buyer</div>
                         <div class="col-gcash">GCash Number</div>
                         <div class="col-amount">Amount</div>
                         <div class="col-status">Status</div>
                         <div class="col-date">Submitted</div>
-                        <div class="col-action">Action</div>
                     </div>
                     
                     <div class="table-body" id="paymentsTableBody">
@@ -172,54 +180,6 @@ require_once '../backend/session/auth_admin.php';
     </main>
 </div>
 
-<!-- Image Viewer Modal -->
-<div id="imageViewerModal" class="image-viewer-modal">
-    <span class="close-viewer" onclick="closeImageViewer()">&times;</span>
-    <img id="viewerImage" src="" alt="Payment Proof">
-</div>
-
-<!-- Status Update Modal -->
-<div id="statusModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 id="modalTitle">
-                <i id="modalIcon" class="fas"></i>
-                <span id="modalTitleText">Update Payment Status</span>
-            </h3>
-            <span class="close-modal" onclick="closeStatusModal()">&times;</span>
-        </div>
-        <div class="modal-body">
-            <div id="modalMessage"></div>
-            <form id="statusUpdateForm">
-                <input type="hidden" id="modalProofId">
-                <input type="hidden" id="modalAction">
-                
-                <div class="form-group">
-                    <label>Order: <span id="modalOrderInfo"></span></label>
-                </div>
-                
-                <div class="form-group">
-                    <label>Buyer: <span id="modalBuyerInfo"></span></label>
-                </div>
-                
-                <div class="form-group">
-                    <label>Amount: <span id="modalAmount"></span></label>
-                </div>
-                
-                <div class="form-group" id="rejectionReasonGroup" style="display: none;">
-                    <label for="rejectionReasonInput">Rejection Reason <span class="required">*</span></label>
-                    <textarea id="rejectionReasonInput" class="form-control" rows="4" placeholder="Please provide a reason for rejection..."></textarea>
-                    <small class="form-text">This reason will be recorded for reference.</small>
-                </div>
-            </form>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="closeStatusModal()">Cancel</button>
-            <button class="btn" id="confirmStatusBtn" onclick="confirmStatusUpdate()">Confirm</button>
-        </div>
-    </div>
-</div>
-
 <!-- Logout Modal -->
 <div id="logoutModal" class="modal">
     <div class="modal-content">
@@ -236,14 +196,26 @@ require_once '../backend/session/auth_admin.php';
     </div>
 </div>
 
-<!-- Notification Container -->
-<div id="notificationContainer"></div>
-
 <script src="/admin/js/logout.js"></script>
 
 <script>
     let allPaymentProofs = [];
-    let currentProof = null;
+    
+    // Toggle dropdown
+    function toggleDropdown(element) {
+        const dropdown = element.closest('.nav-dropdown');
+        dropdown.classList.toggle('open');
+        localStorage.setItem('onlinePaymentsOpen', dropdown.classList.contains('open'));
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropdown = document.querySelector('.nav-dropdown');
+        const isOpen = localStorage.getItem('onlinePaymentsOpen') === 'true';
+        const hasActive = dropdown?.querySelector('.dropdown-item.active');
+        if (isOpen || hasActive) {
+            dropdown?.classList.add('open');
+        }
+    });
     
     // Display current date
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
@@ -258,13 +230,11 @@ require_once '../backend/session/auth_admin.php';
             if (result.success) {
                 allPaymentProofs = result.data;
                 
-                // Update stats
                 document.getElementById('totalPayments').textContent = result.status_counts.total;
                 document.getElementById('pendingPayments').textContent = result.status_counts.pending;
                 document.getElementById('verifiedPayments').textContent = result.status_counts.verified;
                 document.getElementById('rejectedPayments').textContent = result.status_counts.rejected;
                 
-                // Display payment proofs
                 displayPaymentProofs(allPaymentProofs);
             } else {
                 document.getElementById('paymentsTableBody').innerHTML = '<div class="error">Failed to load payment proofs</div>';
@@ -275,7 +245,6 @@ require_once '../backend/session/auth_admin.php';
         }
     }
     
-    // Display payment proofs in table
     function displayPaymentProofs(proofs) {
         const tbody = document.getElementById('paymentsTableBody');
         
@@ -289,33 +258,9 @@ require_once '../backend/session/auth_admin.php';
             const statusClass = getStatusClass(proof.payment_status);
             const statusText = formatStatus(proof.payment_status);
             
-            let actionButtons = '';
-            if (proof.payment_status === 'pending') {
-                actionButtons = `
-                    <button class="btn-action btn-view" onclick="viewProofImage(event, '${proof.proof_image_url}')" title="View Proof">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button class="btn-action btn-verify" onclick="openStatusModal(event, ${proof.proof_id}, 'verify')" title="Verify">
-                        <i class="fas fa-check"></i>
-                    </button>
-                    <button class="btn-action btn-reject" onclick="openStatusModal(event, ${proof.proof_id}, 'reject')" title="Reject">
-                        <i class="fas fa-times"></i>
-                    </button>
-                `;
-            } else {
-                actionButtons = `
-                    <button class="btn-action btn-view" onclick="viewProofImage(event, '${proof.proof_image_url}')" title="View Proof">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                `;
-            }
-            
             html += `
-                <div class="payment-row" onclick="viewOrder(${proof.order_id})">
+                <div class="payment-row clickable" onclick="viewPaymentDetails(${proof.proof_id})">
                     <div class="col-proof-id">#${proof.proof_id}</div>
-                    <div class="col-order">
-                        <span class="order-link">#${proof.order_id}</span>
-                    </div>
                     <div class="col-buyer">
                         <div class="buyer-info">
                             <strong>${escapeHtml(proof.buyer_name || 'N/A')}</strong>
@@ -327,15 +272,11 @@ require_once '../backend/session/auth_admin.php';
                     </div>
                     <div class="col-amount">
                         <span class="payment-amount">₱${formatNumber(proof.amount)}</span>
-                        <small>Order: ₱${formatNumber(proof.order_total)}</small>
                     </div>
                     <div class="col-status">
                         <span class="status-badge ${statusClass}">${statusText}</span>
                     </div>
                     <div class="col-date">${formatDateTime(proof.submitted_at)}</div>
-                    <div class="col-action" onclick="event.stopPropagation()">
-                        ${actionButtons}
-                    </div>
                 </div>
             `;
         });
@@ -343,159 +284,10 @@ require_once '../backend/session/auth_admin.php';
         tbody.innerHTML = html;
     }
     
-    function viewProofImage(event, imageUrl) {
-        event.stopPropagation();
-        const modal = document.getElementById('imageViewerModal');
-        const viewerImage = document.getElementById('viewerImage');
-        viewerImage.src = imageUrl;
-        modal.style.display = 'flex';
+    function viewPaymentDetails(proofId) {
+        window.location.href = `order_payment_details.php?id=${proofId}`;
     }
     
-    function closeImageViewer() {
-        document.getElementById('imageViewerModal').style.display = 'none';
-    }
-    
-    function openStatusModal(event, proofId, action) {
-        event.stopPropagation();
-        
-        const proof = allPaymentProofs.find(p => p.proof_id === proofId);
-        if (!proof) return;
-        
-        currentProof = proof;
-        
-        const modal = document.getElementById('statusModal');
-        const modalTitle = document.getElementById('modalTitleText');
-        const modalIcon = document.getElementById('modalIcon');
-        const modalMessage = document.getElementById('modalMessage');
-        const modalProofId = document.getElementById('modalProofId');
-        const modalAction = document.getElementById('modalAction');
-        const modalOrderInfo = document.getElementById('modalOrderInfo');
-        const modalBuyerInfo = document.getElementById('modalBuyerInfo');
-        const modalAmount = document.getElementById('modalAmount');
-        const rejectionGroup = document.getElementById('rejectionReasonGroup');
-        const confirmBtn = document.getElementById('confirmStatusBtn');
-        
-        modalProofId.value = proofId;
-        modalAction.value = action;
-        modalOrderInfo.textContent = `#${proof.order_id}`;
-        modalBuyerInfo.textContent = proof.buyer_name;
-        modalAmount.textContent = `₱${formatNumber(proof.amount)}`;
-        
-        if (action === 'verify') {
-            modalTitle.textContent = 'Verify Payment';
-            modalIcon.className = 'fas fa-check-circle';
-            modalIcon.style.color = '#27ae60';
-            modalMessage.innerHTML = `
-                <div class="message-box message-success">
-                    <i class="fas fa-info-circle"></i>
-                    <p>Are you sure you want to verify this payment proof?</p>
-                </div>
-            `;
-            rejectionGroup.style.display = 'none';
-            confirmBtn.className = 'btn btn-success';
-            confirmBtn.innerHTML = '<i class="fas fa-check"></i> Verify Payment';
-        } else {
-            modalTitle.textContent = 'Reject Payment';
-            modalIcon.className = 'fas fa-times-circle';
-            modalIcon.style.color = '#e74c3c';
-            modalMessage.innerHTML = `
-                <div class="message-box message-danger">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <p>Are you sure you want to reject this payment proof? Please provide a reason.</p>
-                </div>
-            `;
-            rejectionGroup.style.display = 'block';
-            document.getElementById('rejectionReasonInput').value = '';
-            confirmBtn.className = 'btn btn-danger';
-            confirmBtn.innerHTML = '<i class="fas fa-times"></i> Reject Payment';
-        }
-        
-        modal.style.display = 'flex';
-        if (action === 'reject') {
-            document.getElementById('rejectionReasonInput').focus();
-        }
-    }
-    
-    function closeStatusModal() {
-        document.getElementById('statusModal').style.display = 'none';
-        document.getElementById('rejectionReasonInput').value = '';
-        currentProof = null;
-    }
-    
-    async function confirmStatusUpdate() {
-        const proofId = document.getElementById('modalProofId').value;
-        const action = document.getElementById('modalAction').value;
-        const status = action === 'verify' ? 'verified' : 'rejected';
-        const reason = action === 'reject' ? document.getElementById('rejectionReasonInput').value.trim() : '';
-        
-        if (action === 'reject' && !reason) {
-            showNotification('error', 'Please provide a reason for rejection.');
-            return;
-        }
-        
-        const confirmBtn = document.getElementById('confirmStatusBtn');
-        const originalText = confirmBtn.innerHTML;
-        confirmBtn.disabled = true;
-        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-        
-        try {
-            const response = await fetch('../backend/payments/update_payment_status.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    proof_id: proofId,
-                    status: status,
-                    reason: reason
-                })
-            });
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                closeStatusModal();
-                showNotification('success', result.message);
-                setTimeout(() => location.reload(), 1500);
-            } else {
-                showNotification('error', 'Failed to update status: ' + result.message);
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            showNotification('error', 'Error updating payment status');
-        } finally {
-            confirmBtn.disabled = false;
-            confirmBtn.innerHTML = originalText;
-        }
-    }
-    
-    function viewOrder(orderId) {
-        window.location.href = `order_details.php?id=${orderId}`;
-    }
-    
-    function showNotification(type, message) {
-        const container = document.getElementById('notificationContainer');
-        const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
-        
-        const icon = type === 'success' ? 'check-circle' : 'exclamation-circle';
-        
-        notification.innerHTML = `
-            <i class="fas fa-${icon}"></i>
-            <span>${message}</span>
-            <button class="notification-close" onclick="this.parentElement.remove()">&times;</button>
-        `;
-        
-        container.appendChild(notification);
-        
-        setTimeout(() => {
-            if (notification.parentElement) {
-                notification.remove();
-            }
-        }, 5000);
-    }
-    
-    // Filter functionality
     function filterPayments() {
         const statusFilter = document.getElementById('statusFilter').value;
         const searchTerm = document.getElementById('searchPayment').value.toLowerCase();
@@ -508,9 +300,10 @@ require_once '../backend/session/auth_admin.php';
         
         if (searchTerm) {
             filtered = filtered.filter(p => 
-                p.order_id.toString().includes(searchTerm) ||
                 (p.buyer_name && p.buyer_name.toLowerCase().includes(searchTerm)) ||
-                p.gcash_number.includes(searchTerm)
+                (p.buyer_email && p.buyer_email.toLowerCase().includes(searchTerm)) ||
+                p.gcash_number.includes(searchTerm) ||
+                p.proof_id.toString().includes(searchTerm)
             );
         }
         
@@ -552,30 +345,9 @@ require_once '../backend/session/auth_admin.php';
         return div.innerHTML;
     }
     
-    // Event listeners
     document.getElementById('statusFilter').addEventListener('change', filterPayments);
     document.getElementById('searchPayment').addEventListener('input', filterPayments);
     
-    window.onclick = function(event) {
-        const statusModal = document.getElementById('statusModal');
-        const imageModal = document.getElementById('imageViewerModal');
-        
-        if (event.target === statusModal) {
-            closeStatusModal();
-        }
-        if (event.target === imageModal) {
-            closeImageViewer();
-        }
-    }
-    
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeStatusModal();
-            closeImageViewer();
-        }
-    });
-    
-    // Load payment proofs when page loads
     loadPaymentProofs();
 </script>
 
