@@ -12,9 +12,27 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $input = json_decode(file_get_contents('php://input'), true);
 $sellerId = $input['seller_id'] ?? null;
+$gcashNumber = $input['gcash_number'] ?? null;
+$proofUrl = $input['proof_url'] ?? null;
 
 if (!$sellerId) {
     echo json_encode(['success' => false, 'message' => 'Missing seller ID']);
+    exit;
+}
+
+if (!$gcashNumber) {
+    echo json_encode(['success' => false, 'message' => 'GCash number is required']);
+    exit;
+}
+
+if (!$proofUrl) {
+    echo json_encode(['success' => false, 'message' => 'Proof of payment is required']);
+    exit;
+}
+
+// Validate GCash number format (09xxxxxxxxx)
+if (!preg_match('/^09[0-9]{9}$/', $gcashNumber)) {
+    echo json_encode(['success' => false, 'message' => 'Invalid GCash number format']);
     exit;
 }
 
@@ -22,10 +40,12 @@ try {
     $conn->beginTransaction();
     
     // Update all unpaid sold_items for this seller to 'paid'
-    // Only for orders with "Gcash - Rider Delivery" payment method
     $sql = "
         UPDATE public.sold_items si
-        SET paid_status = 'paid'
+        SET paid_status = 'paid',
+            gcash_number = ?,
+            proof_url = ?,
+            paid_at = NOW()
         FROM public.order_items oi
         INNER JOIN public.items i ON oi.product_id = i.id
         INNER JOIN public.orders o ON si.orders_id = o.id
@@ -36,7 +56,7 @@ try {
     ";
     
     $stmt = $conn->prepare($sql);
-    $stmt->execute([$sellerId]);
+    $stmt->execute([$gcashNumber, $proofUrl, $sellerId]);
     $rowCount = $stmt->rowCount();
     
     $conn->commit();

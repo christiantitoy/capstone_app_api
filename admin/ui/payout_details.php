@@ -119,6 +119,52 @@ if (!$sellerId) {
     </div>
 </div>
 
+<!-- Mark as Paid Modal -->
+<div id="markPaidModal" class="modal">
+    <div class="modal-content modal-lg">
+        <div class="modal-header">
+            <h3><i class="fas fa-check-circle" style="color: #27ae60;"></i> Mark Payout as Paid</h3>
+            <span class="close-modal" onclick="closeMarkPaidModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="payout-summary-modal">
+                <p><strong>Seller:</strong> <span id="modalSellerName"></span></p>
+                <p><strong>Amount to Pay:</strong> <span id="modalPayoutAmount" style="color: #27ae60; font-weight: 700;"></span></p>
+            </div>
+            
+            <form id="markPaidForm">
+                <div class="form-group">
+                    <label for="gcashNumber">GCash Number <span class="required">*</span></label>
+                    <input type="text" id="gcashNumber" class="form-control" placeholder="09XXXXXXXXX" maxlength="11">
+                    <small class="form-text">Enter the GCash number used for payment</small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Payment Proof <span class="required">*</span></label>
+                    <div class="file-upload-area" id="fileUploadArea" onclick="document.getElementById('proofImage').click()">
+                        <input type="file" id="proofImage" accept="image/jpeg,image/jpg,image/png,image/gif" style="display: none;" onchange="handleFileSelect(event)">
+                        <div id="uploadPlaceholder">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Click to upload proof of payment</p>
+                            <small>JPG, PNG, GIF (Max 5MB)</small>
+                        </div>
+                        <div id="imagePreview" style="display: none;">
+                            <img id="previewImg" src="" alt="Preview">
+                            <button type="button" class="btn-remove-image" onclick="removeImage(event)">&times;</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeMarkPaidModal()">Cancel</button>
+            <button class="btn btn-success" id="confirmMarkPaidBtn" onclick="confirmMarkAsPaid()">
+                <i class="fas fa-check"></i> Confirm & Mark as Paid
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Notification Container -->
 <div id="notificationContainer"></div>
 
@@ -126,6 +172,7 @@ if (!$sellerId) {
     const sellerId = <?= $sellerId ?>;
     let allItems = [];
     let sellerInfo = null;
+    let uploadedProofUrl = '';
     
     // Load payout details
     async function loadPayoutDetails() {
@@ -162,11 +209,10 @@ if (!$sellerId) {
     function updateActionButtons(seller) {
         const actionContainer = document.getElementById('actionButtons');
         
-        // Only show Mark as Paid button if there are unpaid items
         if (seller.unpaid_amount > 0) {
             actionContainer.innerHTML = `
-                <button class="btn btn-success" onclick="markAllAsPaid()">
-                    <i class="fas fa-check-circle"></i> Mark All as Paid
+                <button class="btn btn-success" onclick="openMarkPaidModal()">
+                    <i class="fas fa-check-circle"></i> Mark as Paid
                 </button>
             `;
         } else {
@@ -175,23 +221,19 @@ if (!$sellerId) {
     }
     
     function displayPayoutDetails(seller, items) {
-        // Seller info
         document.getElementById('sellerName').textContent = seller.seller_name;
         document.getElementById('storeName').textContent = seller.store_name || 'No store';
         document.getElementById('sellerEmail').textContent = seller.seller_email || 'No email';
         
-        // Status badge
         const statusBadge = document.getElementById('payoutStatus');
         statusBadge.textContent = seller.paid_status;
         statusBadge.className = `status-badge status-${seller.paid_status.toLowerCase()}`;
         
-        // Summary
         document.getElementById('totalItems').textContent = seller.total_items;
         document.getElementById('totalAmount').textContent = `₱${formatNumber(seller.total_amount)}`;
         document.getElementById('unpaidAmount').textContent = `₱${formatNumber(seller.unpaid_amount)}`;
         document.getElementById('paidAmount').textContent = `₱${formatNumber(seller.paid_amount)}`;
         
-        // Display items
         displayItems(items);
     }
     
@@ -232,33 +274,163 @@ if (!$sellerId) {
         tbody.innerHTML = html;
     }
     
-    async function markAllAsPaid() {
-        if (!confirm(`Mark all unpaid items (₱${formatNumber(sellerInfo.unpaid_amount)}) as paid for ${sellerInfo.seller_name}?`)) {
+    function openMarkPaidModal() {
+        document.getElementById('modalSellerName').textContent = sellerInfo.seller_name;
+        document.getElementById('modalPayoutAmount').textContent = `₱${formatNumber(sellerInfo.unpaid_amount)}`;
+        document.getElementById('markPaidModal').style.display = 'flex';
+        
+        // Reset form
+        document.getElementById('gcashNumber').value = '';
+        removeImage(null);
+        uploadedProofUrl = '';
+    }
+    
+    function closeMarkPaidModal() {
+        document.getElementById('markPaidModal').style.display = 'none';
+    }
+    
+    function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+        showNotification('error', 'Invalid file type. Only JPG, PNG, GIF, WEBP allowed.');
+        return;
+    }
+    
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        showNotification('error', 'File size exceeds 5MB limit.');
+        return;
+    }
+    
+    // Show preview immediately
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('previewImg').src = e.target.result;
+        document.getElementById('uploadPlaceholder').style.display = 'none';
+        document.getElementById('imagePreview').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+    
+    // Upload file to Cloudinary
+    uploadProofImage(file);
+}
+    
+    async function uploadProofImage(file) {
+    const formData = new FormData();
+    formData.append('proof_image', file);
+    
+    // Show uploading indicator
+    const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+    const originalHtml = uploadPlaceholder.innerHTML;
+    uploadPlaceholder.innerHTML = `
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Uploading...</p>
+        <small>Please wait</small>
+    `;
+    
+    try {
+        const response = await fetch('../backend/payouts/upload_payout_proof.php', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            uploadedProofUrl = result.url;
+            showNotification('success', result.message || 'Proof image uploaded successfully');
+        } else {
+            showNotification('error', result.message || 'Upload failed');
+            removeImage(null);
+            uploadPlaceholder.innerHTML = originalHtml;
+        }
+    } catch (error) {
+        console.error('Upload error:', error);
+        showNotification('error', 'Failed to upload image. Please try again.');
+        removeImage(null);
+        uploadPlaceholder.innerHTML = originalHtml;
+    }
+}
+    
+    function removeImage(event) {
+    if (event) event.stopPropagation();
+    
+    // Reset file input
+    document.getElementById('proofImage').value = '';
+    
+    // Reset preview
+    document.getElementById('uploadPlaceholder').style.display = 'flex';
+    document.getElementById('imagePreview').style.display = 'none';
+    document.getElementById('previewImg').src = '';
+    
+    // Reset upload placeholder content
+    const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+    uploadPlaceholder.innerHTML = `
+        <i class="fas fa-cloud-upload-alt"></i>
+        <p>Click to upload proof of payment</p>
+        <small>JPG, PNG, GIF, WEBP (Max 5MB)</small>
+    `;
+    
+    // Clear uploaded URL
+    uploadedProofUrl = '';
+}
+    
+    async function confirmMarkAsPaid() {
+        const gcashNumber = document.getElementById('gcashNumber').value.trim();
+        
+        // Validate GCash number
+        if (!gcashNumber) {
+            showNotification('error', 'Please enter GCash number');
             return;
         }
         
+        if (!/^09[0-9]{9}$/.test(gcashNumber)) {
+            showNotification('error', 'Invalid GCash number format (09XXXXXXXXX)');
+            return;
+        }
+        
+        if (!uploadedProofUrl) {
+            showNotification('error', 'Please upload proof of payment');
+            return;
+        }
+        
+        const confirmBtn = document.getElementById('confirmMarkPaidBtn');
+        const originalText = confirmBtn.innerHTML;
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        
         try {
-            const response = await fetch('../backend/payouts/mark_seller_paid.php', {
+            const response = await fetch('../backend/payouts/mark_payout_paid.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    seller_id: sellerId
+                    seller_id: sellerId,
+                    gcash_number: gcashNumber,
+                    proof_url: uploadedProofUrl
                 })
             });
             
             const result = await response.json();
             
             if (result.success) {
+                closeMarkPaidModal();
                 showNotification('success', result.message);
                 setTimeout(() => location.reload(), 1500);
             } else {
-                showNotification('error', 'Failed to mark as paid: ' + result.message);
+                showNotification('error', result.message);
             }
         } catch (error) {
             console.error('Error:', error);
             showNotification('error', 'Error marking payout as paid');
+        } finally {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = originalText;
         }
     }
     
@@ -297,6 +469,20 @@ if (!$sellerId) {
         }
         
         displayItems(filteredItems);
+    });
+    
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('markPaidModal');
+        if (event.target === modal) {
+            closeMarkPaidModal();
+        }
+    }
+    
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeMarkPaidModal();
+        }
     });
     
     function formatNumber(num) {

@@ -1155,3 +1155,102 @@ body {
         right: 5%;
     }
 }
+
+/* Larger Modal */
+.modal-lg {
+    max-width: 550px;
+}
+
+/* Payout Summary in Modal */
+.payout-summary-modal {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.payout-summary-modal p {
+    margin-bottom: 8px;
+}
+
+.payout-summary-modal p:last-child {
+    margin-bottom: 0;
+}
+
+/* File Upload Area */
+.file-upload-area {
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.3s;
+    position: relative;
+    min-height: 150px;
+}
+
+.file-upload-area:hover {
+    border-color: #3498db;
+}
+
+#uploadPlaceholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+#uploadPlaceholder i {
+    font-size: 48px;
+    color: #3498db;
+}
+
+#uploadPlaceholder p {
+    margin: 0;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+#uploadPlaceholder small {
+    color: #7f8c8d;
+}
+
+#imagePreview {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+#imagePreview img {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 8px;
+}
+
+.btn-remove-image {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: background 0.3s;
+}
+
+.btn-remove-image:hover {
+    background: #c0392b;
+}
+
+/* GCash Number Input */
+#gcashNumber {
+    font-family: monospace;
+    letter-spacing: 1px;
+}
