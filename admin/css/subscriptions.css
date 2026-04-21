@@ -605,3 +605,39 @@ body {
 .nav-dropdown.open .nav-dropdown-toggle .dropdown-arrow {
     transform: rotate(180deg);
 }
+
+.subscription_holder {
+    width: 100%;
+    min-width: 850px;
+}
+
+.subscription-table-header {
+    display: grid;
+    grid-template-columns: 90px minmax(200px, 2fr) 100px 120px 100px 120px;
+    background: #f8f9fa;
+    padding: 12px 15px;
+    font-weight: 600;
+    border-bottom: 2px solid #e9ecef;
+    gap: 10px;
+}
+
+.subscription-row {
+    display: grid;
+    grid-template-columns: 90px minmax(200px, 2fr) 100px 120px 100px 120px;
+    padding: 15px;
+    border-bottom: 1px solid #e9ecef;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.2s;
+    gap: 10px;
+}
+
+.status-badge.status-confirmed {
+    background: #e8f5e9;
+    color: #27ae60;
+}
+
+.status-badge.status-rejected {
+    background: #ffebee;
+    color: #e74c3c;
+}

@@ -158,6 +158,7 @@ require_once '../backend/session/auth_admin.php';
                         <div class="col-seller">Seller</div>
                         <div class="col-plan">Plan</div>
                         <div class="col-amount">Amount</div>
+                        <div class="col-status">Status</div>
                         <div class="col-date">Submitted</div>
                     </div>
                     
@@ -224,6 +225,8 @@ require_once '../backend/session/auth_admin.php';
             const response = await fetch('/admin/backend/subscriptions/get_subscriptions.php');
             const result = await response.json();
             
+            console.log('API Response:', result); // Debug logging
+            
             if (result.success) {
                 allSubscriptions = result.data;
                 planBreakdown = result.plan_breakdown;
@@ -240,7 +243,7 @@ require_once '../backend/session/auth_admin.php';
                 
                 displaySubscriptions(allSubscriptions);
             } else {
-                document.getElementById('subscriptionsTableBody').innerHTML = '<div class="error">Failed to load subscriptions</div>';
+                document.getElementById('subscriptionsTableBody').innerHTML = '<div class="error">Failed to load subscriptions: ' + (result.message || 'Unknown error') + '</div>';
             }
         } catch (error) {
             console.error('Error:', error);
@@ -251,7 +254,7 @@ require_once '../backend/session/auth_admin.php';
     function displaySubscriptions(subscriptions) {
         const tbody = document.getElementById('subscriptionsTableBody');
         
-        if (subscriptions.length === 0) {
+        if (!subscriptions || subscriptions.length === 0) {
             tbody.innerHTML = '<div class="no-data">No pending subscriptions found</div>';
             return;
         }
@@ -259,6 +262,8 @@ require_once '../backend/session/auth_admin.php';
         let html = '';
         subscriptions.forEach(sub => {
             const planClass = getPlanClass(sub.plan);
+            const statusClass = getStatusClass(sub.payment_status);
+            const statusText = formatStatus(sub.payment_status);
             
             html += `
                 <div class="subscription-row clickable" onclick="viewSubscriptionDetails(${sub.payment_id})">
@@ -274,6 +279,9 @@ require_once '../backend/session/auth_admin.php';
                     </div>
                     <div class="col-amount">
                         <span class="amount">₱${formatNumber(sub.amount)}</span>
+                    </div>
+                    <div class="col-status">
+                        <span class="status-badge ${statusClass}">${statusText}</span>
                     </div>
                     <div class="col-date">${formatDate(sub.submitted_at)}</div>
                 </div>
@@ -315,6 +323,20 @@ require_once '../backend/session/auth_admin.php';
             case 'gold': return 'plan-gold';
             default: return 'plan-bronze';
         }
+    }
+    
+    function getStatusClass(status) {
+        switch(status) {
+            case 'pending': return 'status-pending';
+            case 'confirmed': return 'status-confirmed';
+            case 'rejected': return 'status-rejected';
+            default: return 'status-pending';
+        }
+    }
+    
+    function formatStatus(status) {
+        if (!status) return 'Pending';
+        return status.charAt(0).toUpperCase() + status.slice(1);
     }
     
     function capitalize(str) {
