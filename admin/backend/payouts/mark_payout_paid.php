@@ -22,6 +22,7 @@ try {
     $conn->beginTransaction();
     
     // Update all unpaid sold_items for this seller to 'paid'
+    // Only for orders with "Gcash - Rider Delivery" payment method
     $sql = "
         UPDATE public.sold_items si
         SET paid_status = 'paid'
@@ -31,7 +32,7 @@ try {
         WHERE si.order_items_id = oi.id
           AND i.seller_id = ?
           AND si.paid_status IS NULL
-          AND o.payment_method = 'gcash'
+          AND o.payment_method = 'Gcash - Rider Delivery'
     ";
     
     $stmt = $conn->prepare($sql);

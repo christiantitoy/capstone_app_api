@@ -45,6 +45,9 @@ require_once '../backend/session/auth_admin.php';
             <a href="/admin/ui/deliveries.php" class="nav-item">
                 <i class="fas fa-truck"></i><span>Deliveries</span>
             </a>
+            <a href="/admin/ui/process_payouts.php" class="nav-item">
+                <i class="fas fa-money-bill-wave"></i><span>Process Payouts</span>
+            </a>
         </nav>
         <div class="sidebar-footer">
             <div class="user-profile">

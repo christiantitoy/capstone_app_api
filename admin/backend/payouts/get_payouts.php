@@ -5,7 +5,7 @@ require_once '/var/www/html/connection/db_connection.php';
 header('Content-Type: application/json');
 
 try {
-    // Get sold items with NULL paid_status and GCash payment method
+    // Get sold items with NULL paid_status and "Gcash - Rider Delivery" payment method
     $sql = "
         SELECT 
             si.id as sold_item_id,
@@ -38,7 +38,7 @@ try {
         LEFT JOIN public.order_deliveries od ON si.order_deliveries_id = od.id
         LEFT JOIN public.riders r ON od.rider_id = r.id
         WHERE si.paid_status IS NULL
-          AND o.payment_method = 'gcash'
+          AND o.payment_method = 'Gcash - Rider Delivery'
           AND o.status IN ('delivered', 'complete')
         ORDER BY s.id, si.created_at DESC
     ";
@@ -47,9 +47,42 @@ try {
     $stmt->execute();
     $soldItems = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
+    // Debug: Check if any data is returned
+    if (empty($soldItems)) {
+        // Let's check what payment methods exist in the database
+        $checkSql = "SELECT DISTINCT payment_method FROM public.orders WHERE status IN ('delivered', 'complete')";
+        $checkStmt = $conn->prepare($checkSql);
+        $checkStmt->execute();
+        $paymentMethods = $checkStmt->fetchAll(PDO::FETCH_COLUMN);
+        
+        // Also check if there are any sold_items with NULL paid_status
+        $soldItemsCheck = "SELECT COUNT(*) as count FROM public.sold_items WHERE paid_status IS NULL";
+        $soldStmt = $conn->prepare($soldItemsCheck);
+        $soldStmt->execute();
+        $nullCount = $soldStmt->fetch(PDO::FETCH_ASSOC)['count'];
+        
+        echo json_encode([
+            'success' => true,
+            'data' => [
+                'sold_items' => [],
+                'seller_summary' => [],
+                'totals' => [
+                    'total_payout' => 0,
+                    'total_sellers' => 0,
+                    'total_items' => 0
+                ]
+            ],
+            'debug' => [
+                'payment_methods' => $paymentMethods,
+                'null_paid_status_count' => (int)$nullCount,
+                'message' => 'No matching records found'
+            ]
+        ]);
+        exit;
+    }
+    
     // Group by seller for summary
     $sellerSummary = [];
-    $sellerItems = [];
     
     foreach ($soldItems as $item) {
         $sellerId = $item['seller_id'];
