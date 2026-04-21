@@ -304,9 +304,9 @@ require_once '../backend/session/auth_admin.php';
         return div.innerHTML;
     }
     
-    // View order function (for future development)
+    // View order function
     function viewOrder(id) {
-        alert('Order details will be implemented soon. Order ID: ' + id);
+        window.location.href = `order_details.php?id=${id}`;
     }
     
     // Filter and search functionality
