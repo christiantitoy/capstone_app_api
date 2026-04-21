@@ -665,3 +665,131 @@ body {
         right: 5%;
     }
 }
+
+/* Performance Stats Grid */
+.stats-grid-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.stat-row:last-child {
+    border-bottom: none;
+}
+
+.stat-label {
+    color: #7f8c8d;
+    font-size: 13px;
+}
+
+.stat-value-small {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 14px;
+}
+
+.stat-divider {
+    height: 1px;
+    background: #e9ecef;
+    margin: 10px 0;
+}
+
+/* Recent Deliveries Section */
+.info-section {
+    padding: 0 30px 30px 30px;
+}
+
+.deliveries-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.deliveries-table th {
+    background: #f8f9fa;
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #2c3e50;
+    border-bottom: 2px solid #e9ecef;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.deliveries-table td {
+    padding: 15px;
+    border-bottom: 1px solid #e9ecef;
+    color: #2c3e50;
+    font-size: 14px;
+}
+
+.deliveries-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+/* Delivery Status Badges */
+.delivery-status {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.status-assigned {
+    background: #3498db20;
+    color: #3498db;
+}
+
+.status-picked_up {
+    background: #9b59b620;
+    color: #9b59b6;
+}
+
+.status-delivering {
+    background: #e67e2220;
+    color: #e67e22;
+}
+
+.status-completed {
+    background: #27ae6020;
+    color: #27ae60;
+}
+
+.status-cancelled {
+    background: #e74c3c20;
+    color: #e74c3c;
+}
+
+.status-abandoned {
+    background: #95a5a620;
+    color: #7f8c8d;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .info-section {
+        padding: 0 20px 20px 20px;
+    }
+    
+    .deliveries-table {
+        font-size: 12px;
+    }
+    
+    .deliveries-table th,
+    .deliveries-table td {
+        padding: 10px 8px;
+    }
+}
