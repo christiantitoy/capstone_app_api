@@ -39,20 +39,23 @@ if (!preg_match('/^09[0-9]{9}$/', $gcashNumber)) {
 try {
     $conn->beginTransaction();
     
-    // Update all unpaid sold_items for this seller to 'paid'
+    // PostgreSQL UPDATE with FROM requires a different syntax
     $sql = "
-        UPDATE public.sold_items si
+        UPDATE public.sold_items 
         SET paid_status = 'paid',
             gcash_number = ?,
             proof_url = ?,
             paid_at = NOW()
-        FROM public.order_items oi
-        INNER JOIN public.items i ON oi.product_id = i.id
-        INNER JOIN public.orders o ON si.orders_id = o.id
-        WHERE si.order_items_id = oi.id
-          AND i.seller_id = ?
-          AND si.paid_status IS NULL
-          AND o.payment_method = 'Gcash - Rider Delivery'
+        WHERE id IN (
+            SELECT si.id
+            FROM public.sold_items si
+            INNER JOIN public.order_items oi ON si.order_items_id = oi.id
+            INNER JOIN public.items i ON oi.product_id = i.id
+            INNER JOIN public.orders o ON si.orders_id = o.id
+            WHERE i.seller_id = ?
+              AND si.paid_status IS NULL
+              AND o.payment_method = 'Gcash - Rider Delivery'
+        )
     ";
     
     $stmt = $conn->prepare($sql);
