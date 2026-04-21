@@ -15,7 +15,7 @@ try {
             spp.proof_image_url,
             spp.submitted_at,
             spp.reviewed_at,
-            spp.status::text as payment_status,
+            spp.status as payment_status,
             spp.notes,
             sp.plan,
             sp.billing,
@@ -30,7 +30,7 @@ try {
         INNER JOIN public.sellers_plan sp ON spp.seller_plan_id = sp.id
         INNER JOIN public.sellers s ON spp.seller_id = s.id
         LEFT JOIN public.stores st ON s.id = st.seller_id
-        WHERE spp.status::text = 'pending'
+        WHERE spp.status = 'pending'
         ORDER BY spp.submitted_at DESC
     ";
     
@@ -44,7 +44,7 @@ try {
             COUNT(*) as total_pending,
             COALESCE(SUM(amount), 0) as total_amount
         FROM public.seller_plan_payments
-        WHERE status::text = 'pending'
+        WHERE status = 'pending'
     ";
     $statusStmt = $conn->prepare($statusSql);
     $statusStmt->execute();
@@ -58,7 +58,7 @@ try {
             COALESCE(SUM(spp.amount), 0) as total
         FROM public.seller_plan_payments spp
         INNER JOIN public.sellers_plan sp ON spp.seller_plan_id = sp.id
-        WHERE spp.status::text = 'pending'
+        WHERE spp.status = 'pending'
         GROUP BY sp.plan
     ";
     $planStmt = $conn->prepare($planSql);

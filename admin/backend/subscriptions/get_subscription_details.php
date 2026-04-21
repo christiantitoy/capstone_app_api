@@ -49,11 +49,9 @@ try {
         exit;
     }
     
-    // Get seller's store info separately (just basic info)
+    // Get seller's store info
     $storeSql = "
-        SELECT 
-            store_name,
-            logo_url
+        SELECT store_name, logo_url
         FROM public.stores
         WHERE seller_id = ?
     ";

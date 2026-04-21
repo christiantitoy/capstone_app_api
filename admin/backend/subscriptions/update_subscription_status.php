@@ -59,11 +59,10 @@ try {
         
         // Calculate end date based on billing
         $endDate = null;
-        $now = new DateTime();
         if ($info['billing'] === 'monthly') {
-            $endDate = $now->modify('+1 month');
+            $endDate = date('Y-m-d H:i:s', strtotime('+1 month'));
         } elseif ($info['billing'] === 'yearly') {
-            $endDate = $now->modify('+1 year');
+            $endDate = date('Y-m-d H:i:s', strtotime('+1 year'));
         }
         
         // Update seller's plan status
@@ -73,7 +72,7 @@ try {
                 SET status = 'active', start_date = NOW(), end_date = ?, updated_at = NOW()
                 WHERE id = ?
             ");
-            $stmt->execute([$endDate->format('Y-m-d H:i:s'), $info['seller_plan_id']]);
+            $stmt->execute([$endDate, $info['seller_plan_id']]);
         } else {
             // Lifetime plan
             $stmt = $conn->prepare("
@@ -91,15 +90,13 @@ try {
             WHERE id = ?
         ");
         $stmt->execute([$notes, $paymentId]);
-        
-        // Keep plan status as pending
     }
     
     $conn->commit();
     
     echo json_encode([
         'success' => true,
-        'message' => "Subscription payment {$status} successfully!"
+        'message' => "Subscription payment " . ($status === 'confirmed' ? 'confirmed' : 'rejected') . " successfully!"
     ]);
     
 } catch (Exception $e) {
