@@ -32,15 +32,13 @@ try {
             o.locked_at,
             b.username as buyer_name,
             b.email as buyer_email,
-            b.phone as buyer_phone,
-            a.street_address,
-            a.city,
-            a.province,
-            a.postal_code,
-            a.plus_code
+            ba.recipient_name as recipient_name,
+            ba.phone_number as buyer_phone,
+            ba.full_address,
+            ba.gps_location as plus_code
         FROM public.orders o
         LEFT JOIN public.buyers b ON o.buyer_id = b.id
-        LEFT JOIN public.addresses a ON o.address_id = a.id
+        LEFT JOIN public.buyer_addresses ba ON o.address_id = ba.id
         WHERE o.id = ?
     ";
     $stmt = $conn->prepare($sql);

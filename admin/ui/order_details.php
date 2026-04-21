@@ -194,24 +194,28 @@ if (!$orderId) {
         document.getElementById('orderPlatformFee').textContent = `₱${formatNumber(order.platform_fee)}`;
         document.getElementById('orderTotal').textContent = `₱${formatNumber(order.total_amount)}`;
         
-        // Customer info
+        // Customer info - from buyers table
         document.getElementById('customerInfo').innerHTML = `
-            <p><strong>Name:</strong> ${escapeHtml(order.buyer_name || 'N/A')}</p>
+            <p><strong>Username:</strong> ${escapeHtml(order.buyer_name || 'N/A')}</p>
             <p><strong>Email:</strong> ${escapeHtml(order.buyer_email || 'N/A')}</p>
-            <p><strong>Phone:</strong> ${escapeHtml(order.buyer_phone || 'N/A')}</p>
         `;
         
-        // Address info
-        const addressParts = [];
-        if (order.street_address) addressParts.push(order.street_address);
-        if (order.city) addressParts.push(order.city);
-        if (order.province) addressParts.push(order.province);
-        if (order.postal_code) addressParts.push(order.postal_code);
+        // Address info - from buyer_addresses table
+        let addressHtml = '';
+        if (order.recipient_name) {
+            addressHtml += `<p><strong>Recipient:</strong> ${escapeHtml(order.recipient_name)}</p>`;
+        }
+        if (order.buyer_phone) {
+            addressHtml += `<p><strong>Phone:</strong> ${escapeHtml(order.buyer_phone)}</p>`;
+        }
+        if (order.full_address) {
+            addressHtml += `<p><strong>Address:</strong> ${escapeHtml(order.full_address)}</p>`;
+        }
+        if (order.plus_code) {
+            addressHtml += `<p><strong>GPS Location / Plus Code:</strong> ${escapeHtml(order.plus_code)}</p>`;
+        }
         
-        document.getElementById('addressInfo').innerHTML = `
-            <p><strong>Address:</strong> ${addressParts.length ? escapeHtml(addressParts.join(', ')) : 'N/A'}</p>
-            ${order.plus_code ? `<p><strong>Plus Code:</strong> ${escapeHtml(order.plus_code)}</p>` : ''}
-        `;
+        document.getElementById('addressInfo').innerHTML = addressHtml || '<p>No address information available</p>';
         
         // Delivery info
         if (delivery) {
@@ -225,6 +229,9 @@ if (!$orderId) {
                 deliveryHtml += `
                     <p><strong>Rider:</strong> <a href="rider_details.php?id=${delivery.rider_id}" class="rider-link">${escapeHtml(delivery.rider_name)}</a></p>
                 `;
+            }
+            if (delivery.rider_email) {
+                deliveryHtml += `<p><strong>Rider Email:</strong> ${escapeHtml(delivery.rider_email)}</p>`;
             }
             if (delivery.assigned_at) {
                 deliveryHtml += `<p><strong>Assigned:</strong> ${formatDateTime(delivery.assigned_at)}</p>`;
@@ -240,6 +247,8 @@ if (!$orderId) {
             }
             
             document.getElementById('deliveryDetails').innerHTML = deliveryHtml || '<p>No delivery details available</p>';
+        } else {
+            document.getElementById('deliverySection').style.display = 'none';
         }
         
         // Order items
@@ -275,8 +284,9 @@ if (!$orderId) {
                                 <i class="fas fa-external-link-alt"></i> View Product
                             </a>
                         </div>
-                        ${item.store_name ? `<p class="item-store">${escapeHtml(item.store_name)}</p>` : ''}
-                        ${optionsDisplay ? `<p class="item-variant">Variant: ${escapeHtml(optionsDisplay)}</p>` : ''}
+                        ${item.store_name ? `<p class="item-store"><i class="fas fa-store"></i> ${escapeHtml(item.store_name)}</p>` : ''}
+                        ${item.seller_name ? `<p class="item-seller">Seller: ${escapeHtml(item.seller_name)}</p>` : ''}
+                        ${optionsDisplay ? `<p class="item-variant"><i class="fas fa-tag"></i> Variant: ${escapeHtml(optionsDisplay)}</p>` : ''}
                         ${item.sku ? `<p class="item-sku">SKU: ${escapeHtml(item.sku)}</p>` : ''}
                         <div class="item-price-qty">
                             <span class="item-price">₱${formatNumber(item.unit_price)} × ${item.quantity}</span>
