@@ -50,6 +50,12 @@ require_once '../backend/session/auth_admin.php';
             <a href="/admin/ui/order_payments.php" class="nav-item active">
                 <i class="fas fa-credit-card"></i><span>Order Payments</span>
             </a>
+            <a href="/admin/ui/rider_remittances.php" class="nav-item">
+                <i class="fas fa-hand-holding-usd"></i><span>Rider Remittances</span>
+            </a>
+            <a href="/admin/ui/seller_subscriptions.php" class="nav-item">
+                <i class="fas fa-crown"></i><span>Seller Subscriptions</span>
+            </a>
         </nav>
         <div class="sidebar-footer">
             <div class="user-profile">
