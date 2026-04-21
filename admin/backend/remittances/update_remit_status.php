@@ -43,8 +43,11 @@ try {
         throw new Exception('Remit proof not found');
     }
     
+    // Parse earning IDs
+    $earningIds = explode(',', trim($remitProof['earning_ids'], '{}'));
+    
     if ($status === 'rejected') {
-        // Update with rejection reason
+        // Update remit proof with rejection reason
         $stmt = $conn->prepare("
             UPDATE remit_proofs 
             SET status = ?, 
@@ -52,8 +55,18 @@ try {
             WHERE id = ?
         ");
         $stmt->execute([$status, $reason, $remitId]);
+        
+        // Reset is_remitted to false for all earnings in this remittance
+        if (!empty($earningIds)) {
+            $placeholders = implode(',', array_fill(0, count($earningIds), '?'));
+            $updateSql = "UPDATE rider_earnings SET is_remitted = false WHERE id IN ($placeholders)";
+            $updateStmt = $conn->prepare($updateSql);
+            $updateStmt->execute($earningIds);
+        }
+        
+        $message = "Remittance rejected successfully! Earnings marked as unremitted.";
     } else {
-        // Update status and mark earnings as remitted
+        // Update remit proof status (confirmed)
         $stmt = $conn->prepare("
             UPDATE remit_proofs 
             SET status = ?, 
@@ -63,20 +76,22 @@ try {
         $stmt->execute([$status, $remitId]);
         
         // Mark earnings as remitted
-        $earningIds = explode(',', trim($remitProof['earning_ids'], '{}'));
         if (!empty($earningIds)) {
             $placeholders = implode(',', array_fill(0, count($earningIds), '?'));
             $updateSql = "UPDATE rider_earnings SET is_remitted = true WHERE id IN ($placeholders)";
             $updateStmt = $conn->prepare($updateSql);
             $updateStmt->execute($earningIds);
         }
+        
+        $message = "Remittance confirmed successfully! Earnings marked as remitted.";
     }
     
     $conn->commit();
     
     echo json_encode([
         'success' => true,
-        'message' => "Remittance {$status} successfully!"
+        'message' => $message,
+        'earnings_updated' => count($earningIds)
     ]);
     
 } catch (Exception $e) {
