@@ -33,6 +33,58 @@ if (!isset($_SESSION['seller_id'])) {
         .multi-preview li {
             margin-bottom: 4px;
         }
+        
+        /* Disabled submit button */
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background: #95a5a6;
+        }
+        
+        .submit-btn:disabled:hover {
+            background: #95a5a6;
+            transform: none;
+        }
+        
+        /* Upload indicator */
+        .uploading-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 10px;
+            color: #3498db;
+            font-size: 13px;
+        }
+        
+        .uploading-indicator i {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Upload status message */
+        .upload-status {
+            margin-top: 15px;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #7f8c8d;
+            text-align: center;
+        }
+        
+        .upload-status.has-uploads {
+            background: #e8f5e9;
+            color: #27ae60;
+        }
+        
+        .upload-status.uploading {
+            background: #fff3e0;
+            color: #e67e22;
+        }
     </style>
 </head>
 <body>
@@ -82,7 +134,7 @@ if (!isset($_SESSION['seller_id'])) {
                             <div class="form-group">
                                 <label for="contact">Contact Number *</label>
                                 <input type="tel" id="contact" name="contact" placeholder="09123456789" required>
-                                <div class="help-text">We’ll use this for order updates and verification</div>
+                                <div class="help-text">We'll use this for order updates and verification</div>
                             </div>
                             <div class="form-group">
                                 <label for="open_time">Open Time</label>
@@ -151,8 +203,8 @@ if (!isset($_SESSION['seller_id'])) {
                                 <input type="file" id="logo" accept="image/*">
                                 <div class="help-text">Recommended: 500×500 px, PNG or JPG</div>
                                 <img id="logo_preview" class="upload-preview" style="display:none;" alt="Logo preview">
-                                <!-- Hidden field for Cloudinary URL -->
                                 <input type="hidden" name="logo_url" id="logo_url">
+                                <span id="logo_status" class="uploading-indicator" style="display:none;"></span>
                             </div>
 
                             <div class="form-group">
@@ -161,6 +213,7 @@ if (!isset($_SESSION['seller_id'])) {
                                 <div class="help-text">Best size: 1200×400 px or wider</div>
                                 <img id="banner_preview" class="upload-preview" style="display:none;" alt="Banner preview">
                                 <input type="hidden" name="banner_url" id="banner_url">
+                                <span id="banner_status" class="uploading-indicator" style="display:none;"></span>
                             </div>
                         </div>
                     </div>
@@ -196,6 +249,7 @@ if (!isset($_SESSION['seller_id'])) {
                                 </div>
                                 <ul id="valid_id_list" class="multi-preview"></ul>
                                 <input type="hidden" name="valid_id_urls" id="valid_id_urls">
+                                <span id="valid_id_status" class="uploading-indicator" style="display:none;"></span>
                             </div>
                             <div class="form-group">
                                 <label for="store_photos">Upload Store Photos *</label>
@@ -203,11 +257,17 @@ if (!isset($_SESSION['seller_id'])) {
                                 <div class="help-text">Upload 2–6 clear photos of your shop (inside, outside, products, etc.)</div>
                                 <ul id="store_photos_list" class="multi-preview"></ul>
                                 <input type="hidden" name="store_photo_urls" id="store_photo_urls">
+                                <span id="store_photos_status" class="uploading-indicator" style="display:none;"></span>
                             </div>
                         </div>
                     </div>
 
-                    <button type="submit" class="submit-btn">
+                    <!-- Upload Status -->
+                    <div id="uploadStatus" class="upload-status">
+                        <span id="uploadStatusText">No files uploading</span>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="submitBtn">
                         Save Shop Information
                     </button>
                 </form>
@@ -216,13 +276,57 @@ if (!isset($_SESSION['seller_id'])) {
     </section>
 
     <script>
-        const UPLOAD_ENDPOINT = '/connection/upload_apis/upload-seller-media.php';  // ← your Cloudinary endpoint
+        const UPLOAD_ENDPOINT = '/connection/upload_apis/upload-seller-media.php';
+        
+        // Track upload states
+        let activeUploads = 0;
+        const submitBtn = document.getElementById('submitBtn');
+        const uploadStatusText = document.getElementById('uploadStatusText');
+        const uploadStatusDiv = document.getElementById('uploadStatus');
+        
+        // Update submit button state
+        function updateSubmitButton() {
+            if (activeUploads > 0) {
+                submitBtn.disabled = true;
+                uploadStatusDiv.className = 'upload-status uploading';
+                uploadStatusText.textContent = `Uploading ${activeUploads} file(s)... Please wait`;
+            } else {
+                submitBtn.disabled = false;
+                uploadStatusDiv.className = 'upload-status has-uploads';
+                uploadStatusText.textContent = 'All uploads complete. Ready to submit.';
+            }
+        }
+        
+        // Check if any required images are missing (optional validation)
+        function validateRequiredImages() {
+            const validIdUrls = document.getElementById('valid_id_urls').value;
+            const storePhotoUrls = document.getElementById('store_photo_urls').value;
+            
+            if (!validIdUrls || validIdUrls === '[]') {
+                alert('Please upload your valid ID (front and back)');
+                return false;
+            }
+            
+            if (!storePhotoUrls || storePhotoUrls === '[]') {
+                alert('Please upload at least one store photo');
+                return false;
+            }
+            
+            return true;
+        }
 
-        // ────────────────────────────────────────────────
-        // Single file upload helper (logo, banner)
-        // ────────────────────────────────────────────────
-        async function uploadSingleFile(file, type, previewId, hiddenInputId) {
+        // Single file upload helper
+        async function uploadSingleFile(file, type, previewId, hiddenInputId, statusId) {
             if (!file) return;
+
+            const statusEl = document.getElementById(statusId);
+            activeUploads++;
+            updateSubmitButton();
+            
+            if (statusEl) {
+                statusEl.style.display = 'inline-flex';
+                statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+            }
 
             const formData = new FormData();
             formData.append('file', file);
@@ -238,6 +342,9 @@ if (!isset($_SESSION['seller_id'])) {
 
                 if (!data.success) {
                     alert(`Upload failed (${type}): ${data.error || 'Unknown error'}`);
+                    if (statusEl) {
+                        statusEl.innerHTML = '<i class="fas fa-times-circle" style="color: #e74c3c;"></i> Failed';
+                    }
                     return;
                 }
 
@@ -248,18 +355,35 @@ if (!isset($_SESSION['seller_id'])) {
                     const preview = document.getElementById(previewId);
                     preview.src = url;
                     preview.style.display = 'block';
+                    
+                    if (statusEl) {
+                        statusEl.innerHTML = '<i class="fas fa-check-circle" style="color: #27ae60;"></i> Uploaded';
+                    }
                 }
             } catch (err) {
                 console.error(err);
                 alert(`Network error uploading ${type}`);
+                if (statusEl) {
+                    statusEl.innerHTML = '<i class="fas fa-times-circle" style="color: #e74c3c;"></i> Error';
+                }
+            } finally {
+                activeUploads--;
+                updateSubmitButton();
             }
         }
 
-        // ────────────────────────────────────────────────
-        // Multiple files upload helper (valid_id, store_photos)
-        // ────────────────────────────────────────────────
-        async function uploadMultipleFiles(files, type, listId, hiddenInputId) {
+        // Multiple files upload helper
+        async function uploadMultipleFiles(files, type, listId, hiddenInputId, statusId) {
             if (files.length === 0) return;
+
+            const statusEl = document.getElementById(statusId);
+            activeUploads++;
+            updateSubmitButton();
+            
+            if (statusEl) {
+                statusEl.style.display = 'inline-flex';
+                statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+            }
 
             const formData = new FormData();
             for (let file of files) {
@@ -277,46 +401,64 @@ if (!isset($_SESSION['seller_id'])) {
 
                 if (!data.success) {
                     alert(`Upload failed (${type}): ${data.error || 'Unknown error'}`);
+                    if (statusEl) {
+                        statusEl.innerHTML = '<i class="fas fa-times-circle" style="color: #e74c3c;"></i> Failed';
+                    }
                     return;
                 }
 
                 const urls = data.files.map(f => f.url);
                 document.getElementById(hiddenInputId).value = JSON.stringify(urls);
 
-                // Show list of uploaded filenames
                 const list = document.getElementById(listId);
                 list.innerHTML = '';
                 urls.forEach((url, i) => {
                     const li = document.createElement('li');
-                    li.textContent = `File ${i+1} uploaded`;
+                    li.textContent = `File ${i+1} uploaded ✓`;
                     list.appendChild(li);
                 });
-
+                
+                if (statusEl) {
+                    statusEl.innerHTML = '<i class="fas fa-check-circle" style="color: #27ae60;"></i> Uploaded';
+                }
             } catch (err) {
                 console.error(err);
                 alert(`Network error uploading ${type} files`);
+                if (statusEl) {
+                    statusEl.innerHTML = '<i class="fas fa-times-circle" style="color: #e74c3c;"></i> Error';
+                }
+            } finally {
+                activeUploads--;
+                updateSubmitButton();
             }
         }
 
-        // ────────────────────────────────────────────────
-        // Event listeners for file inputs
-        // ────────────────────────────────────────────────
-
+        // Event listeners
         document.getElementById('logo').addEventListener('change', (e) => {
-            uploadSingleFile(e.target.files[0], 'logo', 'logo_preview', 'logo_url');
+            if (e.target.files[0]) {
+                uploadSingleFile(e.target.files[0], 'logo', 'logo_preview', 'logo_url', 'logo_status');
+            }
         });
 
         document.getElementById('banner').addEventListener('change', (e) => {
-            uploadSingleFile(e.target.files[0], 'banner', 'banner_preview', 'banner_url');
+            if (e.target.files[0]) {
+                uploadSingleFile(e.target.files[0], 'banner', 'banner_preview', 'banner_url', 'banner_status');
+            }
         });
 
         document.getElementById('valid_id').addEventListener('change', (e) => {
-            uploadMultipleFiles(e.target.files, 'valid_id', 'valid_id_list', 'valid_id_urls');
+            if (e.target.files.length > 0) {
+                uploadMultipleFiles(e.target.files, 'valid_id', 'valid_id_list', 'valid_id_urls', 'valid_id_status');
+            }
         });
 
         document.getElementById('store_photos').addEventListener('change', (e) => {
-            uploadMultipleFiles(e.target.files, 'store_photos', 'store_photos_list', 'store_photo_urls');
+            if (e.target.files.length > 0) {
+                uploadMultipleFiles(e.target.files, 'store_photos', 'store_photos_list', 'store_photo_urls', 'store_photos_status');
+            }
         });
+
+        // GCash number validation
         document.getElementById('gcash_number').addEventListener('input', function(e) {
             this.value = this.value.replace(/[^0-9]/g, '');
             if (this.value.length > 11) {
@@ -324,7 +466,15 @@ if (!isset($_SESSION['seller_id'])) {
             }
         });
 
+        // Form submit validation
         document.getElementById('shopSetupForm').addEventListener('submit', function(e) {
+            // Prevent submit if uploads are in progress
+            if (activeUploads > 0) {
+                e.preventDefault();
+                alert('Please wait for all images to finish uploading.');
+                return false;
+            }
+            
             const gcashNumber = document.getElementById('gcash_number').value;
             
             if (gcashNumber && !/^09[0-9]{9}$/.test(gcashNumber)) {
@@ -332,11 +482,15 @@ if (!isset($_SESSION['seller_id'])) {
                 alert('GCash number must be 11 digits starting with 09 (e.g., 09123456789)');
                 return false;
             }
+            
+            // Validate required images
+            if (!validateRequiredImages()) {
+                e.preventDefault();
+                return false;
+            }
         });
 
-        // ────────────────────────────────────────────────
-        // Your original GPS + Plus Code logic (unchanged)
-        // ────────────────────────────────────────────────
+        // GPS + Plus Code logic (unchanged)
         const gpsInput = document.getElementById('gps_display');
         const latInput = document.getElementById('latitude');
         const lngInput = document.getElementById('longitude');
@@ -410,6 +564,9 @@ if (!isset($_SESSION['seller_id'])) {
                 .then(() => alert('Copied! (Include the city name when sharing)'))
                 .catch(() => alert('Copy failed – select manually.'));
         });
+        
+        // Initialize
+        updateSubmitButton();
     </script>
 </body>
 </html>
