@@ -41,7 +41,7 @@ function sendRejectionEmail($sellerEmail, $sellerName, $rejectionReason) {
         return false;
     }
     
-    // Prepare HTML email content
+    // Prepare HTML email content - Simplified without "What You Can Do Next"
     $htmlContent = "
     <html>
     <head>
@@ -55,11 +55,6 @@ function sendRejectionEmail($sellerEmail, $sellerName, $rejectionReason) {
         .reason-box { background: #fdf0f0; border-left: 4px solid #e74c3c; padding: 20px; border-radius: 8px; margin: 20px 0; }
         .reason-box h4 { color: #e74c3c; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px; }
         .reason-box p { margin: 0; color: #2c3e50; }
-        .next-steps { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
-        .next-steps h4 { margin: 0 0 15px 0; color: #2c3e50; }
-        .next-steps ul { margin: 0; padding-left: 20px; color: #5a6a7a; }
-        .next-steps li { margin-bottom: 8px; }
-        .button { display: inline-block; padding: 12px 30px; background: #3498db; color: white !important; text-decoration: none; border-radius: 6px; margin: 15px 0; font-weight: 600; }
         .footer { text-align: center; color: #95a5a6; font-size: 13px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef; }
     </style>
     </head>
@@ -79,25 +74,10 @@ function sendRejectionEmail($sellerEmail, $sellerName, $rejectionReason) {
                 <p>" . nl2br(htmlspecialchars($rejectionReason)) . "</p>
             </div>
             
-            <div class='next-steps'>
-                <h4>What You Can Do Next:</h4>
-                <ul>
-                    <li>Review the rejection reason above</li>
-                    <li>Update your shop information with the correct details</li>
-                    <li>Ensure your valid ID and store photos are clear and legitimate</li>
-                    <li>Reapply once you've addressed the issues mentioned</li>
-                </ul>
-            </div>
-            
-            <p>You can log in to your account and update your shop information to reapply for seller approval.</p>
-            
-            <center>
-                <a href='https://capstone-app-api-r1ux.onrender.com/seller/ui/shop-form.php' class='button'>Update My Shop</a>
-            </center>
+            <p>If you have any questions regarding this decision, please feel free to contact our support team.</p>
         </div>
         
         <div class='footer'>
-            <p>If you have any questions, please contact our support team.</p>
             <p>© " . date('Y') . " PalitOra. All rights reserved.</p>
         </div>
     </div>
@@ -109,12 +89,7 @@ function sendRejectionEmail($sellerEmail, $sellerName, $rejectionReason) {
     $textContent = "Dear {$sellerName},\n\n";
     $textContent .= "Thank you for your interest in becoming a seller on PalitOra. We have carefully reviewed your application and unfortunately, we are unable to approve your seller account at this time.\n\n";
     $textContent .= "Rejection Reason:\n{$rejectionReason}\n\n";
-    $textContent .= "What You Can Do Next:\n";
-    $textContent .= "- Review the rejection reason above\n";
-    $textContent .= "- Update your shop information with the correct details\n";
-    $textContent .= "- Ensure your valid ID and store photos are clear and legitimate\n";
-    $textContent .= "- Reapply once you've addressed the issues mentioned\n\n";
-    $textContent .= "Log in to update your shop: https://capstone-app-api-r1ux.onrender.com/seller/ui/shop-form.php\n\n";
+    $textContent .= "If you have any questions regarding this decision, please feel free to contact our support team.\n\n";
     $textContent .= "© " . date('Y') . " PalitOra. All rights reserved.";
     
     // Prepare JSON payload
