@@ -25,6 +25,7 @@ try {
             i.id,
             i.product_name as title,
             i.price,
+            i.sold,
             s.store_name as shop,
             i.seller_id,
             i.main_image_url as image_url
@@ -46,6 +47,9 @@ try {
         foreach ($products as &$product) {
             // Convert price to float
             $product['price'] = floatval($product['price']);
+            
+            // Convert sold to int
+            $product['sold'] = (int)$product['sold'];
             
             // Ensure image_url is set, use default if null
             if (empty($product['image_url'])) {
