@@ -38,15 +38,15 @@ if (!isset($_SESSION['seller_id'])) {
         .submit-btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
-            background: #95a5a6;
+            background: #95a5a6 !important;
         }
         
         .submit-btn:disabled:hover {
-            background: #95a5a6;
-            transform: none;
+            background: #95a5a6 !important;
+            transform: none !important;
         }
         
-        /* Upload indicator */
+        /* Upload indicator - fixed animation */
         .uploading-indicator {
             display: inline-flex;
             align-items: center;
@@ -56,8 +56,13 @@ if (!isset($_SESSION['seller_id'])) {
             font-size: 13px;
         }
         
-        .uploading-indicator i {
+        .uploading-indicator .fa-spinner {
             animation: spin 1s linear infinite;
+        }
+        
+        .uploading-indicator .fa-check-circle,
+        .uploading-indicator .fa-times-circle {
+            animation: none !important;
         }
         
         @keyframes spin {
@@ -67,13 +72,14 @@ if (!isset($_SESSION['seller_id'])) {
         
         /* Upload status message */
         .upload-status {
-            margin-top: 15px;
-            padding: 10px 15px;
+            margin-top: 20px;
+            padding: 12px 15px;
             background: #f8f9fa;
             border-radius: 8px;
             font-size: 14px;
             color: #7f8c8d;
             text-align: center;
+            transition: all 0.3s;
         }
         
         .upload-status.has-uploads {
@@ -97,7 +103,6 @@ if (!isset($_SESSION['seller_id'])) {
                     <p>Complete your shop profile to start selling on the platform.</p>
                 </div>
 
-                <!-- Form now submits text + URLs to the processing script -->
                 <form id="shopSetupForm" method="POST" action="/seller/backend/shop-form/process-shop-setup.php">
 
                     <!-- Shop Information -->
@@ -112,7 +117,7 @@ if (!isset($_SESSION['seller_id'])) {
                             <div class="form-group">
                                 <label for="category">Store Category *</label>
                                 <select id="category" name="category" required>
-                                    <option>Select Category</option>
+                                    <option value="">Select Category</option>
                                     <option>Electronics</option>
                                     <option>Fashion & Clothing</option>
                                     <option>Home & Garden</option>
@@ -194,7 +199,7 @@ if (!isset($_SESSION['seller_id'])) {
                         </div>
                     </div>
 
-                    <!-- Shop Media – now with Cloudinary upload -->
+                    <!-- Shop Media -->
                     <div class="form-section">
                         <h3>Shop Media</h3>
                         <div class="form-grid">
@@ -264,7 +269,7 @@ if (!isset($_SESSION['seller_id'])) {
 
                     <!-- Upload Status -->
                     <div id="uploadStatus" class="upload-status">
-                        <span id="uploadStatusText">No files uploading</span>
+                        <span id="uploadStatusText">Ready to submit</span>
                     </div>
 
                     <button type="submit" class="submit-btn" id="submitBtn">
@@ -297,7 +302,7 @@ if (!isset($_SESSION['seller_id'])) {
             }
         }
         
-        // Check if any required images are missing (optional validation)
+        // Check if any required images are missing
         function validateRequiredImages() {
             const validIdUrls = document.getElementById('valid_id_urls').value;
             const storePhotoUrls = document.getElementById('store_photo_urls').value;
@@ -315,7 +320,7 @@ if (!isset($_SESSION['seller_id'])) {
             return true;
         }
 
-        // Single file upload helper
+        // Single file upload helper - FIXED
         async function uploadSingleFile(file, type, previewId, hiddenInputId, statusId) {
             if (!file) return;
 
@@ -325,7 +330,7 @@ if (!isset($_SESSION['seller_id'])) {
             
             if (statusEl) {
                 statusEl.style.display = 'inline-flex';
-                statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+                statusEl.innerHTML = '<i class="fas fa-spinner"></i> Uploading...';
             }
 
             const formData = new FormData();
@@ -343,7 +348,7 @@ if (!isset($_SESSION['seller_id'])) {
                 if (!data.success) {
                     alert(`Upload failed (${type}): ${data.error || 'Unknown error'}`);
                     if (statusEl) {
-                        statusEl.innerHTML = '<i class="fas fa-times-circle" style="color: #e74c3c;"></i> Failed';
+                        statusEl.innerHTML = '<i class="fas fa-times-circle" style="color: #e74c3c; animation: none;"></i> Failed';
                     }
                     return;
                 }
@@ -357,14 +362,14 @@ if (!isset($_SESSION['seller_id'])) {
                     preview.style.display = 'block';
                     
                     if (statusEl) {
-                        statusEl.innerHTML = '<i class="fas fa-check-circle" style="color: #27ae60;"></i> Uploaded';
+                        statusEl.innerHTML = '<i class="fas fa-check-circle" style="color: #27ae60; animation: none;"></i> Uploaded';
                     }
                 }
             } catch (err) {
                 console.error(err);
                 alert(`Network error uploading ${type}`);
                 if (statusEl) {
-                    statusEl.innerHTML = '<i class="fas fa-times-circle" style="color: #e74c3c;"></i> Error';
+                    statusEl.innerHTML = '<i class="fas fa-times-circle" style="color: #e74c3c; animation: none;"></i> Error';
                 }
             } finally {
                 activeUploads--;
@@ -372,7 +377,7 @@ if (!isset($_SESSION['seller_id'])) {
             }
         }
 
-        // Multiple files upload helper
+        // Multiple files upload helper - FIXED
         async function uploadMultipleFiles(files, type, listId, hiddenInputId, statusId) {
             if (files.length === 0) return;
 
@@ -382,7 +387,7 @@ if (!isset($_SESSION['seller_id'])) {
             
             if (statusEl) {
                 statusEl.style.display = 'inline-flex';
-                statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+                statusEl.innerHTML = '<i class="fas fa-spinner"></i> Uploading...';
             }
 
             const formData = new FormData();
@@ -402,7 +407,7 @@ if (!isset($_SESSION['seller_id'])) {
                 if (!data.success) {
                     alert(`Upload failed (${type}): ${data.error || 'Unknown error'}`);
                     if (statusEl) {
-                        statusEl.innerHTML = '<i class="fas fa-times-circle" style="color: #e74c3c;"></i> Failed';
+                        statusEl.innerHTML = '<i class="fas fa-times-circle" style="color: #e74c3c; animation: none;"></i> Failed';
                     }
                     return;
                 }
@@ -419,13 +424,13 @@ if (!isset($_SESSION['seller_id'])) {
                 });
                 
                 if (statusEl) {
-                    statusEl.innerHTML = '<i class="fas fa-check-circle" style="color: #27ae60;"></i> Uploaded';
+                    statusEl.innerHTML = '<i class="fas fa-check-circle" style="color: #27ae60; animation: none;"></i> Uploaded';
                 }
             } catch (err) {
                 console.error(err);
                 alert(`Network error uploading ${type} files`);
                 if (statusEl) {
-                    statusEl.innerHTML = '<i class="fas fa-times-circle" style="color: #e74c3c;"></i> Error';
+                    statusEl.innerHTML = '<i class="fas fa-times-circle" style="color: #e74c3c; animation: none;"></i> Error';
                 }
             } finally {
                 activeUploads--;
@@ -468,7 +473,6 @@ if (!isset($_SESSION['seller_id'])) {
 
         // Form submit validation
         document.getElementById('shopSetupForm').addEventListener('submit', function(e) {
-            // Prevent submit if uploads are in progress
             if (activeUploads > 0) {
                 e.preventDefault();
                 alert('Please wait for all images to finish uploading.');
@@ -483,14 +487,13 @@ if (!isset($_SESSION['seller_id'])) {
                 return false;
             }
             
-            // Validate required images
             if (!validateRequiredImages()) {
                 e.preventDefault();
                 return false;
             }
         });
 
-        // GPS + Plus Code logic (unchanged)
+        // GPS + Plus Code logic
         const gpsInput = document.getElementById('gps_display');
         const latInput = document.getElementById('latitude');
         const lngInput = document.getElementById('longitude');
