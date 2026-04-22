@@ -103,6 +103,24 @@ require_once '../backend/session/auth_admin.php';
                     <p>Total Pending Amount</p>
                 </div>
             </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#cd7f3220;color:#cd7f32">
+                    <i class="fas fa-medal"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="bronzeCount">0</h3>
+                    <p>Bronze Plans</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#ffd70020;color:#ffd700">
+                    <i class="fas fa-crown"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="goldCount">0</h3>
+                    <p>Gold/Silver Plans</p>
+                </div>
+            </div>
         </section>
 
         <!-- SUBSCRIPTIONS LIST -->
