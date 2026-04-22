@@ -15,8 +15,12 @@ try {
     $email = $data['email'];
     $password = $data['password'];
 
-    // Fetch rider by email
-    $stmt = $conn->prepare("SELECT id, password_hash, verification_status, status FROM riders WHERE email = :email");
+    // Fetch rider by email - ADDED rejection_reason to SELECT
+    $stmt = $conn->prepare("
+        SELECT id, password_hash, verification_status, status, rejection_reason 
+        FROM riders 
+        WHERE email = :email
+    ");
     $stmt->execute([':email' => $email]);
 
     $rider = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -29,18 +33,25 @@ try {
     // Verify password
     if (password_verify($password, $rider['password_hash'])) {
 
-        // ✅ FIXED: Check verification_status instead of is_confirmed
+        // Update online status if verified
         if ($rider['verification_status'] === 'complete') {
             $updateStmt = $conn->prepare("UPDATE riders SET status = 'online' WHERE id = :id");
             $updateStmt->execute([':id' => $rider['id']]);
         }
 
-        // Always return success with verification_status data
-        echo json_encode([
+        // Prepare response array
+        $response = [
             "status" => "success",
             "rider_id" => (int)$rider['id'],
             "verification_status" => $rider['verification_status']
-        ]);
+        ];
+
+        // ✅ ADDED: Include rejection_reason if status is 'rejected'
+        if ($rider['verification_status'] === 'rejected') {
+            $response['rejection_reason'] = $rider['rejection_reason'] ?? 'No reason provided';
+        }
+
+        echo json_encode($response);
 
     } else {
         echo json_encode(["status" => "wrong_password"]);
