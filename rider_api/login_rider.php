@@ -33,10 +33,14 @@ try {
     // Verify password
     if (password_verify($password, $rider['password_hash'])) {
 
-        // Update online status if verified
+        // ✅ FIXED: Only update to 'online' if NOT currently 'delivering'
         if ($rider['verification_status'] === 'complete') {
-            $updateStmt = $conn->prepare("UPDATE riders SET status = 'online' WHERE id = :id");
-            $updateStmt->execute([':id' => $rider['id']]);
+            // Don't override 'delivering' status
+            if ($rider['status'] !== 'delivering') {
+                $updateStmt = $conn->prepare("UPDATE riders SET status = 'online' WHERE id = :id");
+                $updateStmt->execute([':id' => $rider['id']]);
+            }
+            // If status is 'delivering', leave it alone!
         }
 
         // Prepare response array
@@ -46,7 +50,10 @@ try {
             "verification_status" => $rider['verification_status']
         ];
 
-        // ✅ ADDED: Include rejection_reason if status is 'rejected'
+        // ✅ Optionally include current status so app knows
+        $response['rider_status'] = $rider['status'];
+
+        // Include rejection_reason if status is 'rejected'
         if ($rider['verification_status'] === 'rejected') {
             $response['rejection_reason'] = $rider['rejection_reason'] ?? 'No reason provided';
         }
