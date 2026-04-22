@@ -32,6 +32,33 @@ try {
         exit;
     }
     
+    // Get payouts for this seller
+    $payoutsSql = "
+        SELECT 
+            id as payout_id,
+            sold_items_ids,
+            gcash_number,
+            proof_url,
+            total_amount,
+            paid_at,
+            notes,
+            created_at
+        FROM public.payouts
+        WHERE seller_id = ?
+        ORDER BY created_at DESC
+    ";
+    $payoutsStmt = $conn->prepare($payoutsSql);
+    $payoutsStmt->execute([$sellerId]);
+    $payouts = $payoutsStmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Process payouts to parse array
+    foreach ($payouts as &$payout) {
+        if (isset($payout['sold_items_ids'])) {
+            $payout['sold_items_ids'] = trim($payout['sold_items_ids'], '{}');
+            $payout['sold_items_ids_array'] = explode(',', $payout['sold_items_ids']);
+        }
+    }
+    
     // Get sold items for this seller
     $itemsSql = "
         SELECT 
@@ -96,6 +123,7 @@ try {
         'success' => true,
         'data' => [
             'seller' => $seller,
+            'payouts' => $payouts,
             'items' => $items
         ]
     ]);

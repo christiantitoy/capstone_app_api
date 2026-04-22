@@ -199,34 +199,23 @@ require_once '../backend/session/auth_admin.php';
     
     // Load payouts from backend
     async function loadPayouts() {
-        try {
-            const response = await fetch('/admin/backend/payouts/get_all_payouts.php');
-            const result = await response.json();
+    try {
+        const response = await fetch('/admin/backend/payouts/get_payouts.php');
+        const result = await response.json();
+        
+        if (result.success) {
+            allSellerSummary = result.data.seller_summary;
             
-            if (result.success) {
-                allSellerSummary = result.data.seller_summary;
-                
-                // Update stats
-                const totalSellers = allSellerSummary.length;
-                const unpaidSellers = allSellerSummary.filter(s => s.paid_status === 'Unpaid').length;
-                const paidSellers = allSellerSummary.filter(s => s.paid_status === 'Paid').length;
-                const totalPayout = allSellerSummary.reduce((sum, s) => sum + s.total_amount, 0);
-                
-                document.getElementById('totalSellers').textContent = totalSellers;
-                document.getElementById('unpaidSellers').textContent = unpaidSellers;
-                document.getElementById('paidSellers').textContent = paidSellers;
-                document.getElementById('totalPayout').textContent = `₱${formatNumber(totalPayout)}`;
-                
-                // Display payouts
-                displayPayouts(allSellerSummary);
-            } else {
-                document.getElementById('payoutsTableBody').innerHTML = '<div class="error">Failed to load payouts</div>';
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            document.getElementById('payoutsTableBody').innerHTML = '<div class="error">Error loading payouts</div>';
+            document.getElementById('totalSellers').textContent = result.data.totals.total_sellers;
+            document.getElementById('totalItems').textContent = result.data.totals.total_items;
+            document.getElementById('totalPayout').textContent = `₱${formatNumber(result.data.totals.total_pending)}`;
+            
+            displayPayouts(allSellerSummary);
         }
+    } catch (error) {
+        console.error('Error:', error);
     }
+}
     
     // Display payouts in table
     function displayPayouts(sellers) {

@@ -405,60 +405,60 @@ if (!$sellerId) {
     }
     
     async function confirmMarkAsPaid() {
-        const gcashNumber = document.getElementById('gcashNumber').value.trim();
+    const gcashNumber = document.getElementById('gcashNumber').value.trim();
+    
+    if (!gcashNumber) {
+        showNotification('error', 'Please enter GCash number');
+        return;
+    }
+    
+    if (!/^09[0-9]{9}$/.test(gcashNumber)) {
+        showNotification('error', 'Invalid GCash number format (09XXXXXXXXX)');
+        return;
+    }
+    
+    if (!uploadedProofUrl) {
+        showNotification('error', 'Please upload proof of payment');
+        return;
+    }
+    
+    const confirmBtn = document.getElementById('confirmMarkPaidBtn');
+    const originalText = confirmBtn.innerHTML;
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    
+    try {
+        // Updated endpoint name
+        const response = await fetch('../backend/payouts/create_payout.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                seller_id: sellerId,
+                gcash_number: gcashNumber,
+                proof_url: uploadedProofUrl
+            })
+        });
         
-        // Validate GCash number
-        if (!gcashNumber) {
-            showNotification('error', 'Please enter GCash number');
-            return;
-        }
+        const result = await response.json();
         
-        if (!/^09[0-9]{9}$/.test(gcashNumber)) {
-            showNotification('error', 'Invalid GCash number format (09XXXXXXXXX)');
-            return;
-        }
-        
-        if (!uploadedProofUrl) {
-            showNotification('error', 'Please upload proof of payment');
-            return;
-        }
-        
-        const confirmBtn = document.getElementById('confirmMarkPaidBtn');
-        const originalText = confirmBtn.innerHTML;
-        confirmBtn.disabled = true;
-        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-        
-        try {
-            const response = await fetch('../backend/payouts/mark_payout_paid.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    seller_id: sellerId,
-                    gcash_number: gcashNumber,
-                    proof_url: uploadedProofUrl
-                })
-            });
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                closeMarkPaidModal();
-                showNotification('success', result.message);
-                setTimeout(() => location.reload(), 1500);
-            } else {
-                showNotification('error', result.message);
-                confirmBtn.disabled = false;
-                confirmBtn.innerHTML = originalText;
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            showNotification('error', 'Error marking payout as paid');
+        if (result.success) {
+            closeMarkPaidModal();
+            showNotification('success', result.message);
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showNotification('error', result.message);
             confirmBtn.disabled = false;
             confirmBtn.innerHTML = originalText;
         }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('error', 'Error processing payout');
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = originalText;
     }
+}
     
     function showNotification(type, message) {
         const container = document.getElementById('notificationContainer');

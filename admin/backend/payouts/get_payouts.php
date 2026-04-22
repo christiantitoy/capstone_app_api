@@ -5,119 +5,79 @@ require_once '/var/www/html/connection/db_connection.php';
 header('Content-Type: application/json');
 
 try {
-    // Get sold items with NULL paid_status and "Gcash - Rider Delivery" payment method
-    $sql = "
+    // Get all payouts with seller information
+    $payoutsSql = "
         SELECT 
-            si.id as sold_item_id,
-            si.order_deliveries_id,
-            si.order_items_id,
-            si.orders_id,
-            si.created_at as sold_date,
-            si.paid_status,
-            o.payment_method,
-            o.total_amount as order_total,
-            o.status as order_status,
-            oi.product_id,
-            oi.quantity,
-            oi.unit_price,
-            oi.total_price as item_total,
+            p.id as payout_id,
+            p.seller_id,
+            p.sold_items_ids,
+            p.gcash_number,
+            p.proof_url,
+            p.total_amount,
+            p.paid_at,
+            p.created_at,
+            s.full_name as seller_name,
+            s.email as seller_email,
+            st.store_name
+        FROM public.payouts p
+        INNER JOIN public.sellers s ON p.seller_id = s.id
+        LEFT JOIN public.stores st ON s.id = st.seller_id
+        ORDER BY p.created_at DESC
+    ";
+    
+    $stmt = $conn->prepare($payoutsSql);
+    $stmt->execute();
+    $payouts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Get unpaid sold items grouped by seller
+    $unpaidSql = "
+        SELECT 
             i.seller_id,
-            i.product_name,
             s.full_name as seller_name,
             s.email as seller_email,
             st.store_name,
-            od.rider_id,
-            od.status as delivery_status,
-            r.username as rider_name
+            COUNT(*) as total_items,
+            COALESCE(SUM(oi.total_price), 0) as total_amount,
+            ARRAY_AGG(si.id) as sold_items_ids
         FROM public.sold_items si
-        INNER JOIN public.orders o ON si.orders_id = o.id
         INNER JOIN public.order_items oi ON si.order_items_id = oi.id
         INNER JOIN public.items i ON oi.product_id = i.id
+        INNER JOIN public.orders o ON si.orders_id = o.id
         INNER JOIN public.sellers s ON i.seller_id = s.id
         LEFT JOIN public.stores st ON s.id = st.seller_id
-        LEFT JOIN public.order_deliveries od ON si.order_deliveries_id = od.id
-        LEFT JOIN public.riders r ON od.rider_id = r.id
         WHERE si.paid_status IS NULL
           AND o.payment_method = 'Gcash - Rider Delivery'
           AND o.status IN ('delivered', 'complete')
-        ORDER BY s.id, si.created_at DESC
+        GROUP BY i.seller_id, s.full_name, s.email, st.store_name
+        ORDER BY total_amount DESC
     ";
     
-    $stmt = $conn->prepare($sql);
-    $stmt->execute();
-    $soldItems = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Debug: Check if any data is returned
-    if (empty($soldItems)) {
-        // Let's check what payment methods exist in the database
-        $checkSql = "SELECT DISTINCT payment_method FROM public.orders WHERE status IN ('delivered', 'complete')";
-        $checkStmt = $conn->prepare($checkSql);
-        $checkStmt->execute();
-        $paymentMethods = $checkStmt->fetchAll(PDO::FETCH_COLUMN);
-        
-        // Also check if there are any sold_items with NULL paid_status
-        $soldItemsCheck = "SELECT COUNT(*) as count FROM public.sold_items WHERE paid_status IS NULL";
-        $soldStmt = $conn->prepare($soldItemsCheck);
-        $soldStmt->execute();
-        $nullCount = $soldStmt->fetch(PDO::FETCH_ASSOC)['count'];
-        
-        echo json_encode([
-            'success' => true,
-            'data' => [
-                'sold_items' => [],
-                'seller_summary' => [],
-                'totals' => [
-                    'total_payout' => 0,
-                    'total_sellers' => 0,
-                    'total_items' => 0
-                ]
-            ],
-            'debug' => [
-                'payment_methods' => $paymentMethods,
-                'null_paid_status_count' => (int)$nullCount,
-                'message' => 'No matching records found'
-            ]
-        ]);
-        exit;
-    }
-    
-    // Group by seller for summary
-    $sellerSummary = [];
-    
-    foreach ($soldItems as $item) {
-        $sellerId = $item['seller_id'];
-        
-        if (!isset($sellerSummary[$sellerId])) {
-            $sellerSummary[$sellerId] = [
-                'seller_id' => $sellerId,
-                'seller_name' => $item['seller_name'],
-                'seller_email' => $item['seller_email'],
-                'store_name' => $item['store_name'],
-                'total_amount' => 0,
-                'total_items' => 0,
-                'paid_status' => 'Unpaid',
-                'sold_items' => []
-            ];
-        }
-        
-        // Add item total to seller's total amount
-        $sellerSummary[$sellerId]['total_amount'] += floatval($item['item_total']);
-        $sellerSummary[$sellerId]['total_items']++;
-        $sellerSummary[$sellerId]['sold_items'][] = $item;
-    }
+    $unpaidStmt = $conn->prepare($unpaidSql);
+    $unpaidStmt->execute();
+    $unpaidSellers = $unpaidStmt->fetchAll(PDO::FETCH_ASSOC);
     
     // Calculate totals
-    $totalPayout = array_sum(array_column($sellerSummary, 'total_amount'));
-    $totalSellers = count($sellerSummary);
-    $totalItems = count($soldItems);
+    $totalPending = array_sum(array_column($unpaidSellers, 'total_amount'));
+    $totalSellers = count($unpaidSellers);
+    $totalItems = array_sum(array_column($unpaidSellers, 'total_items'));
+    
+    // Process each seller to add paid_status
+    foreach ($unpaidSellers as &$seller) {
+        $seller['paid_status'] = 'Unpaid';
+        // Convert PostgreSQL array string to actual array for JSON
+        if (isset($seller['sold_items_ids'])) {
+            $seller['sold_items_ids'] = trim($seller['sold_items_ids'], '{}');
+            $seller['sold_items_ids_array'] = explode(',', $seller['sold_items_ids']);
+        }
+    }
     
     echo json_encode([
         'success' => true,
         'data' => [
-            'sold_items' => $soldItems,
-            'seller_summary' => array_values($sellerSummary),
+            'payouts' => $payouts,
+            'seller_summary' => $unpaidSellers,
             'totals' => [
-                'total_payout' => $totalPayout,
+                'total_pending' => $totalPending,
                 'total_sellers' => $totalSellers,
                 'total_items' => $totalItems
             ]
