@@ -10,7 +10,7 @@ try {
     $rider_id = 0;
 
     // Check if it's JSON content type
-    if (isset($_SERVER['CONTENT_TYPE']) && $_SERVER['CONTENT_TYPE'] === 'application/json') {
+    if (isset($_SERVER['CONTENT_TYPE']) && str_contains($_SERVER['CONTENT_TYPE'], 'application/json')) {
         $data = json_decode(file_get_contents("php://input"), true);
         $order_id = isset($data['order_id']) ? intval($data['order_id']) : 0;
         $status = isset($data['status']) ? $data['status'] : '';
@@ -27,14 +27,19 @@ try {
         exit;
     }
 
-    // Allowed statuses
-    $allowed_status = ['pending', 'packed', 'shipped', 'delivered', 'locked', 'assigned', 'reassinged', 'complete', 'cancelled'];
+    // Allowed statuses (matching your CHECK constraint)
+    $allowed_status = [
+        'pending', 'pending_payment', 'packed', 'ready_for_pickup', 
+        'shipped', 'delivered', 'locked', 'assigned', 'reassigned', 
+        'complete', 'cancelled'
+    ];
+    
     if (!in_array($status, $allowed_status)) {
         echo json_encode(['status' => 'error', 'message' => 'Invalid status']);
         exit;
     }
 
-    // ✅ NEW: Check rider status BEFORE locking
+    // ✅ Check rider status BEFORE locking
     if ($status === 'locked') {
         
         // Require rider_id when locking
@@ -89,11 +94,12 @@ try {
             exit;
         }
 
-        // ✅ Check if order is already locked by someone else
+        // ✅ Check if order is already locked (check order_deliveries table)
         $orderCheckStmt = $conn->prepare("
-            SELECT status, locked_by, locked_at 
-            FROM orders 
-            WHERE id = :order_id
+            SELECT o.status, o.locked_at, od.rider_id as locked_by
+            FROM orders o
+            LEFT JOIN order_deliveries od ON o.id = od.order_id AND od.delivery_status = 'locked'
+            WHERE o.id = :order_id
         ");
         $orderCheckStmt->execute([':order_id' => $order_id]);
         $order = $orderCheckStmt->fetch(PDO::FETCH_ASSOC);
@@ -108,7 +114,7 @@ try {
 
         // Check if order is already locked
         if ($order['status'] === 'locked') {
-            // Check if lock is expired (optional: 5 minute lock expiry)
+            // Check if lock is expired (5 minute lock expiry)
             $lockExpiryTime = 5; // minutes
             $lockedAt = strtotime($order['locked_at']);
             $currentTime = time();
@@ -123,25 +129,38 @@ try {
             }
         }
 
-        // ✅ All checks passed - Lock the order AND assign to rider
+        // ✅ All checks passed - Lock the order
         $conn->beginTransaction();
 
         try {
-            // Update order status and assign to rider
+            // Update order status
             $stmt = $conn->prepare("
                 UPDATE orders 
                 SET status = :status, 
-                    locked_by = :rider_id, 
-                    locked_at = NOW() 
+                    locked_at = NOW(),
+                    updated_at = NOW()
                 WHERE id = :order_id
             ");
             $success = $stmt->execute([
                 ':status' => $status,
-                ':rider_id' => $rider_id,
                 ':order_id' => $order_id
             ]);
 
-            // ✅ Update rider status to 'busy' when they lock an order
+            // Create or update order_deliveries record
+            $deliveryStmt = $conn->prepare("
+                INSERT INTO order_deliveries (order_id, rider_id, delivery_status, locked_at)
+                VALUES (:order_id, :rider_id, 'locked', NOW())
+                ON CONFLICT (order_id) DO UPDATE 
+                SET rider_id = :rider_id, 
+                    delivery_status = 'locked',
+                    locked_at = NOW()
+            ");
+            $deliveryStmt->execute([
+                ':order_id' => $order_id,
+                ':rider_id' => $rider_id
+            ]);
+
+            // ✅ Update rider status to 'busy'
             $updateRiderStmt = $conn->prepare("
                 UPDATE riders 
                 SET status = 'busy' 
@@ -162,9 +181,63 @@ try {
             throw $e;
         }
 
+    } elseif ($status === 'assigned') {
+        // ✅ Handle assigned status
+        if (!$rider_id) {
+            echo json_encode([
+                'status' => 'error', 
+                'message' => 'Rider ID is required to assign an order'
+            ]);
+            exit;
+        }
+
+        $conn->beginTransaction();
+
+        try {
+            // Update order status
+            $stmt = $conn->prepare("
+                UPDATE orders 
+                SET status = :status, 
+                    updated_at = NOW()
+                WHERE id = :order_id
+            ");
+            $stmt->execute([
+                ':status' => $status,
+                ':order_id' => $order_id
+            ]);
+
+            // Update order_deliveries status
+            $deliveryStmt = $conn->prepare("
+                UPDATE order_deliveries 
+                SET delivery_status = 'assigned',
+                    assigned_at = NOW()
+                WHERE order_id = :order_id AND rider_id = :rider_id
+            ");
+            $deliveryStmt->execute([
+                ':order_id' => $order_id,
+                ':rider_id' => $rider_id
+            ]);
+
+            $conn->commit();
+
+            echo json_encode([
+                'status' => 'success',
+                'message' => "Order $order_id assigned successfully"
+            ]);
+
+        } catch (Exception $e) {
+            $conn->rollBack();
+            throw $e;
+        }
+
     } else {
-        // For other status updates (delivered, cancelled, etc.)
-        $stmt = $conn->prepare("UPDATE orders SET status = :status WHERE id = :order_id");
+        // For other status updates
+        $stmt = $conn->prepare("
+            UPDATE orders 
+            SET status = :status, 
+                updated_at = NOW() 
+            WHERE id = :order_id
+        ");
         $success = $stmt->execute([
             ':status' => $status,
             ':order_id' => $order_id
@@ -172,35 +245,42 @@ try {
 
         // ✅ If order is delivered or cancelled, free up the rider
         if ($status === 'delivered' || $status === 'cancelled') {
-            // Get the rider who was assigned to this order
+            // Get the rider from order_deliveries
             $orderInfoStmt = $conn->prepare("
-                SELECT locked_by 
-                FROM orders 
-                WHERE id = :order_id
+                SELECT rider_id 
+                FROM order_deliveries 
+                WHERE order_id = :order_id AND delivery_status IN ('assigned', 'picked_up')
             ");
             $orderInfoStmt->execute([':order_id' => $order_id]);
             $orderInfo = $orderInfoStmt->fetch(PDO::FETCH_ASSOC);
 
-            if ($orderInfo && $orderInfo['locked_by']) {
+            if ($orderInfo && $orderInfo['rider_id']) {
                 // Set rider back to online
                 $freeRiderStmt = $conn->prepare("
                     UPDATE riders 
                     SET status = 'online' 
                     WHERE id = :rider_id
                 ");
-                $freeRiderStmt->execute([':rider_id' => $orderInfo['locked_by']]);
+                $freeRiderStmt->execute([':rider_id' => $orderInfo['rider_id']]);
+
+                // Update delivery status
+                $updateDeliveryStmt = $conn->prepare("
+                    UPDATE order_deliveries 
+                    SET delivery_status = :status,
+                        delivered_at = CASE WHEN :status = 'delivered' THEN NOW() ELSE delivered_at END
+                    WHERE order_id = :order_id
+                ");
+                $updateDeliveryStmt->execute([
+                    ':status' => $status,
+                    ':order_id' => $order_id
+                ]);
             }
         }
 
-        if ($success && $stmt->rowCount() > 0) {
+        if ($success) {
             echo json_encode([
                 'status' => 'success',
                 'message' => "Order $order_id updated to $status"
-            ]);
-        } elseif ($success && $stmt->rowCount() === 0) {
-            echo json_encode([
-                'status' => 'error',
-                'message' => "Order not found or status unchanged"
             ]);
         } else {
             echo json_encode([
@@ -211,7 +291,7 @@ try {
     }
 
 } catch (PDOException $e) {
-    if ($conn->inTransaction()) {
+    if (isset($conn) && $conn->inTransaction()) {
         $conn->rollBack();
     }
     echo json_encode([
@@ -219,7 +299,7 @@ try {
         'message' => 'Database error: ' . $e->getMessage()
     ]);
 } catch (Exception $e) {
-    if ($conn->inTransaction()) {
+    if (isset($conn) && $conn->inTransaction()) {
         $conn->rollBack();
     }
     echo json_encode([
