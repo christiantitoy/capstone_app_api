@@ -841,13 +841,6 @@ function displayProfile(data) {
                             <span class="info-label"><i class="fas fa-phone"></i> GCash Number</span>
                             <span class="info-value">${store?.gcash_number ? escapeHtml(store.gcash_number) : '<span style="color: var(--gray); font-style: italic;">Not set</span>'}</span>
                         </div>
-                        ${!store?.gcash_name && !store?.gcash_number ? `
-                            <div style="margin-top: 0.75rem;">
-                                <a href="/seller/ui/shop-form.php" class="edit-btn" style="display: inline-flex;">
-                                    <i class="fas fa-plus"></i> Add GCash Info
-                                </a>
-                            </div>
-                        ` : ''}
                     </div>
 
 

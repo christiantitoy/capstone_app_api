@@ -35,7 +35,7 @@ try {
         throw new Exception('Seller not found.');
     }
 
-    // Get store data from stores table
+    // Get store data from stores table - INCLUDING GCASH FIELDS
     $stmt2 = $conn->prepare("
         SELECT 
             store_name,
@@ -53,6 +53,8 @@ try {
             id_type,
             valid_id_files,
             store_photo_files,
+            gcash_name,
+            gcash_number,
             created_at,
             updated_at
         FROM public.stores
@@ -71,11 +73,21 @@ try {
         }
         
         // Parse JSON arrays if stored as JSON strings
-        if ($store['valid_id_files'] && is_string($store['valid_id_files'])) {
-            $store['valid_id_files'] = json_decode($store['valid_id_files'], true) ?: [];
+        if (isset($store['valid_id_files']) && is_string($store['valid_id_files'])) {
+            $decoded = json_decode($store['valid_id_files'], true);
+            $store['valid_id_files'] = $decoded ?: [];
         }
-        if ($store['store_photo_files'] && is_string($store['store_photo_files'])) {
-            $store['store_photo_files'] = json_decode($store['store_photo_files'], true) ?: [];
+        if (isset($store['store_photo_files']) && is_string($store['store_photo_files'])) {
+            $decoded = json_decode($store['store_photo_files'], true);
+            $store['store_photo_files'] = $decoded ?: [];
+        }
+        
+        // Ensure GCash fields are included in response (even if null)
+        if (!isset($store['gcash_name'])) {
+            $store['gcash_name'] = null;
+        }
+        if (!isset($store['gcash_number'])) {
+            $store['gcash_number'] = null;
         }
     }
 
