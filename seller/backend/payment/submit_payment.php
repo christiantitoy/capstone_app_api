@@ -43,6 +43,11 @@ try {
         throw new Exception('Invalid billing period.');
     }
 
+    // Validate GCash number
+    if (!preg_match('/^09[0-9]{9}$/', $gcash_number)) {
+        throw new Exception('Invalid GCash number format (09XXXXXXXXX).');
+    }
+
     // === 1. Upload Proof Image to Cloudinary ===
     if (!isset($_FILES['proof_image']) || $_FILES['proof_image']['error'] !== UPLOAD_ERR_OK) {
         throw new Exception('Payment proof image is required.');
@@ -75,17 +80,52 @@ try {
 
     $proof_image_url = $result['secure_url'];
 
-    // === 2. Insert into seller_plan_payments ===
-    $stmt = $conn->prepare("
+    // === 2. Start Transaction ===
+    $conn->beginTransaction();
+
+    // === 3. Insert or Update sellers_plan FIRST to get the ID ===
+    // Calculate end date based on billing
+    $endDateExpr = "CASE 
+        WHEN ? = 'lifetime' THEN NULL
+        WHEN ? = 'yearly'   THEN NOW() + INTERVAL '1 year'
+        ELSE NOW() + INTERVAL '1 month'
+    END";
+    
+    $sql = "
+        INSERT INTO public.sellers_plan 
+        (seller_id, plan, billing, status, start_date, end_date, created_at, updated_at)
+        VALUES (?, ?, ?, 'pending', NOW(), $endDateExpr, NOW(), NOW())
+        ON CONFLICT (seller_id) 
+        DO UPDATE SET 
+            plan = EXCLUDED.plan,
+            billing = EXCLUDED.billing,
+            status = 'pending',
+            start_date = NOW(),
+            end_date = $endDateExpr,
+            updated_at = NOW()
+        RETURNING id
+    ";
+
+    $stmt = $conn->prepare($sql);
+    $stmt->execute([$seller_id, $plan, $billing, $billing, $billing, $billing, $billing]);
+    
+    $seller_plan_id = $stmt->fetchColumn();
+    
+    if (!$seller_plan_id) {
+        // If RETURNING didn't work, fetch it separately
+        $stmt2 = $conn->prepare("SELECT id FROM public.sellers_plan WHERE seller_id = ?");
+        $stmt2->execute([$seller_id]);
+        $seller_plan_id = $stmt2->fetchColumn();
+    }
+
+    // === 4. Insert into seller_plan_payments with the correct seller_plan_id ===
+    $stmt3 = $conn->prepare("
         INSERT INTO public.seller_plan_payments 
-        (seller_id, seller_plan_id, gcash_number, amount, proof_image_url, status)
-        VALUES (?, ?, ?, ?, ?, 'pending')
+        (seller_id, seller_plan_id, gcash_number, amount, proof_image_url, status, submitted_at)
+        VALUES (?, ?, ?, ?, ?, 'pending', NOW())
     ");
 
-    $plan_map = ['bronze' => 1, 'silver' => 2, 'gold' => 3];
-    $seller_plan_id = $plan_map[$plan] ?? 1;
-
-    $stmt->execute([
+    $stmt3->execute([
         $seller_id,
         $seller_plan_id,
         $gcash_number,
@@ -95,29 +135,8 @@ try {
 
     $payment_id = $conn->lastInsertId();
 
-    // === 3. Insert / Update sellers_plan with correct start_date & end_date ===
-    $sql = "
-        INSERT INTO public.sellers_plan 
-        (seller_id, plan, billing, status, start_date, end_date)
-        VALUES (?, ?, ?, 'pending', NOW(), 
-            CASE 
-                WHEN ? = 'lifetime' THEN NULL
-                WHEN ? = 'yearly'   THEN NOW() + INTERVAL '1 year'
-                ELSE NOW() + INTERVAL '1 month'
-            END
-        )
-        ON CONFLICT (seller_id) 
-        DO UPDATE SET 
-            plan = EXCLUDED.plan,
-            billing = EXCLUDED.billing,
-            status = 'pending',
-            start_date = NOW(),
-            end_date = EXCLUDED.end_date,
-            updated_at = NOW()
-    ";
-
-    $stmt2 = $conn->prepare($sql);
-    $stmt2->execute([$seller_id, $plan, $billing, $billing, $billing]);
+    // === 5. Commit Transaction ===
+    $conn->commit();
 
     $response = [
         'success'    => true,
@@ -126,12 +145,21 @@ try {
     ];
 
 } catch (ApiError $e) {
+    if (isset($conn) && $conn->inTransaction()) {
+        $conn->rollBack();
+    }
     $response['message'] = 'Cloudinary upload failed: ' . $e->getMessage();
     error_log("Cloudinary Error: " . $e->getMessage());
 } catch (Exception $e) {
+    if (isset($conn) && $conn->inTransaction()) {
+        $conn->rollBack();
+    }
     $response['message'] = $e->getMessage();
     error_log("Payment Submit Error: " . $e->getMessage());
 } catch (PDOException $e) {
+    if (isset($conn) && $conn->inTransaction()) {
+        $conn->rollBack();
+    }
     $response['message'] = 'Database error. Please try again later.';
     error_log("Payment DB Error: " . $e->getMessage());
 }
