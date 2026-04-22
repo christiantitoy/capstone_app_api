@@ -523,12 +523,32 @@ document.addEventListener('keydown', function(e) {
 });
 
 // Update pricing buttons based on OFFICIAL plan and billing
+// Update pricing buttons based on OFFICIAL plan and billing
 function updatePricingButtons(planData) {
     const officialPlan = planData.official_plan.toLowerCase();
     const officialBilling = planData.official_billing;
     const planRank = { 'bronze': 1, 'silver': 2, 'gold': 3 };
     const officialRank = planRank[officialPlan] || 1;
     
+    // First, reset all Bronze cards to not show "Current Plan"
+    document.querySelectorAll('.pricing-card[data-plan="bronze"]').forEach(card => {
+        const freeBadge = card.querySelector('.free-badge');
+        if (freeBadge) freeBadge.textContent = 'FREE FOREVER';
+        freeBadge.style.background = '#27ae60';
+        
+        const cardRight = card.querySelector('.card-right');
+        const existingBtn = cardRight.querySelector('.pricing-btn');
+        
+        // Create Upgrade button for Bronze
+        const newButton = document.createElement('button');
+        newButton.className = 'pricing-btn btn-upgrade';
+        newButton.textContent = 'Upgrade to Silver';
+        newButton.onclick = () => showPlanModal('silver', 'monthly', 300);
+        
+        if (existingBtn) existingBtn.replaceWith(newButton);
+    });
+    
+    // Now set the correct current plan
     document.querySelectorAll('.pricing-card[data-plan]').forEach(card => {
         const cardPlan = card.getAttribute('data-plan');
         const cardBilling = card.getAttribute('data-billing');
@@ -539,7 +559,27 @@ function updatePricingButtons(planData) {
         
         let newButton;
         
-        // Check against OFFICIAL plan (source of truth)
+        // SPECIAL HANDLING FOR BRONZE - since Bronze is always lifetime in the card
+        if (cardPlan === 'bronze') {
+            if (officialPlan === 'bronze') {
+                // Seller is on Bronze plan - this IS their current plan
+                newButton = document.createElement('span');
+                newButton.className = 'pricing-btn btn-current';
+                newButton.textContent = 'Current Plan';
+                
+                // Update the free badge
+                const freeBadge = card.querySelector('.free-badge');
+                if (freeBadge) {
+                    freeBadge.textContent = 'CURRENT PLAN';
+                    freeBadge.style.background = '#27ae60';
+                }
+                
+                if (existingBtn) existingBtn.replaceWith(newButton);
+            }
+            return; // Skip rest of processing for Bronze
+        }
+        
+        // For Silver and Gold cards
         if (cardPlan === officialPlan && cardBilling === officialBilling) {
             // This is the seller's official current plan
             newButton = document.createElement('span');
@@ -548,18 +588,23 @@ function updatePricingButtons(planData) {
         } else if (cardPlan === officialPlan && cardBilling !== officialBilling) {
             // Same plan, different billing period
             newButton = document.createElement('button');
+            newButton.type = 'button';
             if ((officialBilling === 'yearly' && cardBilling === 'monthly') ||
                 (officialBilling === 'lifetime' && cardBilling !== 'lifetime')) {
                 newButton.className = 'pricing-btn btn-downgrade';
                 newButton.textContent = 'Downgrade';
             } else {
                 newButton.className = 'pricing-btn btn-switch';
-                newButton.textContent = 'Switch to Yearly';
+                newButton.textContent = cardBilling === 'yearly' ? 'Switch to Yearly' : 'Switch to Monthly';
             }
-            newButton.onclick = () => showPlanModal(cardPlan, cardBilling, cardPrice);
+            newButton.onclick = (e) => {
+                e.preventDefault();
+                showPlanModal(cardPlan, cardBilling, cardPrice);
+            };
         } else {
             // Different plan
             newButton = document.createElement('button');
+            newButton.type = 'button';
             if (cardRank < officialRank) {
                 newButton.className = 'pricing-btn btn-downgrade';
                 newButton.textContent = 'Downgrade';
@@ -567,7 +612,10 @@ function updatePricingButtons(planData) {
                 newButton.className = `pricing-btn btn-upgrade ${cardPlan === 'gold' ? 'btn-gold' : ''}`;
                 newButton.textContent = `Upgrade to ${cardPlan.charAt(0).toUpperCase() + cardPlan.slice(1)}`;
             }
-            newButton.onclick = () => showPlanModal(cardPlan, cardBilling, cardPrice);
+            newButton.onclick = (e) => {
+                e.preventDefault();
+                showPlanModal(cardPlan, cardBilling, cardPrice);
+            };
         }
         
         if (existingBtn) existingBtn.replaceWith(newButton);
@@ -579,7 +627,12 @@ function updatePricingButtons(planData) {
         if (card) {
             const cardPlan = card.getAttribute('data-plan');
             const cardBilling = card.getAttribute('data-billing');
-            badge.style.display = (cardPlan === officialPlan && cardBilling === officialBilling) ? 'none' : 'block';
+            // Hide if this card matches the official plan AND billing
+            if (cardPlan === officialPlan && cardBilling === officialBilling) {
+                badge.style.display = 'none';
+            } else {
+                badge.style.display = 'block';
+            }
         }
     });
 }
