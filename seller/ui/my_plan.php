@@ -487,17 +487,17 @@ function showPlanModal(plan, billing, amount) {
         downgradeWarning.style.gap = '0.75rem';
         modalTitle.textContent = "Confirm Downgrade";
         confirmBtn.textContent = "Confirm Downgrade";
-        confirmBtn.style.backgroundColor = 'var(--danger)';
+        confirmBtn.style.backgroundColor = '#dc3545';
     } else if (isBillingChange) {
         downgradeWarning.style.display = 'none';
         modalTitle.textContent = "Change Billing Period";
         confirmBtn.textContent = "Confirm & Pay";
-        confirmBtn.style.backgroundColor = 'var(--primary)';
+        confirmBtn.style.backgroundColor = '#3498db';
     } else {
         downgradeWarning.style.display = 'none';
         modalTitle.textContent = "Confirm Upgrade";
         confirmBtn.textContent = "Confirm & Pay";
-        confirmBtn.style.backgroundColor = 'var(--primary)';
+        confirmBtn.style.backgroundColor = '#3498db';
     }
 
     const modal = document.getElementById('planConfirmModal');
@@ -507,7 +507,10 @@ function showPlanModal(plan, billing, amount) {
 
 // Close modal
 function closeModal() {
-    document.getElementById('planConfirmModal').style.display = 'none';
+    const modal = document.getElementById('planConfirmModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
 }
 
 // Proceed with plan change
@@ -558,8 +561,9 @@ function updatePricingButtons(planData) {
                 newButton.textContent = 'Switch to Yearly';
             }
             // Use addEventListener instead of onclick for better reliability
-            newButton.addEventListener('click', (e) => {
+            newButton.addEventListener('click', function(e) {
                 e.preventDefault();
+                e.stopPropagation();
                 showPlanModal(cardPlan, cardBilling, cardPrice);
             });
         } else {
@@ -573,8 +577,9 @@ function updatePricingButtons(planData) {
                 newButton.textContent = `Upgrade to ${cardPlan.charAt(0).toUpperCase() + cardPlan.slice(1)}`;
             }
             // Use addEventListener instead of onclick
-            newButton.addEventListener('click', (e) => {
+            newButton.addEventListener('click', function(e) {
                 e.preventDefault();
+                e.stopPropagation();
                 showPlanModal(cardPlan, cardBilling, cardPrice);
             });
         }
@@ -694,12 +699,33 @@ function updatePlanDisplay(planData) {
 // Initialize everything when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, initializing...');
-    fetchCurrentPlan();
     
-    // Set up modal close handlers
+    // Make functions globally available FIRST
+    window.showPlanModal = showPlanModal;
+    window.closeModal = closeModal;
+    window.proceedWithPlanChange = proceedWithPlanChange;
+    
+    // Remove inline onclick handlers and set up proper event listeners
     const modal = document.getElementById('planConfirmModal');
-    const closeBtn = document.querySelector('.modal-close');
+    const modalCloseBtn = document.querySelector('.modal-close');
     const cancelBtn = document.querySelector('.btn-cancel');
+    const confirmBtn = document.getElementById('confirmBtn');
+    
+    // Remove inline onclick attributes
+    if (modalCloseBtn) {
+        modalCloseBtn.removeAttribute('onclick');
+        modalCloseBtn.addEventListener('click', closeModal);
+    }
+    
+    if (cancelBtn) {
+        cancelBtn.removeAttribute('onclick');
+        cancelBtn.addEventListener('click', closeModal);
+    }
+    
+    if (confirmBtn) {
+        confirmBtn.removeAttribute('onclick');
+        confirmBtn.addEventListener('click', proceedWithPlanChange);
+    }
     
     // Close modal when clicking outside
     window.addEventListener('click', function(event) {
@@ -710,16 +736,30 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Close with Escape key
     document.addEventListener('keydown', function(e) {
-        if (e.key === "Escape" && modal.style.display === 'block') {
+        if (e.key === "Escape" && modal && modal.style.display === 'block') {
             closeModal();
         }
     });
+    
+    // Fetch current plan data
+    fetchCurrentPlan();
+    
+    // Add click handlers to initial buttons (before they're replaced)
+    setTimeout(() => {
+        document.querySelectorAll('.pricing-btn.btn-upgrade, .pricing-btn.btn-gold').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const card = this.closest('.pricing-card');
+                if (card) {
+                    const plan = card.getAttribute('data-plan');
+                    const billing = card.getAttribute('data-billing');
+                    const price = parseInt(card.getAttribute('data-price')) || 0;
+                    showPlanModal(plan, billing, price);
+                }
+            });
+        });
+    }, 100);
 });
-
-// Make functions globally available
-window.showPlanModal = showPlanModal;
-window.closeModal = closeModal;
-window.proceedWithPlanChange = proceedWithPlanChange;
 
 </script>
 
