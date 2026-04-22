@@ -501,16 +501,14 @@ function showPlanModal(plan, billing, amount) {
     }
 
     const modal = document.getElementById('planConfirmModal');
-    modal.style.display = 'block';
+    modal.classList.add('show');
     console.log('Modal display set to block');
 }
 
 // Close modal
 function closeModal() {
     const modal = document.getElementById('planConfirmModal');
-    if (modal) {
-        modal.style.display = 'none';
-    }
+    modal.classList.remove('show');
 }
 
 // Proceed with plan change
@@ -745,20 +743,24 @@ document.addEventListener('DOMContentLoaded', function() {
     fetchCurrentPlan();
     
     // Add click handlers to initial buttons (before they're replaced)
-    setTimeout(() => {
-        document.querySelectorAll('.pricing-btn.btn-upgrade, .pricing-btn.btn-gold').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const card = this.closest('.pricing-card');
-                if (card) {
-                    const plan = card.getAttribute('data-plan');
-                    const billing = card.getAttribute('data-billing');
-                    const price = parseInt(card.getAttribute('data-price')) || 0;
-                    showPlanModal(plan, billing, price);
-                }
-            });
-        });
-    }, 100);
+    // Event delegation for pricing buttons
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('.pricing-btn');
+        
+        if (!btn) return;
+        
+        // Ignore current plan
+        if (btn.classList.contains('btn-current')) return;
+
+        const card = btn.closest('.pricing-card');
+        if (!card) return;
+
+        const plan = card.getAttribute('data-plan');
+        const billing = card.getAttribute('data-billing');
+        const price = parseInt(card.getAttribute('data-price')) || 0;
+
+        showPlanModal(plan, billing, price);
+    });
 });
 
 </script>
