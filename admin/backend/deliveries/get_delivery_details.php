@@ -66,6 +66,23 @@ try {
         exit;
     }
     
+    // Get delivery proofs
+    $proofsSql = "
+        SELECT 
+            id,
+            delivery_id,
+            order_id,
+            rider_id,
+            proof_image_path,
+            created_at
+        FROM public.delivery_proofs
+        WHERE delivery_id = ?
+        ORDER BY created_at DESC
+    ";
+    $proofsStmt = $conn->prepare($proofsSql);
+    $proofsStmt->execute([$deliveryId]);
+    $deliveryProofs = $proofsStmt->fetchAll(PDO::FETCH_ASSOC);
+    
     // Get order items
     $itemsSql = "
         SELECT 
@@ -109,7 +126,8 @@ try {
         'data' => [
             'delivery' => $delivery,
             'items' => $orderItems,
-            'delivery_duration' => $deliveryDuration
+            'delivery_duration' => $deliveryDuration,
+            'delivery_proofs' => $deliveryProofs
         ]
     ]);
     

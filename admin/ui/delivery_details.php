@@ -144,6 +144,16 @@ if (!$deliveryId) {
             </div>
         </div>
 
+        <!-- Delivery Proof Section -->
+        <div id="deliveryProofSection" class="info-section" style="display: none;">
+            <div class="section-header">
+                <h3><i class="fas fa-camera"></i> Delivery Proof</h3>
+            </div>
+            <div class="delivery-proof-container" id="deliveryProofContainer">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+
         <!-- Order Items -->
         <div class="info-section">
             <div class="section-header">
@@ -163,6 +173,105 @@ if (!$deliveryId) {
         <p id="errorMessage">An error occurred while loading the delivery information.</p>
         <a href="deliveries.php" class="btn btn-primary">Return to Deliveries</a>
     </div>
+</div>
+
+<style>
+/* Delivery Proof Styles */
+.delivery-proof-container {
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+}
+
+.proof-image-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.proof-image {
+    max-width: 100%;
+    max-height: 400px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: transform 0.3s;
+}
+
+.proof-image:hover {
+    transform: scale(1.02);
+}
+
+.proof-meta {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    color: #7f8c8d;
+    font-size: 14px;
+}
+
+.proof-meta i {
+    margin-right: 5px;
+    color: #3498db;
+}
+
+.no-proof {
+    text-align: center;
+    padding: 40px;
+    color: #7f8c8d;
+}
+
+.no-proof i {
+    font-size: 48px;
+    margin-bottom: 15px;
+    opacity: 0.5;
+}
+
+/* Image Modal */
+.image-modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.9);
+    justify-content: center;
+    align-items: center;
+}
+
+.image-modal.active {
+    display: flex;
+}
+
+.modal-image {
+    max-width: 90%;
+    max-height: 90%;
+    object-fit: contain;
+}
+
+.close-modal-btn {
+    position: absolute;
+    top: 20px;
+    right: 35px;
+    color: #f1f1f1;
+    font-size: 40px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-modal-btn:hover {
+    color: #bbb;
+}
+</style>
+
+<!-- Image Modal -->
+<div id="imageModal" class="image-modal" onclick="closeImageModal()">
+    <span class="close-modal-btn">&times;</span>
+    <img id="modalImage" class="modal-image">
 </div>
 
 <script>
@@ -238,6 +347,9 @@ if (!$deliveryId) {
             document.getElementById('deliveryDuration').textContent = data.delivery_duration;
         }
         
+        // Delivery Proof
+        displayDeliveryProof(data.delivery_proofs);
+        
         // Rider info
         document.getElementById('riderInfo').innerHTML = `
             <p><strong>Name:</strong> <a href="rider_details.php?id=${delivery.rider_id}" class="rider-link">${escapeHtml(delivery.rider_name || 'N/A')}</a></p>
@@ -281,6 +393,49 @@ if (!$deliveryId) {
         // Order items
         document.getElementById('itemCount').textContent = `${items.length} item${items.length !== 1 ? 's' : ''}`;
         displayOrderItems(items);
+    }
+    
+    function displayDeliveryProof(proofs) {
+        const proofSection = document.getElementById('deliveryProofSection');
+        const proofContainer = document.getElementById('deliveryProofContainer');
+        
+        if (!proofs || proofs.length === 0) {
+            proofSection.style.display = 'none';
+            return;
+        }
+        
+        proofSection.style.display = 'block';
+        
+        let html = '';
+        proofs.forEach(proof => {
+            html += `
+                <div class="delivery-proof-container">
+                    <div class="proof-image-wrapper">
+                        <img src="${escapeHtml(proof.proof_image_path)}" 
+                             alt="Delivery Proof" 
+                             class="proof-image"
+                             onclick="openImageModal('${escapeHtml(proof.proof_image_path)}')">
+                    </div>
+                    <div class="proof-meta">
+                        <span><i class="far fa-calendar-alt"></i> Uploaded: ${formatDateTime(proof.created_at)}</span>
+                    </div>
+                </div>
+            `;
+        });
+        
+        proofContainer.innerHTML = html;
+    }
+    
+    function openImageModal(imageSrc) {
+        const modal = document.getElementById('imageModal');
+        const modalImg = document.getElementById('modalImage');
+        modal.classList.add('active');
+        modalImg.src = imageSrc;
+    }
+    
+    function closeImageModal() {
+        const modal = document.getElementById('imageModal');
+        modal.classList.remove('active');
     }
     
     function updateTimelineStatus(delivery) {
@@ -426,6 +581,13 @@ if (!$deliveryId) {
         div.textContent = text;
         return div.innerHTML;
     }
+    
+    // Close modal on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeImageModal();
+        }
+    });
     
     document.addEventListener('DOMContentLoaded', loadDeliveryDetails);
 </script>
