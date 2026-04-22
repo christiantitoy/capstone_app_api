@@ -16,7 +16,7 @@ try {
         $buyerId = isset($_GET['buyerId']) ? intval($_GET['buyerId']) : null;
 
         $sql = "SELECT p.id, p.product_name, p.product_description, p.price, p.stock, p.main_image_url, p.has_variations, 
-                       s.store_name as shop_name, s.seller_id, s.logo_url,
+                       s.store_name as shop_name, s.seller_id, s.logo_url, s.contact_number,
                        (SELECT COUNT(*) FROM items WHERE seller_id = s.seller_id AND status = 'approved') as seller_products_count
                 FROM items p 
                 JOIN stores s ON p.seller_id = s.seller_id
@@ -51,6 +51,7 @@ try {
                     'shop' => $row['shop_name'],
                     'seller_id' => (int)$row['seller_id'],
                     'logo_url' => $row['logo_url'],
+                    'contact_number' => $row['contact_number'], // ✅ ADDED
                     'seller_products_count' => (int)$row['seller_products_count'],
                     'has_variations' => (int)$row['has_variations'],
                     'image_url' => $row['main_image_url'],
@@ -67,7 +68,7 @@ try {
 
     // Original list-all-products code with additional seller info
     $sql = "SELECT p.id, p.product_name, p.price, p.main_image_url, p.seller_id, 
-                   s.store_name as shop_name, s.logo_url,
+                   s.store_name as shop_name, s.logo_url, s.contact_number,
                    (SELECT COUNT(*) FROM items WHERE seller_id = s.seller_id AND status = 'approved') as seller_products_count
             FROM items p 
             JOIN stores s ON p.seller_id = s.seller_id
@@ -88,6 +89,7 @@ try {
                 'shop' => $row['shop_name'],
                 'seller_id' => (int)$row['seller_id'],
                 'logo_url' => $row['logo_url'],
+                'contact_number' => $row['contact_number'], // ✅ ADDED
                 'seller_products_count' => (int)$row['seller_products_count'],
                 'image_url' => $row['main_image_url']
             ];
