@@ -4,33 +4,34 @@
 require_once '/var/www/html/connection/db_connection.php';
 require_once __DIR__ . '/../session/auth.php';
 
-session_start();
-
 header('Content-Type: application/json');
 
 $response = ['success' => false, 'data' => null];
 
 try {
-    $seller_id = $_SESSION['seller_id'] ?? 1;
 
+    // seller_id already provided by auth.php
     if (!$seller_id) {
         throw new Exception('Unauthorized');
     }
 
-    // Get seller's OFFICIAL plan from sellers table (source of truth)
+    // ─────────────────────────────────────────────
+    // 1. Get OFFICIAL Plan (Source of Truth)
+    // ─────────────────────────────────────────────
     $stmt = $conn->prepare("
         SELECT 
             LOWER(seller_plan) as official_plan,
-            COALESCE(seller_billing, 'lifetime') as official_billing,
-            'active' as official_status
+            COALESCE(seller_billing, 'lifetime') as official_billing
         FROM public.sellers
         WHERE id = ?
     ");
     $stmt->execute([$seller_id]);
     $official = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // Get seller's SUBSCRIBED plan from sellers_plan table
-    // Only active or pending (exclude rejected)
+
+    // ─────────────────────────────────────────────
+    // 2. Get SUBSCRIBED Plan
+    // ─────────────────────────────────────────────
     $stmt2 = $conn->prepare("
         SELECT 
             sp.plan as subscribed_plan,
@@ -47,27 +48,33 @@ try {
     $stmt2->execute([$seller_id]);
     $subscribed = $stmt2->fetch(PDO::FETCH_ASSOC);
 
-    // Check if there was a rejected plan
+
+    // ─────────────────────────────────────────────
+    // 3. Check Rejected Plan
+    // ─────────────────────────────────────────────
+    $rejected = null;
+
     if (!$subscribed) {
         $stmt3 = $conn->prepare("
-            SELECT 
-                sp.status as rejected_status
-            FROM public.sellers_plan sp
-            WHERE sp.seller_id = ?
-              AND sp.status = 'rejected'
-            ORDER BY sp.created_at DESC 
+            SELECT status
+            FROM public.sellers_plan
+            WHERE seller_id = ?
+              AND status = 'rejected'
+            ORDER BY created_at DESC
             LIMIT 1
         ");
+
         $stmt3->execute([$seller_id]);
         $rejected = $stmt3->fetch(PDO::FETCH_ASSOC);
-    } else {
-        $rejected = null;
     }
 
-    // Build response
+
+    // ─────────────────────────────────────────────
+    // 4. Build Response
+    // ─────────────────────────────────────────────
     $planData = [];
 
-    // Official Plan (Source of truth)
+    // Official Plan
     if ($official) {
         $planData['official_plan'] = $official['official_plan'];
         $planData['official_billing'] = $official['official_billing'];
@@ -76,7 +83,10 @@ try {
         $planData['official_billing'] = 'lifetime';
     }
 
-    // Subscribed Plan (For Current Plan Card)
+
+    // ─────────────────────────────────────────────
+    // 5. Subscribed Plan
+    // ─────────────────────────────────────────────
     if ($subscribed && in_array($subscribed['subscribed_status'], ['active', 'pending'])) {
 
         $planData['subscribed_plan'] = strtolower($subscribed['subscribed_plan']);
@@ -85,24 +95,19 @@ try {
         $planData['start_date'] = $subscribed['start_date'];
         $planData['end_date'] = $subscribed['end_date'];
 
-        // Format dates
         if ($subscribed['start_date']) {
-            $planData['start_date_formatted'] = date(
-                'M d, Y',
-                strtotime($subscribed['start_date'])
-            );
+            $planData['start_date_formatted'] = 
+                date('M d, Y', strtotime($subscribed['start_date']));
         }
 
         if ($subscribed['end_date']) {
-            $planData['end_date_formatted'] = date(
-                'M d, Y',
-                strtotime($subscribed['end_date'])
-            );
+            $planData['end_date_formatted'] = 
+                date('M d, Y', strtotime($subscribed['end_date']));
         }
 
     } else {
 
-        // Fallback to official plan
+        // fallback to official plan
         $planData['subscribed_plan'] = $planData['official_plan'];
         $planData['subscribed_billing'] = $planData['official_billing'];
         $planData['subscribed_status'] = 'active';
@@ -110,13 +115,15 @@ try {
         $planData['end_date'] = null;
         $planData['start_date_formatted'] = date('M d, Y');
 
-        // If rejected previously
         if ($rejected) {
             $planData['had_rejection'] = true;
         }
     }
 
-    // Plan Descriptions
+
+    // ─────────────────────────────────────────────
+    // 6. Plan Descriptions
+    // ─────────────────────────────────────────────
     $descriptions = [
         'bronze' => 'Free forever · 3 employees · Up to 50 products',
         'silver' => '10 employees · 100 products · Featured products',
@@ -127,8 +134,9 @@ try {
         $descriptions[$planData['subscribed_plan']]
         ?? $descriptions['bronze'];
 
-    $response['data'] = $planData;
+
     $response['success'] = true;
+    $response['data'] = $planData;
 
 } catch (Exception $e) {
 
@@ -137,9 +145,8 @@ try {
 
 } catch (PDOException $e) {
 
-    $response['message'] = 'Database error. Please try again later.';
+    $response['message'] = 'Database error';
     error_log("Get Plan DB Error: " . $e->getMessage());
-
 }
 
 echo json_encode($response);
