@@ -27,6 +27,7 @@ try {
     $official = $stmt->fetch(PDO::FETCH_ASSOC);
 
     // Get seller's SUBSCRIBED plan from sellers_plan table (for current plan card display)
+    // Exclude rejected plans - only get pending or active
     $stmt2 = $conn->prepare("
         SELECT 
             sp.plan as subscribed_plan,
@@ -36,11 +37,31 @@ try {
             sp.end_date
         FROM public.sellers_plan sp
         WHERE sp.seller_id = ?
+          AND sp.status IN ('active', 'pending')
         ORDER BY sp.created_at DESC 
         LIMIT 1
     ");
     $stmt2->execute([$seller_id]);
     $subscribed = $stmt2->fetch(PDO::FETCH_ASSOC);
+
+    // If no active/pending subscription, check if there's a rejected one
+    // but we'll use the official plan instead
+    if (!$subscribed) {
+        $stmt3 = $conn->prepare("
+            SELECT 
+                sp.status as rejected_status,
+                sp.notes as rejection_notes
+            FROM public.sellers_plan sp
+            WHERE sp.seller_id = ?
+              AND sp.status = 'rejected'
+            ORDER BY sp.created_at DESC 
+            LIMIT 1
+        ");
+        $stmt3->execute([$seller_id]);
+        $rejected = $stmt3->fetch(PDO::FETCH_ASSOC);
+    } else {
+        $rejected = null;
+    }
 
     // Build response
     $planData = [];
@@ -55,7 +76,8 @@ try {
     }
     
     // Subscribed plan data (from sellers_plan table) - used for current plan card
-    if ($subscribed) {
+    // Only use if status is 'active' or 'pending' (not rejected)
+    if ($subscribed && in_array($subscribed['subscribed_status'], ['active', 'pending'])) {
         $planData['subscribed_plan'] = strtolower($subscribed['subscribed_plan']);
         $planData['subscribed_billing'] = $subscribed['subscribed_billing'];
         $planData['subscribed_status'] = $subscribed['subscribed_status'];
@@ -70,13 +92,18 @@ try {
             $planData['end_date_formatted'] = date('M d, Y', strtotime($subscribed['end_date']));
         }
     } else {
-        // No subscribed plan yet, use official as fallback for display
+        // No valid subscription, or it was rejected - use official plan as fallback
         $planData['subscribed_plan'] = $planData['official_plan'];
         $planData['subscribed_billing'] = $planData['official_billing'];
         $planData['subscribed_status'] = 'active';
         $planData['start_date'] = date('Y-m-d H:i:s');
         $planData['end_date'] = null;
         $planData['start_date_formatted'] = date('M d, Y');
+        
+        // If there was a rejection, add a flag
+        if ($rejected) {
+            $planData['had_rejection'] = true;
+        }
     }
     
     // Add plan description for subscribed plan
