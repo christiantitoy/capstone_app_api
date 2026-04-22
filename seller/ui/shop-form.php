@@ -125,6 +125,23 @@ if (!isset($_SESSION['seller_id'])) {
                         </div>
                     </div>
 
+                    <!-- GCash Information -->
+                    <div class="form-section">
+                        <h3>GCash Information (For Payouts)</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="gcash_name">GCash Account Name</label>
+                                <input type="text" id="gcash_name" name="gcash_name" placeholder="e.g. Juan Dela Cruz">
+                                <div class="help-text">Enter the name registered to your GCash account</div>
+                            </div>
+                            <div class="form-group">
+                                <label for="gcash_number">GCash Number</label>
+                                <input type="tel" id="gcash_number" name="gcash_number" placeholder="09123456789" pattern="09[0-9]{9}">
+                                <div class="help-text">Your 11-digit GCash mobile number (09XXXXXXXXX)</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Shop Media – now with Cloudinary upload -->
                     <div class="form-section">
                         <h3>Shop Media</h3>
@@ -299,6 +316,22 @@ if (!isset($_SESSION['seller_id'])) {
 
         document.getElementById('store_photos').addEventListener('change', (e) => {
             uploadMultipleFiles(e.target.files, 'store_photos', 'store_photos_list', 'store_photo_urls');
+        });
+        document.getElementById('gcash_number').addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+            if (this.value.length > 11) {
+                this.value = this.value.slice(0, 11);
+            }
+        });
+
+        document.getElementById('shopSetupForm').addEventListener('submit', function(e) {
+            const gcashNumber = document.getElementById('gcash_number').value;
+            
+            if (gcashNumber && !/^09[0-9]{9}$/.test(gcashNumber)) {
+                e.preventDefault();
+                alert('GCash number must be 11 digits starting with 09 (e.g., 09123456789)');
+                return false;
+            }
         });
 
         // ────────────────────────────────────────────────
