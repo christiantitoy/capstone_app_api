@@ -54,6 +54,10 @@ try {
         throw new Exception('Payment not found');
     }
     
+    // Capitalize plan name to match sellers table constraint
+    // 'bronze' -> 'Bronze', 'silver' -> 'Silver', 'gold' -> 'Gold'
+    $sellerPlan = ucfirst(strtolower($info['plan']));
+    
     if ($status === 'confirmed') {
         // 1. Update seller_plan_payments status to 'confirmed'
         $stmt = $conn->prepare("
@@ -97,7 +101,7 @@ try {
             $stmt->execute([$info['seller_plan_id']]);
         }
         
-        // 4. Update sellers table: seller_plan and seller_billing
+        // 4. Update sellers table with CAPITALIZED plan name
         $stmt = $conn->prepare("
             UPDATE sellers 
             SET seller_plan = ?,
@@ -105,9 +109,9 @@ try {
                 updated_at = NOW()
             WHERE id = ?
         ");
-        $stmt->execute([$info['plan'], $info['billing'], $info['seller_id']]);
+        $stmt->execute([$sellerPlan, $info['billing'], $info['seller_id']]);
         
-        $message = "Subscription payment confirmed successfully! Seller plan updated to " . ucfirst($info['plan']) . " (" . $info['billing'] . ").";
+        $message = "Subscription payment confirmed successfully! Seller plan updated to " . $sellerPlan . " (" . $info['billing'] . ").";
         
     } else {
         // REJECTED
