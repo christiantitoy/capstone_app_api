@@ -523,32 +523,13 @@ document.addEventListener('keydown', function(e) {
 });
 
 // Update pricing buttons based on OFFICIAL plan and billing
-// Update pricing buttons based on OFFICIAL plan and billing
 function updatePricingButtons(planData) {
     const officialPlan = planData.official_plan.toLowerCase();
     const officialBilling = planData.official_billing;
     const planRank = { 'bronze': 1, 'silver': 2, 'gold': 3 };
     const officialRank = planRank[officialPlan] || 1;
     
-    // First, reset all Bronze cards to not show "Current Plan"
-    document.querySelectorAll('.pricing-card[data-plan="bronze"]').forEach(card => {
-        const freeBadge = card.querySelector('.free-badge');
-        if (freeBadge) freeBadge.textContent = 'FREE FOREVER';
-        freeBadge.style.background = '#27ae60';
-        
-        const cardRight = card.querySelector('.card-right');
-        const existingBtn = cardRight.querySelector('.pricing-btn');
-        
-        // Create Upgrade button for Bronze
-        const newButton = document.createElement('button');
-        newButton.className = 'pricing-btn btn-upgrade';
-        newButton.textContent = 'Upgrade to Silver';
-        newButton.onclick = () => showPlanModal('silver', 'monthly', 300);
-        
-        if (existingBtn) existingBtn.replaceWith(newButton);
-    });
-    
-    // Now set the correct current plan
+    // Process ALL cards
     document.querySelectorAll('.pricing-card[data-plan]').forEach(card => {
         const cardPlan = card.getAttribute('data-plan');
         const cardBilling = card.getAttribute('data-billing');
@@ -559,10 +540,10 @@ function updatePricingButtons(planData) {
         
         let newButton;
         
-        // SPECIAL HANDLING FOR BRONZE - since Bronze is always lifetime in the card
+        // SPECIAL HANDLING FOR BRONZE
         if (cardPlan === 'bronze') {
             if (officialPlan === 'bronze') {
-                // Seller is on Bronze plan - this IS their current plan
+                // Seller is on Bronze - this IS their current plan
                 newButton = document.createElement('span');
                 newButton.className = 'pricing-btn btn-current';
                 newButton.textContent = 'Current Plan';
@@ -573,10 +554,27 @@ function updatePricingButtons(planData) {
                     freeBadge.textContent = 'CURRENT PLAN';
                     freeBadge.style.background = '#27ae60';
                 }
+            } else {
+                // Seller is on Silver or Gold - Bronze is a DOWNGRADE
+                newButton = document.createElement('button');
+                newButton.type = 'button';
+                newButton.className = 'pricing-btn btn-downgrade';
+                newButton.textContent = 'Downgrade to Bronze';
+                newButton.onclick = (e) => {
+                    e.preventDefault();
+                    showPlanModal('bronze', 'lifetime', 0);
+                };
                 
-                if (existingBtn) existingBtn.replaceWith(newButton);
+                // Reset the free badge
+                const freeBadge = card.querySelector('.free-badge');
+                if (freeBadge) {
+                    freeBadge.textContent = 'FREE FOREVER';
+                    freeBadge.style.background = '#27ae60';
+                }
             }
-            return; // Skip rest of processing for Bronze
+            
+            if (existingBtn) existingBtn.replaceWith(newButton);
+            return;
         }
         
         // For Silver and Gold cards
@@ -606,9 +604,11 @@ function updatePricingButtons(planData) {
             newButton = document.createElement('button');
             newButton.type = 'button';
             if (cardRank < officialRank) {
+                // This is a downgrade
                 newButton.className = 'pricing-btn btn-downgrade';
-                newButton.textContent = 'Downgrade';
+                newButton.textContent = `Downgrade to ${cardPlan.charAt(0).toUpperCase() + cardPlan.slice(1)}`;
             } else {
+                // This is an upgrade
                 newButton.className = `pricing-btn btn-upgrade ${cardPlan === 'gold' ? 'btn-gold' : ''}`;
                 newButton.textContent = `Upgrade to ${cardPlan.charAt(0).toUpperCase() + cardPlan.slice(1)}`;
             }
