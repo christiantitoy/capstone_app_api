@@ -826,6 +826,31 @@ function displayProfile(data) {
                             </span>
                         </span>
                     </div>
+
+
+                    <!-- GCash Information -->
+                    <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #eef2f6;">
+                        <h3 style="font-size: 1rem; margin-bottom: 1rem; color: var(--dark); display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-mobile-alt" style="color: #3498db;"></i> GCash Information (For Payouts)
+                        </h3>
+                        <div class="info-row">
+                            <span class="info-label"><i class="fas fa-user-circle"></i> Account Name</span>
+                            <span class="info-value">${store?.gcash_name ? escapeHtml(store.gcash_name) : '<span style="color: var(--gray); font-style: italic;">Not set</span>'}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label"><i class="fas fa-phone"></i> GCash Number</span>
+                            <span class="info-value">${store?.gcash_number ? escapeHtml(store.gcash_number) : '<span style="color: var(--gray); font-style: italic;">Not set</span>'}</span>
+                        </div>
+                        ${!store?.gcash_name && !store?.gcash_number ? `
+                            <div style="margin-top: 0.75rem;">
+                                <a href="/seller/ui/shop-form.php" class="edit-btn" style="display: inline-flex;">
+                                    <i class="fas fa-plus"></i> Add GCash Info
+                                </a>
+                            </div>
+                        ` : ''}
+                    </div>
+
+
                 </div>
             </div>
 
