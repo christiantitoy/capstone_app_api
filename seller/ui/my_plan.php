@@ -381,9 +381,8 @@ require_once __DIR__ . '/../backend/session/auth.php';
 <script src="/seller/js/logout.js"></script>
 
 <script>
-// Global variables
+// Global variable to store current plan data
 let currentPlanData = null;
-let pendingPlanChange = {};
 
 // Set current date
 document.getElementById('dateDisplay').textContent = new Date().toLocaleDateString('en-US', { 
@@ -420,6 +419,9 @@ yearlyRadio.addEventListener('change', () => {
     updatePriceDisplay();
 });
 
+// Modal variables
+let pendingPlanChange = {};
+
 // Check if it's a downgrade (using OFFICIAL plan)
 function checkIfDowngrade(newPlan, newBilling) {
     if (!currentPlanData) return false;
@@ -452,17 +454,9 @@ function checkIfBillingChange(newPlan, newBilling) {
 
 // Show confirmation modal
 function showPlanModal(plan, billing, amount) {
-    console.log('showPlanModal called with:', { plan, billing, amount });
-    console.log('currentPlanData:', currentPlanData);
-    
-    if (!currentPlanData) {
-        console.error('Current plan data not loaded yet');
-        alert('Please wait, loading plan information...');
-        return;
-    }
-
-    const currentPlanDisplay = 
-        `${currentPlanData.official_plan.charAt(0).toUpperCase() + currentPlanData.official_plan.slice(1)} Plan (${currentPlanData.official_billing})`;
+    const currentPlanDisplay = currentPlanData ? 
+        `${currentPlanData.official_plan.charAt(0).toUpperCase() + currentPlanData.official_plan.slice(1)} Plan (${currentPlanData.official_billing})` : 
+        'Bronze Plan (lifetime)';
 
     pendingPlanChange = { plan, billing, amount };
 
@@ -482,50 +476,54 @@ function showPlanModal(plan, billing, amount) {
     const modalTitle = document.getElementById('modalTitle');
 
     if (isDowngrade) {
-        downgradeWarning.style.display = 'flex';
-        downgradeWarning.style.alignItems = 'flex-start';
-        downgradeWarning.style.gap = '0.75rem';
+        downgradeWarning.style.display = 'block';
         modalTitle.textContent = "Confirm Downgrade";
         confirmBtn.textContent = "Confirm Downgrade";
-        confirmBtn.style.backgroundColor = '#dc3545';
+        confirmBtn.style.backgroundColor = 'var(--danger)';
     } else if (isBillingChange) {
         downgradeWarning.style.display = 'none';
         modalTitle.textContent = "Change Billing Period";
         confirmBtn.textContent = "Confirm & Pay";
-        confirmBtn.style.backgroundColor = '#3498db';
+        confirmBtn.style.backgroundColor = 'var(--primary)';
     } else {
         downgradeWarning.style.display = 'none';
         modalTitle.textContent = "Confirm Upgrade";
         confirmBtn.textContent = "Confirm & Pay";
-        confirmBtn.style.backgroundColor = '#3498db';
+        confirmBtn.style.backgroundColor = 'var(--primary)';
     }
 
-    const modal = document.getElementById('planConfirmModal');
-    modal.classList.add('show');
-    console.log('Modal display set to block');
+    document.getElementById('planConfirmModal').style.display = 'block';
 }
 
 // Close modal
 function closeModal() {
-    const modal = document.getElementById('planConfirmModal');
-    modal.classList.remove('show');
+    document.getElementById('planConfirmModal').style.display = 'none';
 }
 
 // Proceed with plan change
 function proceedWithPlanChange() {
-    if (!pendingPlanChange.plan) {
-        console.error('No pending plan change');
-        return;
-    }
+    if (!pendingPlanChange.plan) return;
     const { plan, billing, amount } = pendingPlanChange;
     closeModal();
     window.location.href = `/seller/ui/payment.php?amount=${amount}&plan=${plan}&billing=${billing}`;
 }
 
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('planConfirmModal');
+    if (event.target === modal) closeModal();
+};
+
+// Close with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === "Escape") {
+        const modal = document.getElementById('planConfirmModal');
+        if (modal.style.display === 'block') closeModal();
+    }
+});
+
 // Update pricing buttons based on OFFICIAL plan and billing
 function updatePricingButtons(planData) {
-    console.log('Updating pricing buttons with data:', planData);
-    
     const officialPlan = planData.official_plan.toLowerCase();
     const officialBilling = planData.official_billing;
     const planRank = { 'bronze': 1, 'silver': 2, 'gold': 3 };
@@ -558,12 +556,7 @@ function updatePricingButtons(planData) {
                 newButton.className = 'pricing-btn btn-switch';
                 newButton.textContent = 'Switch to Yearly';
             }
-            // Use addEventListener instead of onclick for better reliability
-            newButton.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                showPlanModal(cardPlan, cardBilling, cardPrice);
-            });
+            newButton.onclick = () => showPlanModal(cardPlan, cardBilling, cardPrice);
         } else {
             // Different plan
             newButton = document.createElement('button');
@@ -574,17 +567,10 @@ function updatePricingButtons(planData) {
                 newButton.className = `pricing-btn btn-upgrade ${cardPlan === 'gold' ? 'btn-gold' : ''}`;
                 newButton.textContent = `Upgrade to ${cardPlan.charAt(0).toUpperCase() + cardPlan.slice(1)}`;
             }
-            // Use addEventListener instead of onclick
-            newButton.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                showPlanModal(cardPlan, cardBilling, cardPrice);
-            });
+            newButton.onclick = () => showPlanModal(cardPlan, cardBilling, cardPrice);
         }
         
-        if (existingBtn) {
-            existingBtn.replaceWith(newButton);
-        }
+        if (existingBtn) existingBtn.replaceWith(newButton);
     });
     
     // Hide popular badge for official current plan
@@ -599,18 +585,17 @@ function updatePricingButtons(planData) {
 }
 
 // Fetch and display current plan
+document.addEventListener('DOMContentLoaded', function() {
+    fetchCurrentPlan();
+});
+
 async function fetchCurrentPlan() {
     try {
-        console.log('Fetching current plan...');
         const response = await fetch('/seller/backend/plan/get_current_plan.php');
         const result = await response.json();
         
-        console.log('Plan API response:', result);
-        
         if (result.success && result.data) {
             updatePlanDisplay(result.data);
-        } else {
-            console.error('Failed to fetch plan:', result);
         }
     } catch (error) {
         console.error('Error fetching plan:', error);
@@ -618,15 +603,14 @@ async function fetchCurrentPlan() {
 }
 
 function updatePlanDisplay(planData) {
-    console.log('Updating plan display with:', planData);
     currentPlanData = planData;
     
-    // Update CURRENT PLAN CARD using SUBSCRIBED data
+    // Update CURRENT PLAN CARD using SUBSCRIBED data (from sellers_plan table)
     const subscribedPlanName = planData.subscribed_plan.charAt(0).toUpperCase() + planData.subscribed_plan.slice(1);
     document.getElementById('currentPlanName').textContent = `${subscribedPlanName} Plan`;
     document.getElementById('currentPlanDesc').textContent = planData.description;
     
-    // Update billing display
+    // Update billing display in current plan card
     const billingText = document.getElementById('billingText');
     if (planData.subscribed_billing === 'monthly') {
         billingText.textContent = 'Monthly Billing';
@@ -666,7 +650,7 @@ function updatePlanDisplay(planData) {
         }
     }
     
-    // Set billing toggle based on OFFICIAL billing
+    // Set billing toggle based on OFFICIAL billing (for default view)
     if (planData.official_billing === 'yearly') {
         yearlyRadio.checked = true;
         monthlyPlans.classList.remove('active');
@@ -678,90 +662,9 @@ function updatePlanDisplay(planData) {
     }
     updatePriceDisplay();
     
-    // Update pricing buttons using OFFICIAL data
+    // Update pricing buttons using OFFICIAL data (from sellers table)
     updatePricingButtons(planData);
-    
-    // Check for pending payment
-    if (planData.subscribed_status === 'pending') {
-        const pendingAlert = document.getElementById('pendingAlert');
-        const pendingAmount = document.getElementById('pendingAmount');
-        if (pendingAlert) {
-            pendingAlert.style.display = 'flex';
-            // Update amount based on pending plan
-            const amount = planData.subscribed_billing === 'yearly' ? '3000' : '300';
-            pendingAmount.textContent = `₱${parseInt(amount).toLocaleString('en-US')}`;
-        }
-    }
 }
-
-// Initialize everything when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, initializing...');
-    
-    // Make functions globally available FIRST
-    window.showPlanModal = showPlanModal;
-    window.closeModal = closeModal;
-    window.proceedWithPlanChange = proceedWithPlanChange;
-    
-    // Remove inline onclick handlers and set up proper event listeners
-    const modal = document.getElementById('planConfirmModal');
-    const modalCloseBtn = document.querySelector('.modal-close');
-    const cancelBtn = document.querySelector('.btn-cancel');
-    const confirmBtn = document.getElementById('confirmBtn');
-    
-    // Remove inline onclick attributes
-    if (modalCloseBtn) {
-        modalCloseBtn.removeAttribute('onclick');
-        modalCloseBtn.addEventListener('click', closeModal);
-    }
-    
-    if (cancelBtn) {
-        cancelBtn.removeAttribute('onclick');
-        cancelBtn.addEventListener('click', closeModal);
-    }
-    
-    if (confirmBtn) {
-        confirmBtn.removeAttribute('onclick');
-        confirmBtn.addEventListener('click', proceedWithPlanChange);
-    }
-    
-    // Close modal when clicking outside
-    window.addEventListener('click', function(event) {
-        if (event.target === modal) {
-            closeModal();
-        }
-    });
-    
-    // Close with Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === "Escape" && modal && modal.style.display === 'block') {
-            closeModal();
-        }
-    });
-    
-    // Fetch current plan data
-    fetchCurrentPlan();
-    
-    // Add click handlers to initial buttons (before they're replaced)
-    // Event delegation for pricing buttons
-    document.addEventListener('click', function(e) {
-        const btn = e.target.closest('.pricing-btn');
-        
-        if (!btn) return;
-        
-        // Ignore current plan
-        if (btn.classList.contains('btn-current')) return;
-
-        const card = btn.closest('.pricing-card');
-        if (!card) return;
-
-        const plan = card.getAttribute('data-plan');
-        const billing = card.getAttribute('data-billing');
-        const price = parseInt(card.getAttribute('data-price')) || 0;
-
-        showPlanModal(plan, billing, price);
-    });
-});
 
 </script>
 
