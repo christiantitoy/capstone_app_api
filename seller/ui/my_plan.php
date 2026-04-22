@@ -14,7 +14,6 @@ require_once __DIR__ . '/../backend/session/auth.php';
     <link rel="stylesheet" href="../css/my_plan.css?v=<?= time() ?>">
     <link rel="stylesheet" href="../css/logout.css?v=<?= time() ?>">
     <style>
-        /* Downgrade button style */
         .pricing-btn.btn-downgrade {
             background: var(--danger, #dc3545);
             color: white;
@@ -40,6 +39,43 @@ require_once __DIR__ . '/../backend/session/auth.php';
         }
         .status-pending i {
             color: #856404;
+        }
+        .toast-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideIn 0.3s ease;
+            max-width: 350px;
+        }
+        .toast-notification.success {
+            border-left: 4px solid #27ae60;
+        }
+        .toast-notification.error {
+            border-left: 4px solid #e74c3c;
+        }
+        .toast-notification i {
+            font-size: 20px;
+        }
+        .toast-notification.success i {
+            color: #27ae60;
+        }
+        .toast-notification.error i {
+            color: #e74c3c;
+        }
+        .toast-notification span {
+            flex: 1;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
     </style>
 </head>
@@ -135,19 +171,15 @@ require_once __DIR__ . '/../backend/session/auth.php';
                 <p>Get more features and grow your business</p>
             </div>
 
-            <!-- Segmented Radio Toggle -->
             <div class="pricing-toggle">
                 <div class="toggle-group">
                     <label class="toggle-label">
                         <input type="radio" name="billing" value="monthly" id="monthlyRadio" checked />
                         <span class="toggle-option">Monthly</span>
                     </label>
-
                     <label class="toggle-label">
                         <input type="radio" name="billing" value="yearly" id="yearlyRadio" />
-                        <span class="toggle-option">
-                            Yearly <span class="save-pill">Save 16%</span>
-                        </span>
+                        <span class="toggle-option">Yearly <span class="save-pill">Save 16%</span></span>
                     </label>
                 </div>
             </div>
@@ -155,17 +187,11 @@ require_once __DIR__ . '/../backend/session/auth.php';
             <!-- Monthly Plans -->
             <div id="monthlyPlans" class="billing-period active">
                 <div class="pricing-grid">
-                    <!-- Bronze -->
                     <div class="pricing-card bronze" data-plan="bronze" data-billing="lifetime" data-price="0">
                         <div class="free-badge">CURRENT PLAN</div>
                         <div class="card-left">
-                            <div class="plan-color bronze-color">
-                                <i class="fas fa-medal"></i>
-                            </div>
-                            <div class="plan-info">
-                                <h3>Bronze</h3>
-                                <div class="price"><span class="price-free-text">₱0</span> / forever</div>
-                            </div>
+                            <div class="plan-color bronze-color"><i class="fas fa-medal"></i></div>
+                            <div class="plan-info"><h3>Bronze</h3><div class="price"><span class="price-free-text">₱0</span> / forever</div></div>
                         </div>
                         <div class="card-middle">
                             <div class="feature-badges">
@@ -174,23 +200,13 @@ require_once __DIR__ . '/../backend/session/auth.php';
                                 <span class="feature-badge"><i class="fas fa-times"></i> Featured products</span>
                             </div>
                         </div>
-                        <div class="card-right">
-                            <span class="pricing-btn btn-current">Current Plan</span>
-                        </div>
+                        <div class="card-right"><span class="pricing-btn btn-current">Current Plan</span></div>
                     </div>
-
-                    <!-- Silver Monthly -->
                     <div class="pricing-card popular silver" data-plan="silver" data-billing="monthly" data-price="300">
                         <div class="popular-badge">MOST POPULAR</div>
                         <div class="card-left">
-                            <div class="plan-color silver-color">
-                                <i class="fas fa-gem"></i>
-                            </div>
-                            <div class="plan-info">
-                                <h3>Silver</h3>
-                                <div class="price monthly-price">₱300 <span class="price-period">/ month</span></div>
-                                <div class="price yearly-price" style="display: none;">₱3,000 <span class="price-period">/ year</span></div>
-                            </div>
+                            <div class="plan-color silver-color"><i class="fas fa-gem"></i></div>
+                            <div class="plan-info"><h3>Silver</h3><div class="price monthly-price">₱300 <span class="price-period">/ month</span></div><div class="price yearly-price" style="display: none;">₱3,000 <span class="price-period">/ year</span></div></div>
                         </div>
                         <div class="card-middle">
                             <div class="feature-badges">
@@ -200,22 +216,12 @@ require_once __DIR__ . '/../backend/session/auth.php';
                                 <span class="feature-badge"><i class="fas fa-check"></i> Improved visibility</span>
                             </div>
                         </div>
-                        <div class="card-right">
-                            <button class="pricing-btn btn-upgrade">Upgrade to Silver</button>
-                        </div>
+                        <div class="card-right"><button class="pricing-btn btn-upgrade">Upgrade to Silver</button></div>
                     </div>
-
-                    <!-- Gold Monthly -->
                     <div class="pricing-card gold" data-plan="gold" data-billing="monthly" data-price="800">
                         <div class="card-left">
-                            <div class="plan-color gold-color">
-                                <i class="fas fa-crown"></i>
-                            </div>
-                            <div class="plan-info">
-                                <h3>Gold</h3>
-                                <div class="price monthly-price">₱800 <span class="price-period">/ month</span></div>
-                                <div class="price yearly-price" style="display: none;">₱8,000 <span class="price-period">/ year</span></div>
-                            </div>
+                            <div class="plan-color gold-color"><i class="fas fa-crown"></i></div>
+                            <div class="plan-info"><h3>Gold</h3><div class="price monthly-price">₱800 <span class="price-period">/ month</span></div><div class="price yearly-price" style="display: none;">₱8,000 <span class="price-period">/ year</span></div></div>
                         </div>
                         <div class="card-middle">
                             <div class="feature-badges">
@@ -225,9 +231,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
                                 <span class="feature-badge"><i class="fas fa-check"></i> Maximum visibility</span>
                             </div>
                         </div>
-                        <div class="card-right">
-                            <button class="pricing-btn btn-upgrade btn-gold">Upgrade to Gold</button>
-                        </div>
+                        <div class="card-right"><button class="pricing-btn btn-upgrade btn-gold">Upgrade to Gold</button></div>
                     </div>
                 </div>
             </div>
@@ -235,17 +239,11 @@ require_once __DIR__ . '/../backend/session/auth.php';
             <!-- Yearly Plans -->
             <div id="yearlyPlans" class="billing-period">
                 <div class="pricing-grid">
-                    <!-- Bronze Yearly -->
                     <div class="pricing-card bronze" data-plan="bronze" data-billing="lifetime" data-price="0">
                         <div class="free-badge">CURRENT PLAN</div>
                         <div class="card-left">
-                            <div class="plan-color bronze-color">
-                                <i class="fas fa-medal"></i>
-                            </div>
-                            <div class="plan-info">
-                                <h3>Bronze</h3>
-                                <div class="price"><span class="price-free-text">₱0</span> / forever</div>
-                            </div>
+                            <div class="plan-color bronze-color"><i class="fas fa-medal"></i></div>
+                            <div class="plan-info"><h3>Bronze</h3><div class="price"><span class="price-free-text">₱0</span> / forever</div></div>
                         </div>
                         <div class="card-middle">
                             <div class="feature-badges">
@@ -254,23 +252,13 @@ require_once __DIR__ . '/../backend/session/auth.php';
                                 <span class="feature-badge"><i class="fas fa-times"></i> Featured products</span>
                             </div>
                         </div>
-                        <div class="card-right">
-                            <span class="pricing-btn btn-current">Current Plan</span>
-                        </div>
+                        <div class="card-right"><span class="pricing-btn btn-current">Current Plan</span></div>
                     </div>
-
-                    <!-- Silver Yearly -->
                     <div class="pricing-card popular silver" data-plan="silver" data-billing="yearly" data-price="3000">
                         <div class="popular-badge">BEST VALUE</div>
                         <div class="card-left">
-                            <div class="plan-color silver-color">
-                                <i class="fas fa-gem"></i>
-                            </div>
-                            <div class="plan-info">
-                                <h3>Silver</h3>
-                                <div class="price">₱3,000 <span class="price-period">/ year</span></div>
-                                <div class="price" style="font-size: 0.7rem; color: var(--success);">Save ₱600</div>
-                            </div>
+                            <div class="plan-color silver-color"><i class="fas fa-gem"></i></div>
+                            <div class="plan-info"><h3>Silver</h3><div class="price">₱3,000 <span class="price-period">/ year</span></div><div class="price" style="font-size: 0.7rem; color: var(--success);">Save ₱600</div></div>
                         </div>
                         <div class="card-middle">
                             <div class="feature-badges">
@@ -280,22 +268,12 @@ require_once __DIR__ . '/../backend/session/auth.php';
                                 <span class="feature-badge"><i class="fas fa-check"></i> Improved visibility</span>
                             </div>
                         </div>
-                        <div class="card-right">
-                            <button class="pricing-btn btn-upgrade">Upgrade to Silver</button>
-                        </div>
+                        <div class="card-right"><button class="pricing-btn btn-upgrade">Upgrade to Silver</button></div>
                     </div>
-
-                    <!-- Gold Yearly -->
                     <div class="pricing-card gold" data-plan="gold" data-billing="yearly" data-price="8000">
                         <div class="card-left">
-                            <div class="plan-color gold-color">
-                                <i class="fas fa-crown"></i>
-                            </div>
-                            <div class="plan-info">
-                                <h3>Gold</h3>
-                                <div class="price">₱8,000 <span class="price-period">/ year</span></div>
-                                <div class="price" style="font-size: 0.7rem; color: var(--success);">Save ₱1,600</div>
-                            </div>
+                            <div class="plan-color gold-color"><i class="fas fa-crown"></i></div>
+                            <div class="plan-info"><h3>Gold</h3><div class="price">₱8,000 <span class="price-period">/ year</span></div><div class="price" style="font-size: 0.7rem; color: var(--success);">Save ₱1,600</div></div>
                         </div>
                         <div class="card-middle">
                             <div class="feature-badges">
@@ -305,72 +283,41 @@ require_once __DIR__ . '/../backend/session/auth.php';
                                 <span class="feature-badge"><i class="fas fa-check"></i> Maximum visibility</span>
                             </div>
                         </div>
-                        <div class="card-right">
-                            <button class="pricing-btn btn-upgrade btn-gold">Upgrade to Gold</button>
-                        </div>
+                        <div class="card-right"><button class="pricing-btn btn-upgrade btn-gold">Upgrade to Gold</button></div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <footer>
-            © 2026 Seller Dashboard. All rights reserved.
-        </footer>
+        <footer>© 2026 Seller Dashboard. All rights reserved.</footer>
     </main>
 </div>
 
-<!-- ==================== PLAN CONFIRMATION MODAL ==================== -->
+<!-- Plan Confirmation Modal -->
 <div id="planConfirmModal" class="modal">
     <div class="modal-content">
-        <div class="modal-header">
-            <h3 id="modalTitle">Confirm Plan Change</h3>
-            <button class="modal-close" onclick="closeModal()">×</button>
-        </div>
-        
+        <div class="modal-header"><h3 id="modalTitle">Confirm Plan Change</h3><button class="modal-close" onclick="closeModal()">×</button></div>
         <div class="modal-body">
             <div class="plan-change-info">
-                <div class="from-plan">
-                    <strong>Current:</strong><br>
-                    <span id="currentPlanModal">Bronze Plan</span>
-                </div>
+                <div class="from-plan"><strong>Current:</strong><br><span id="currentPlanModal">Bronze Plan</span></div>
                 <div class="arrow">→</div>
-                <div class="to-plan">
-                    <strong>New:</strong><br>
-                    <span id="newPlanModal">Silver Plan (Monthly)</span>
-                </div>
+                <div class="to-plan"><strong>New:</strong><br><span id="newPlanModal">Silver Plan (Monthly)</span></div>
             </div>
-
-            <div class="price-info">
-                <p>You will be charged <strong id="modalAmount">₱300.00</strong> 
-                <span id="modalBillingPeriod">per month</span></p>
-            </div>
-
-            <div class="warning-note" id="downgradeWarning" style="display: none;">
-                <i class="fas fa-exclamation-triangle"></i>
-                <p>Downgrading will take effect at the end of your current billing period. Some features may no longer be available.</p>
-            </div>
+            <div class="price-info"><p>You will be charged <strong id="modalAmount">₱300.00</strong> <span id="modalBillingPeriod">per month</span></p></div>
+            <div class="warning-note" id="downgradeWarning" style="display: none;"><i class="fas fa-exclamation-triangle"></i><p>Downgrading will take effect at the end of your current billing period.</p></div>
         </div>
-
         <div class="modal-footer">
             <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-            <button class="btn-confirm" id="confirmBtn" onclick="proceedWithPlanChange()">
-                Confirm Upgrade
-            </button>
+            <button class="btn-confirm" id="confirmBtn" onclick="proceedWithPlanChange()">Confirm Upgrade</button>
         </div>
     </div>
 </div>
 
-<!-- ── LOGOUT CONFIRMATION MODAL ── -->
+<!-- Logout Modal -->
 <div class="logout-modal-overlay" id="logoutModal">
     <div class="logout-modal-content">
-        <div class="logout-modal-header">
-            <h3>Sign Out</h3>
-            <button class="logout-modal-close" id="closeModal">×</button>
-        </div>
-        <div class="logout-modal-body">
-            <p>Are you sure you want to sign out?</p>
-            <p class="logout-text-secondary">You will need to log in again to access your dashboard.</p>
-        </div>
+        <div class="logout-modal-header"><h3>Sign Out</h3><button class="logout-modal-close" id="closeModal">×</button></div>
+        <div class="logout-modal-body"><p>Are you sure you want to sign out?</p><p class="logout-text-secondary">You will need to log in again to access your dashboard.</p></div>
         <div class="logout-modal-footer">
             <button class="logout-btn2 logout-btn2-secondary" id="cancelLogout">Cancel</button>
             <a href="/seller/backend/auth/logout.php" class="logout-btn2 logout-btn2-danger">Sign Out</a>
@@ -381,15 +328,11 @@ require_once __DIR__ . '/../backend/session/auth.php';
 <script src="/seller/js/logout.js"></script>
 
 <script>
-// Global variable to store current plan data
 let currentPlanData = null;
+let pendingPlanChange = {};
 
-// Set current date
-document.getElementById('dateDisplay').textContent = new Date().toLocaleDateString('en-US', { 
-    year: 'numeric', month: 'long', day: 'numeric' 
-});
+document.getElementById('dateDisplay').textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-// Toggle between monthly and yearly
 const monthlyRadio = document.getElementById('monthlyRadio');
 const yearlyRadio = document.getElementById('yearlyRadio');
 const monthlyPlans = document.getElementById('monthlyPlans');
@@ -407,129 +350,130 @@ function updatePriceDisplay() {
     });
 }
 
-monthlyRadio.addEventListener('change', () => {
-    monthlyPlans.classList.add('active');
-    yearlyPlans.classList.remove('active');
-    updatePriceDisplay();
-});
+monthlyRadio.addEventListener('change', () => { monthlyPlans.classList.add('active'); yearlyPlans.classList.remove('active'); updatePriceDisplay(); });
+yearlyRadio.addEventListener('change', () => { yearlyPlans.classList.add('active'); monthlyPlans.classList.remove('active'); updatePriceDisplay(); });
 
-yearlyRadio.addEventListener('change', () => {
-    yearlyPlans.classList.add('active');
-    monthlyPlans.classList.remove('active');
-    updatePriceDisplay();
-});
-
-// Modal variables
-let pendingPlanChange = {};
-
-// Check if it's a downgrade (using OFFICIAL plan)
 function checkIfDowngrade(newPlan, newBilling) {
     if (!currentPlanData) return false;
-    
     const currentPlan = currentPlanData.official_plan;
     const currentBilling = currentPlanData.official_billing;
-    
     const planRank = { 'bronze': 1, 'silver': 2, 'gold': 3 };
     const billingMultiplier = { 'monthly': 1, 'yearly': 12, 'lifetime': 999 };
-    
     const currentRank = planRank[currentPlan] || 1;
     const newRank = planRank[newPlan] || 1;
-    
     if (newRank < currentRank) return true;
-    
     if (newRank === currentRank) {
         const currentValue = billingMultiplier[currentBilling] || 1;
         const newValue = billingMultiplier[newBilling] || 1;
         return newValue < currentValue;
     }
-    
     return false;
 }
 
-// Check if it's just a billing change (using OFFICIAL plan)
 function checkIfBillingChange(newPlan, newBilling) {
     if (!currentPlanData) return false;
     return (newPlan === currentPlanData.official_plan && newBilling !== currentPlanData.official_billing);
 }
 
-// Show confirmation modal
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast-notification ${type}`;
+    toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i><span>${message}</span>`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+}
+
 function showPlanModal(plan, billing, amount) {
-    const currentPlanDisplay = currentPlanData ? 
-        `${currentPlanData.official_plan.charAt(0).toUpperCase() + currentPlanData.official_plan.slice(1)} Plan (${currentPlanData.official_billing})` : 
-        'Bronze Plan (lifetime)';
-
-    pendingPlanChange = { plan, billing, amount };
-
-    document.getElementById('currentPlanModal').textContent = currentPlanDisplay;
-    document.getElementById('newPlanModal').textContent = 
-        `${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan (${billing})`;
+    const currentPlanDisplay = currentPlanData ? `${currentPlanData.official_plan.charAt(0).toUpperCase() + currentPlanData.official_plan.slice(1)} Plan (${currentPlanData.official_billing})` : 'Bronze Plan (lifetime)';
+    const isBronzeDowngrade = (plan === 'bronze' && currentPlanData && currentPlanData.official_plan !== 'bronze');
     
-    document.getElementById('modalAmount').textContent = `₱${amount.toLocaleString('en-US')}`;
-    document.getElementById('modalBillingPeriod').textContent = 
-        billing === 'monthly' ? 'per month' : 'per year';
-
+    pendingPlanChange = { plan, billing, amount, isBronze: isBronzeDowngrade };
+    
+    document.getElementById('currentPlanModal').textContent = currentPlanDisplay;
+    document.getElementById('newPlanModal').textContent = isBronzeDowngrade ? 'Bronze Plan (Free)' : `${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan (${billing})`;
+    document.getElementById('modalAmount').textContent = isBronzeDowngrade ? '₱0.00' : `₱${amount.toLocaleString('en-US')}`;
+    document.getElementById('modalBillingPeriod').textContent = isBronzeDowngrade ? 'free forever' : (billing === 'monthly' ? 'per month' : 'per year');
+    
     const isDowngrade = checkIfDowngrade(plan, billing);
     const isBillingChange = checkIfBillingChange(plan, billing);
-    
     const downgradeWarning = document.getElementById('downgradeWarning');
     const confirmBtn = document.getElementById('confirmBtn');
     const modalTitle = document.getElementById('modalTitle');
-
-    if (isDowngrade) {
+    
+    if (isBronzeDowngrade) {
         downgradeWarning.style.display = 'block';
+        downgradeWarning.innerHTML = '<i class="fas fa-exclamation-triangle"></i><p>Downgrading to Bronze will take effect immediately. You will lose access to premium features.</p>';
+        modalTitle.textContent = "Confirm Downgrade to Bronze";
+        confirmBtn.textContent = "Confirm Downgrade";
+        confirmBtn.style.backgroundColor = '#e74c3c';
+    } else if (isDowngrade) {
+        downgradeWarning.style.display = 'block';
+        downgradeWarning.innerHTML = '<i class="fas fa-exclamation-triangle"></i><p>Downgrading will take effect at the end of your current billing period.</p>';
         modalTitle.textContent = "Confirm Downgrade";
         confirmBtn.textContent = "Confirm Downgrade";
-        confirmBtn.style.backgroundColor = 'var(--danger)';
+        confirmBtn.style.backgroundColor = '#e74c3c';
     } else if (isBillingChange) {
         downgradeWarning.style.display = 'none';
         modalTitle.textContent = "Change Billing Period";
         confirmBtn.textContent = "Confirm & Pay";
-        confirmBtn.style.backgroundColor = 'var(--primary)';
+        confirmBtn.style.backgroundColor = '#3498db';
     } else {
         downgradeWarning.style.display = 'none';
         modalTitle.textContent = "Confirm Upgrade";
         confirmBtn.textContent = "Confirm & Pay";
-        confirmBtn.style.backgroundColor = 'var(--primary)';
+        confirmBtn.style.backgroundColor = '#3498db';
     }
-
+    
     document.getElementById('planConfirmModal').style.display = 'block';
 }
 
-// Close modal
-function closeModal() {
-    document.getElementById('planConfirmModal').style.display = 'none';
+function closeModal() { document.getElementById('planConfirmModal').style.display = 'none'; }
+
+async function submitBronzeDowngrade() {
+    const confirmBtn = document.getElementById('confirmBtn');
+    const originalText = confirmBtn.textContent;
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Processing...';
+    
+    try {
+        const response = await fetch('/seller/backend/plan/update_to_bronze_plan.php', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+        const result = await response.json();
+        if (result.success) {
+            closeModal();
+            showToast(result.message, 'success');
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            showToast('Error: ' + result.message, 'error');
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = originalText;
+        }
+    } catch (error) {
+        showToast('An error occurred. Please try again.', 'error');
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = originalText;
+    }
 }
 
-// Proceed with plan change
 function proceedWithPlanChange() {
     if (!pendingPlanChange.plan) return;
-    const { plan, billing, amount } = pendingPlanChange;
+    const { plan, billing, amount, isBronze } = pendingPlanChange;
     closeModal();
-    window.location.href = `/seller/ui/payment.php?amount=${amount}&plan=${plan}&billing=${billing}`;
+    if (isBronze) {
+        submitBronzeDowngrade();
+    } else {
+        window.location.href = `/seller/ui/payment.php?amount=${amount}&plan=${plan}&billing=${billing}`;
+    }
 }
 
-// Close modal when clicking outside
-window.onclick = function(event) {
-    const modal = document.getElementById('planConfirmModal');
-    if (event.target === modal) closeModal();
-};
+window.onclick = function(event) { if (event.target === document.getElementById('planConfirmModal')) closeModal(); };
+document.addEventListener('keydown', function(e) { if (e.key === "Escape" && document.getElementById('planConfirmModal').style.display === 'block') closeModal(); });
 
-// Close with Escape key
-document.addEventListener('keydown', function(e) {
-    if (e.key === "Escape") {
-        const modal = document.getElementById('planConfirmModal');
-        if (modal.style.display === 'block') closeModal();
-    }
-});
-
-// Update pricing buttons based on OFFICIAL plan and billing
 function updatePricingButtons(planData) {
     const officialPlan = planData.official_plan.toLowerCase();
     const officialBilling = planData.official_billing;
     const planRank = { 'bronze': 1, 'silver': 2, 'gold': 3 };
     const officialRank = planRank[officialPlan] || 1;
     
-    // Process ALL cards
     document.querySelectorAll('.pricing-card[data-plan]').forEach(card => {
         const cardPlan = card.getAttribute('data-plan');
         const cardBilling = card.getAttribute('data-billing');
@@ -537,173 +481,103 @@ function updatePricingButtons(planData) {
         const cardRight = card.querySelector('.card-right');
         const existingBtn = cardRight.querySelector('.pricing-btn');
         const cardRank = planRank[cardPlan] || 1;
-        
         let newButton;
         
-        // SPECIAL HANDLING FOR BRONZE
         if (cardPlan === 'bronze') {
             if (officialPlan === 'bronze') {
-                // Seller is on Bronze - this IS their current plan
                 newButton = document.createElement('span');
                 newButton.className = 'pricing-btn btn-current';
                 newButton.textContent = 'Current Plan';
-                
-                // Update the free badge
                 const freeBadge = card.querySelector('.free-badge');
-                if (freeBadge) {
-                    freeBadge.textContent = 'CURRENT PLAN';
-                    freeBadge.style.background = '#27ae60';
-                }
+                if (freeBadge) { freeBadge.textContent = 'CURRENT PLAN'; freeBadge.style.background = '#27ae60'; }
             } else {
-                // Seller is on Silver or Gold - Bronze is a DOWNGRADE
                 newButton = document.createElement('button');
                 newButton.type = 'button';
                 newButton.className = 'pricing-btn btn-downgrade';
-                newButton.textContent = 'Downgrade to Bronze';
-                newButton.onclick = (e) => {
-                    e.preventDefault();
-                    showPlanModal('bronze', 'lifetime', 0);
-                };
-                
-                // Reset the free badge
+                newButton.textContent = 'Downgrade to Bronze (Free)';
+                newButton.onclick = (e) => { e.preventDefault(); showPlanModal('bronze', 'lifetime', 0); };
                 const freeBadge = card.querySelector('.free-badge');
-                if (freeBadge) {
-                    freeBadge.textContent = 'FREE FOREVER';
-                    freeBadge.style.background = '#27ae60';
-                }
+                if (freeBadge) { freeBadge.textContent = 'FREE FOREVER'; freeBadge.style.background = '#27ae60'; }
             }
-            
             if (existingBtn) existingBtn.replaceWith(newButton);
             return;
         }
         
-        // For Silver and Gold cards
         if (cardPlan === officialPlan && cardBilling === officialBilling) {
-            // This is the seller's official current plan
             newButton = document.createElement('span');
             newButton.className = 'pricing-btn btn-current';
             newButton.textContent = 'Current Plan';
         } else if (cardPlan === officialPlan && cardBilling !== officialBilling) {
-            // Same plan, different billing period
             newButton = document.createElement('button');
             newButton.type = 'button';
-            if ((officialBilling === 'yearly' && cardBilling === 'monthly') ||
-                (officialBilling === 'lifetime' && cardBilling !== 'lifetime')) {
+            if ((officialBilling === 'yearly' && cardBilling === 'monthly') || (officialBilling === 'lifetime' && cardBilling !== 'lifetime')) {
                 newButton.className = 'pricing-btn btn-downgrade';
                 newButton.textContent = 'Downgrade';
             } else {
                 newButton.className = 'pricing-btn btn-switch';
                 newButton.textContent = cardBilling === 'yearly' ? 'Switch to Yearly' : 'Switch to Monthly';
             }
-            newButton.onclick = (e) => {
-                e.preventDefault();
-                showPlanModal(cardPlan, cardBilling, cardPrice);
-            };
+            newButton.onclick = (e) => { e.preventDefault(); showPlanModal(cardPlan, cardBilling, cardPrice); };
         } else {
-            // Different plan
             newButton = document.createElement('button');
             newButton.type = 'button';
             if (cardRank < officialRank) {
-                // This is a downgrade
                 newButton.className = 'pricing-btn btn-downgrade';
                 newButton.textContent = `Downgrade to ${cardPlan.charAt(0).toUpperCase() + cardPlan.slice(1)}`;
             } else {
-                // This is an upgrade
                 newButton.className = `pricing-btn btn-upgrade ${cardPlan === 'gold' ? 'btn-gold' : ''}`;
                 newButton.textContent = `Upgrade to ${cardPlan.charAt(0).toUpperCase() + cardPlan.slice(1)}`;
             }
-            newButton.onclick = (e) => {
-                e.preventDefault();
-                showPlanModal(cardPlan, cardBilling, cardPrice);
-            };
+            newButton.onclick = (e) => { e.preventDefault(); showPlanModal(cardPlan, cardBilling, cardPrice); };
         }
-        
         if (existingBtn) existingBtn.replaceWith(newButton);
     });
     
-    // Hide popular badge for official current plan
     document.querySelectorAll('.popular-badge').forEach(badge => {
         const card = badge.closest('.pricing-card');
         if (card) {
             const cardPlan = card.getAttribute('data-plan');
             const cardBilling = card.getAttribute('data-billing');
-            // Hide if this card matches the official plan AND billing
-            if (cardPlan === officialPlan && cardBilling === officialBilling) {
-                badge.style.display = 'none';
-            } else {
-                badge.style.display = 'block';
-            }
+            badge.style.display = (cardPlan === officialPlan && cardBilling === officialBilling) ? 'none' : 'block';
         }
     });
 }
-
-// Fetch and display current plan
-document.addEventListener('DOMContentLoaded', function() {
-    fetchCurrentPlan();
-});
 
 async function fetchCurrentPlan() {
     try {
         const response = await fetch('/seller/backend/plan/get_current_plan.php');
         const result = await response.json();
-        
-        if (result.success && result.data) {
-            updatePlanDisplay(result.data);
-        }
-    } catch (error) {
-        console.error('Error fetching plan:', error);
-    }
+        if (result.success && result.data) updatePlanDisplay(result.data);
+    } catch (error) { console.error('Error fetching plan:', error); }
 }
 
 function updatePlanDisplay(planData) {
     currentPlanData = planData;
-    
-    // Update CURRENT PLAN CARD using SUBSCRIBED data (from sellers_plan table)
     const subscribedPlanName = planData.subscribed_plan.charAt(0).toUpperCase() + planData.subscribed_plan.slice(1);
     document.getElementById('currentPlanName').textContent = `${subscribedPlanName} Plan`;
     document.getElementById('currentPlanDesc').textContent = planData.description;
     
-    // Update billing display in current plan card
     const billingText = document.getElementById('billingText');
-    if (planData.subscribed_billing === 'monthly') {
-        billingText.textContent = 'Monthly Billing';
-    } else if (planData.subscribed_billing === 'yearly') {
-        billingText.textContent = 'Yearly Billing';
-    } else {
-        billingText.textContent = 'Lifetime Access';
-    }
+    if (planData.subscribed_billing === 'monthly') billingText.textContent = 'Monthly Billing';
+    else if (planData.subscribed_billing === 'yearly') billingText.textContent = 'Yearly Billing';
+    else billingText.textContent = 'Lifetime Access';
     
-    // Update status badge
     const statusBadge = document.getElementById('currentPlanStatus');
     const isActive = planData.subscribed_status === 'active';
-    
     statusBadge.className = `status-badge ${isActive ? 'status-active' : 'status-pending'}`;
-    statusBadge.innerHTML = `
-        <i class="fas fa-${isActive ? 'check-circle' : 'clock'}"></i> 
-        ${isActive ? 'Active' : 'Pending'}
-    `;
+    statusBadge.innerHTML = `<i class="fas fa-${isActive ? 'check-circle' : 'clock'}"></i> ${isActive ? 'Active' : 'Pending'}`;
     
-    // Update expiry/renewal text
     const expiryEl = document.getElementById('planExpiry');
     if (planData.end_date_formatted) {
-        if (planData.subscribed_billing === 'lifetime') {
-            expiryEl.textContent = 'Never expires';
-        } else if (planData.subscribed_status === 'pending') {
-            expiryEl.textContent = 'Activation pending payment';
-        } else {
-            expiryEl.textContent = `Renews on ${planData.end_date_formatted}`;
-        }
+        if (planData.subscribed_billing === 'lifetime') expiryEl.textContent = 'Never expires';
+        else if (planData.subscribed_status === 'pending') expiryEl.textContent = 'Activation pending payment';
+        else expiryEl.textContent = `Renews on ${planData.end_date_formatted}`;
     } else {
-        if (planData.subscribed_billing === 'lifetime') {
-            expiryEl.textContent = 'Never expires';
-        } else if (planData.subscribed_status === 'pending') {
-            expiryEl.textContent = 'Activation pending payment';
-        } else {
-            expiryEl.textContent = 'Active subscription';
-        }
+        if (planData.subscribed_billing === 'lifetime') expiryEl.textContent = 'Never expires';
+        else if (planData.subscribed_status === 'pending') expiryEl.textContent = 'Activation pending payment';
+        else expiryEl.textContent = 'Active subscription';
     }
     
-    // Set billing toggle based on OFFICIAL billing (for default view)
     if (planData.official_billing === 'yearly') {
         yearlyRadio.checked = true;
         monthlyPlans.classList.remove('active');
@@ -714,12 +588,10 @@ function updatePlanDisplay(planData) {
         yearlyPlans.classList.remove('active');
     }
     updatePriceDisplay();
-    
-    // Update pricing buttons using OFFICIAL data (from sellers table)
     updatePricingButtons(planData);
 }
 
+document.addEventListener('DOMContentLoaded', fetchCurrentPlan);
 </script>
-
 </body>
 </html>
