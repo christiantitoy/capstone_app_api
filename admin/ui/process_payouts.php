@@ -44,18 +44,28 @@ require_once '../backend/session/auth_admin.php';
             <a href="/admin/ui/deliveries.php" class="nav-item">
                 <i class="fas fa-truck"></i><span>Deliveries</span>
             </a>
-            <a href="/admin/ui/process_payouts.php" class="nav-item">
-                <i class="fas fa-money-bill-wave"></i><span>Process Payouts</span>
-            </a>
-            <a href="/admin/ui/order_payments.php" class="nav-item">
-                <i class="fas fa-credit-card"></i><span>Order Payments</span>
-            </a>
-            <a href="/admin/ui/rider_remittances.php" class="nav-item">
-                <i class="fas fa-hand-holding-usd"></i><span>Rider Remittances</span>
-            </a>
-            <a href="/admin/ui/seller_subscriptions.php" class="nav-item">
-                <i class="fas fa-crown"></i><span>Seller Subscriptions</span>
-            </a>
+            
+            <!-- Online Payments Dropdown -->
+            <div class="nav-dropdown">
+                <div class="nav-item nav-dropdown-toggle" onclick="toggleDropdown(this)">
+                    <i class="fas fa-wallet"></i><span>Online Payments</span>
+                    <i class="fas fa-chevron-down dropdown-arrow"></i>
+                </div>
+                <div class="dropdown-menu">
+                    <a href="/admin/ui/process_payouts.php" class="dropdown-item active">
+                        <i class="fas fa-money-bill-wave"></i><span>Process Payouts</span>
+                    </a>
+                    <a href="/admin/ui/order_payments.php" class="dropdown-item">
+                        <i class="fas fa-credit-card"></i><span>Order Payments</span>
+                    </a>
+                    <a href="/admin/ui/rider_remittances.php" class="dropdown-item">
+                        <i class="fas fa-hand-holding-usd"></i><span>Rider Remittances</span>
+                    </a>
+                    <a href="/admin/ui/seller_subscriptions.php" class="dropdown-item">
+                        <i class="fas fa-crown"></i><span>Seller Subscriptions</span>
+                    </a>
+                </div>
+            </div>
         </nav>
         <div class="sidebar-footer">
             <div class="user-profile">
@@ -76,7 +86,7 @@ require_once '../backend/session/auth_admin.php';
         <header class="main-header">
             <div class="header-left">
                 <h1>Process Payouts</h1>
-                <p>GCash - Rider Delivery payments for seller payout</p>
+                <p>GCash - Rider Delivery payments pending for seller payout</p>
             </div>
             <div class="header-right">
                 <div class="date-display" id="currentDate"></div>
@@ -96,29 +106,20 @@ require_once '../backend/session/auth_admin.php';
             </div>
             <div class="stat-card">
                 <div class="stat-icon" style="background:#e67e2220;color:#e67e22">
-                    <i class="fas fa-clock"></i>
+                    <i class="fas fa-box"></i>
                 </div>
                 <div class="stat-info">
-                    <h3 id="unpaidSellers">0</h3>
-                    <p>Unpaid Sellers</p>
+                    <h3 id="totalItems">0</h3>
+                    <p>Total Items</p>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon" style="background:#27ae6020;color:#27ae60">
-                    <i class="fas fa-check-circle"></i>
-                </div>
-                <div class="stat-info">
-                    <h3 id="paidSellers">0</h3>
-                    <p>Paid Sellers</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon" style="background:#9b59b620;color:#9b59b6">
                     <i class="fas fa-money-bill-wave"></i>
                 </div>
                 <div class="stat-info">
-                    <h3 id="totalPayout">₱0</h3>
-                    <p>Total Payout Amount</p>
+                    <h3 id="totalPending">₱0</h3>
+                    <p>Pending Payout</p>
                 </div>
             </div>
         </section>
@@ -126,13 +127,8 @@ require_once '../backend/session/auth_admin.php';
         <!-- SELLER PAYOUTS LIST -->
         <div class="full-width-section payouts-list">
             <div class="section-header">
-                <h2>Seller Payouts</h2>
+                <h2>Pending Seller Payouts</h2>
                 <div class="filter-container">
-                    <select id="statusFilter" class="filter-select">
-                        <option value="all">All Status</option>
-                        <option value="Unpaid">Unpaid</option>
-                        <option value="Paid">Paid</option>
-                    </select>
                     <div class="search-container">
                         <input type="text" class="search-field" id="searchSeller" placeholder="Search seller...">
                         <i class="fas fa-search search-icon"></i>
@@ -151,7 +147,6 @@ require_once '../backend/session/auth_admin.php';
                         <div class="col-items">Items</div>
                         <div class="col-amount">Payout Amount</div>
                         <div class="col-status">Status</div>
-                        <div class="col-date">Last Updated</div>
                     </div>
                     
                     <div class="table-body" id="payoutsTableBody">
@@ -193,42 +188,65 @@ require_once '../backend/session/auth_admin.php';
 <script>
     let allSellerSummary = [];
     
+    // Toggle dropdown
+    function toggleDropdown(element) {
+        const dropdown = element.closest('.nav-dropdown');
+        dropdown.classList.toggle('open');
+        localStorage.setItem('onlinePaymentsOpen', dropdown.classList.contains('open'));
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropdown = document.querySelector('.nav-dropdown');
+        const isOpen = localStorage.getItem('onlinePaymentsOpen') === 'true';
+        const hasActive = dropdown?.querySelector('.dropdown-item.active');
+        if (isOpen || hasActive) {
+            dropdown?.classList.add('open');
+        }
+    });
+    
     // Display current date
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     document.getElementById('currentDate').textContent = new Date().toLocaleDateString(undefined, options);
     
     // Load payouts from backend
     async function loadPayouts() {
-    try {
-        const response = await fetch('/admin/backend/payouts/get_payouts.php');
-        const result = await response.json();
-        
-        if (result.success) {
-            allSellerSummary = result.data.seller_summary;
+        try {
+            const response = await fetch('/admin/backend/payouts/get_payouts.php');
+            const result = await response.json();
             
-            document.getElementById('totalSellers').textContent = result.data.totals.total_sellers;
-            document.getElementById('totalItems').textContent = result.data.totals.total_items;
-            document.getElementById('totalPayout').textContent = `₱${formatNumber(result.data.totals.total_pending)}`;
+            console.log('Payouts response:', result);
             
-            displayPayouts(allSellerSummary);
+            if (result.success) {
+                allSellerSummary = result.data.seller_summary;
+                
+                // Update stats
+                document.getElementById('totalSellers').textContent = result.data.totals.total_sellers || 0;
+                document.getElementById('totalItems').textContent = result.data.totals.total_items || 0;
+                document.getElementById('totalPending').textContent = `₱${formatNumber(result.data.totals.total_pending || 0)}`;
+                
+                // Display payouts
+                displayPayouts(allSellerSummary);
+            } else {
+                document.getElementById('payoutsTableBody').innerHTML = '<div class="error">Failed to load payouts: ' + (result.message || 'Unknown error') + '</div>';
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('payoutsTableBody').innerHTML = '<div class="error">Error loading payouts. Check console for details.</div>';
         }
-    } catch (error) {
-        console.error('Error:', error);
     }
-}
     
     // Display payouts in table
     function displayPayouts(sellers) {
         const tbody = document.getElementById('payoutsTableBody');
         
-        if (sellers.length === 0) {
-            tbody.innerHTML = '<div class="no-data">No payouts found</div>';
+        if (!sellers || sellers.length === 0) {
+            tbody.innerHTML = '<div class="no-data">No pending payouts found</div>';
             return;
         }
         
         let html = '';
         sellers.forEach(seller => {
-            const statusClass = seller.paid_status === 'Paid' ? 'status-processed' : 'status-pending';
+            const statusClass = 'status-pending';
             
             html += `
                 <div class="payout-row clickable" onclick="viewPayoutDetails(${seller.seller_id})">
@@ -250,9 +268,6 @@ require_once '../backend/session/auth_admin.php';
                     <div class="col-status">
                         <span class="status-badge ${statusClass}">${seller.paid_status}</span>
                     </div>
-                    <div class="col-date">
-                        ${formatDate(seller.last_updated || seller.sold_items[0]?.sold_date)}
-                    </div>
                 </div>
             `;
         });
@@ -265,12 +280,7 @@ require_once '../backend/session/auth_admin.php';
     }
     
     function exportPayouts() {
-        const statusFilter = document.getElementById('statusFilter').value;
         let sellersToExport = allSellerSummary;
-        
-        if (statusFilter !== 'all') {
-            sellersToExport = allSellerSummary.filter(s => s.paid_status === statusFilter);
-        }
         
         let csv = 'Seller Name,Seller Email,Store Name,Total Items,Payout Amount,Status\n';
         
@@ -288,15 +298,10 @@ require_once '../backend/session/auth_admin.php';
     }
     
     // Filter functionality
-    function filterPayouts() {
-        const statusFilter = document.getElementById('statusFilter').value;
-        const searchTerm = document.getElementById('searchSeller').value.toLowerCase();
+    document.getElementById('searchSeller').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
         
         let filtered = [...allSellerSummary];
-        
-        if (statusFilter !== 'all') {
-            filtered = filtered.filter(seller => seller.paid_status === statusFilter);
-        }
         
         if (searchTerm) {
             filtered = filtered.filter(seller => 
@@ -307,19 +312,10 @@ require_once '../backend/session/auth_admin.php';
         }
         
         displayPayouts(filtered);
-    }
-    
-    document.getElementById('statusFilter').addEventListener('change', filterPayouts);
-    document.getElementById('searchSeller').addEventListener('input', filterPayouts);
+    });
     
     function formatNumber(num) {
         return parseFloat(num || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    }
-    
-    function formatDate(dateString) {
-        if (!dateString) return 'N/A';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     }
     
     function escapeHtml(text) {

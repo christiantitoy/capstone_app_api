@@ -309,12 +309,12 @@ body {
 /* Payout Table Styles */
 .payout_holder {
     width: 100%;
-    min-width: 800px;
+    min-width: 700px;
 }
 
 .payout-table-header {
     display: grid;
-    grid-template-columns: minmax(180px, 1.5fr) minmax(150px, 1fr) 100px 150px 100px 150px;
+    grid-template-columns: minmax(180px, 1.5fr) minmax(150px, 1fr) 100px 150px 100px;
     background: #f8f9fa;
     padding: 12px 15px;
     font-weight: 600;
@@ -328,7 +328,7 @@ body {
 
 .payout-row {
     display: grid;
-    grid-template-columns: minmax(180px, 1.5fr) minmax(150px, 1fr) 100px 150px 100px 150px;
+    grid-template-columns: minmax(180px, 1.5fr) minmax(150px, 1fr) 100px 150px 100px;
     padding: 15px;
     border-bottom: 1px solid #e9ecef;
     align-items: center;
