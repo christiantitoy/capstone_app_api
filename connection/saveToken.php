@@ -1,4 +1,6 @@
 <?php
+
+// saveToken.php
 header('Content-Type: application/json');
 
 require_once '/var/www/html/connection/db_connection.php';
@@ -19,16 +21,14 @@ try {
     $role = $data['role'];
     $fcm_token = $data['fcm_token'];
 
-    // ✅ FIXED UPSERT (one token per user)
     $stmt = $conn->prepare("
-        INSERT INTO user_tokens (user_id, role, fcm_token)
-        VALUES (:user_id, :role, :fcm_token)
-        ON CONFLICT (user_id)
-        DO UPDATE SET
-            role = EXCLUDED.role,
-            fcm_token = EXCLUDED.fcm_token,
-            updated_at = CURRENT_TIMESTAMP
-    ");
+    INSERT INTO user_tokens (user_id, role, fcm_token)
+    VALUES (:user_id, :role, :fcm_token)
+    ON CONFLICT (user_id, role)
+    DO UPDATE SET
+        fcm_token = EXCLUDED.fcm_token,
+        updated_at = CURRENT_TIMESTAMP
+");
 
     $stmt->execute([
         ':user_id' => $user_id,
