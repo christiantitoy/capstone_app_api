@@ -91,7 +91,7 @@ try {
         }
 
         if ($seller['approval_status'] === 'rejected') {
-            $_SESSION['login_errors'] = ["Your seller account has been rejected. Please contact support for more information."];
+            $_SESSION['login_errors'] = ["Your seller account has been rejected."];
             $_SESSION['login_email']  = $email;
             header("Location: $redirect");
             exit;

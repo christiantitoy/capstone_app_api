@@ -126,7 +126,6 @@ if (!isset($_SESSION['seller_id'])) {
                                     <option>Beauty & Cosmetics</option>
                                     <option>Toys & Games</option>
                                     <option>Automotive</option>
-                                    <option>Health</option>
                                     <option>Art & Crafts</option>
                                 </select>
                                 <div class="help-text">Choose the main category of products you sell</div>
@@ -239,7 +238,6 @@ if (!isset($_SESSION['seller_id'])) {
                                     <option>National ID</option>
                                     <option>Driver's License</option>
                                     <option>Passport</option>
-                                    <option>Student ID</option>
                                     <option>SSS / UMID</option>
                                     <option>Others</option>
                                 </select>
