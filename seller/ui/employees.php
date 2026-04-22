@@ -339,7 +339,18 @@ function openAddModal() {
     document.getElementById('modalTitle').innerHTML = '<i class="fas fa-user-plus"></i> Add New Employee';
     document.getElementById('passwordGroup').style.display = 'block';
     document.getElementById('modalSubmit').textContent = 'Add Employee';
-    document.getElementById('employeeForm').reset();
+    // Update the employeeForm submission
+    document.getElementById('employeeForm').addEventListener('submit', function(e) {
+        // No need to prevent default as it's a standard form POST
+        // The form will submit normally and redirect back
+        
+        // Optional: Show loading state
+        const submitBtn = document.getElementById('modalSubmit');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Adding...';
+        
+        // Form will submit and redirect automatically
+    });
     document.getElementById('editEmployeeId').value = '';
     document.getElementById('employeeModal').classList.add('active');
     updateRoleDescription();
@@ -495,6 +506,32 @@ function applyFilters() {
         row.style.display = (matchRole && matchStatus) ? '' : 'none';
     });
 }
+
+// Display success/error messages from URL parameters
+function showUrlMessages() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
+    const success = urlParams.get('success');
+    
+    if (error) {
+        showToast(decodeURIComponent(error), 'error');
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
+    if (success) {
+        showToast(decodeURIComponent(success), 'success');
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+}
+
+// Call on page load
+document.addEventListener('DOMContentLoaded', function() {
+    checkEmployeeLimits();
+    applyFilters();
+    showUrlMessages(); // Add this line
+});
 
 // Search functionality
 document.getElementById('searchInput')?.addEventListener('keyup', function() {

@@ -1,5 +1,5 @@
 <?php
-// add.php
+// /seller/backend/employees/add.php
 require_once $_SERVER['DOCUMENT_ROOT'] . '/seller/backend/session/auth.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/connection/db_connection.php';
 
@@ -13,12 +13,30 @@ $email     = trim($_POST['email'] ?? '');
 $password  = $_POST['password'] ?? '';
 $role      = $_POST['role'] ?? '';
 
-if (empty($full_name) || empty($email) || empty($password) || !in_array($role, ['order_manager', 'product_manager'])) {
-    // In real project → use session flash message + redirect back with error
-    die("Missing required fields");
+// Validation
+$errors = [];
+if (empty($full_name)) $errors[] = "Full name is required";
+if (empty($email)) $errors[] = "Email is required";
+if (empty($password)) $errors[] = "Password is required";
+if (!in_array($role, ['order_manager', 'product_manager'])) $errors[] = "Invalid role selected";
+
+// Check if email already exists
+if (empty($errors)) {
+    $check_stmt = $conn->prepare("SELECT id FROM employees WHERE email = ? AND seller_id = ?");
+    $check_stmt->execute([$email, $seller_id]);
+    if ($check_stmt->fetch()) {
+        $errors[] = "Email already exists";
+    }
 }
 
-// Simple password hash (use password_hash in real project!)
+// If there are errors, redirect back with error message
+if (!empty($errors)) {
+    $error_message = urlencode(implode(", ", $errors));
+    header("Location: /seller/ui/employees.php?error=" . $error_message);
+    exit;
+}
+
+// Simple password hash
 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
 try {
@@ -29,13 +47,14 @@ try {
     $stmt->execute([$full_name, $email, $hashed_password, $seller_id, $role]);
 
     // Success → redirect back
-    header("Location: ../../ui/employees.php?success=1");
+    header("Location: /seller/ui/employees.php?success=Employee added successfully");
     exit;
 } catch (PDOException $e) {
-    if ($e->getCode() == 23505) { // unique violation
-        die("Email already exists");
-    }
-    die("Error: " . $e->getMessage());
+    // For any other database errors
+    $error_message = urlencode("Database error: " . $e->getMessage());
+    header("Location: /seller/ui/employees.php?error=" . $error_message);
+    exit;
 }
 
 $conn = null;
+?>
