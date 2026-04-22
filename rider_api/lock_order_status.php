@@ -72,9 +72,9 @@ try {
         // ✅ Log rider's current status
         error_log("Rider found - ID: {$rider['id']}, Status: {$rider['status']}");
 
-        // Check if rider is busy
-        if ($rider['status'] === 'busy') {
-            error_log("BLOCKED: Rider is busy");
+        // ✅ Check if rider is delivering (was 'busy')
+        if ($rider['status'] === 'delivering') {
+            error_log("BLOCKED: Rider is delivering");
             echo json_encode([
                 'status' => 'error',
                 'message' => 'You are currently on a delivery. Complete it before accepting new orders.'
@@ -82,7 +82,7 @@ try {
             exit;
         }
 
-        // Check if rider is offline
+        // ✅ Check if rider is offline
         if ($rider['status'] === 'offline') {
             error_log("BLOCKED: Rider is offline");
             echo json_encode([
