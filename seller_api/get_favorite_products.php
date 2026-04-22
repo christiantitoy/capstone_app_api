@@ -25,6 +25,7 @@ try {
             i.id,
             i.product_name as title,
             i.price,
+            i.sold,
             s.store_name as shop,
             i.seller_id,
             i.main_image_url as image_url,
@@ -44,6 +45,10 @@ try {
     
     // Format the response
     if (count($products) > 0) {
+        // Convert sold to int for each product
+        foreach ($products as &$product) {
+            $product['sold'] = (int)$product['sold'];
+        }
         echo json_encode([
             'status' => 'success',
             'products' => $products
