@@ -31,8 +31,151 @@ if ($status === 'rejected' && empty($reason)) {
     exit;
 }
 
+/**
+ * Send rejection email to seller using Brevo API
+ */
+function sendRejectionEmail($sellerEmail, $sellerName, $rejectionReason) {
+    $apiKey = getenv('BREVO_API_KEY');
+    if (!$apiKey) {
+        error_log("BREVO_API_KEY not set. Rejection email not sent.");
+        return false;
+    }
+    
+    // Prepare HTML email content
+    $htmlContent = "
+    <html>
+    <head>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; background: #f4f4f4; padding: 20px; }
+        .container { max-width: 550px; background: white; margin: auto; padding: 30px; border-radius: 12px; box-shadow: 0px 4px 20px rgba(0,0,0,0.1); }
+        .header { text-align: center; margin-bottom: 25px; }
+        .header h2 { color: #e74c3c; margin-bottom: 5px; }
+        .header p { color: #7f8c8d; margin: 0; }
+        .content { margin-bottom: 25px; }
+        .reason-box { background: #fdf0f0; border-left: 4px solid #e74c3c; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .reason-box h4 { color: #e74c3c; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px; }
+        .reason-box p { margin: 0; color: #2c3e50; }
+        .next-steps { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .next-steps h4 { margin: 0 0 15px 0; color: #2c3e50; }
+        .next-steps ul { margin: 0; padding-left: 20px; color: #5a6a7a; }
+        .next-steps li { margin-bottom: 8px; }
+        .button { display: inline-block; padding: 12px 30px; background: #3498db; color: white !important; text-decoration: none; border-radius: 6px; margin: 15px 0; font-weight: 600; }
+        .footer { text-align: center; color: #95a5a6; font-size: 13px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef; }
+    </style>
+    </head>
+    <body>
+    <div class='container'>
+        <div class='header'>
+            <h2>Application Status Update</h2>
+            <p>Regarding your seller application on PalitOra</p>
+        </div>
+        
+        <div class='content'>
+            <p>Dear " . htmlspecialchars($sellerName) . ",</p>
+            <p>Thank you for your interest in becoming a seller on <strong>PalitOra</strong>. We have carefully reviewed your application and unfortunately, we are unable to approve your seller account at this time.</p>
+            
+            <div class='reason-box'>
+                <h4><span style='font-size: 20px;'>⚠️</span> Rejection Reason</h4>
+                <p>" . nl2br(htmlspecialchars($rejectionReason)) . "</p>
+            </div>
+            
+            <div class='next-steps'>
+                <h4>What You Can Do Next:</h4>
+                <ul>
+                    <li>Review the rejection reason above</li>
+                    <li>Update your shop information with the correct details</li>
+                    <li>Ensure your valid ID and store photos are clear and legitimate</li>
+                    <li>Reapply once you've addressed the issues mentioned</li>
+                </ul>
+            </div>
+            
+            <p>You can log in to your account and update your shop information to reapply for seller approval.</p>
+            
+            <center>
+                <a href='https://capstone-app-api-r1ux.onrender.com/seller/ui/shop-form.php' class='button'>Update My Shop</a>
+            </center>
+        </div>
+        
+        <div class='footer'>
+            <p>If you have any questions, please contact our support team.</p>
+            <p>© " . date('Y') . " PalitOra. All rights reserved.</p>
+        </div>
+    </div>
+    </body>
+    </html>
+    ";
+    
+    // Plain text version
+    $textContent = "Dear {$sellerName},\n\n";
+    $textContent .= "Thank you for your interest in becoming a seller on PalitOra. We have carefully reviewed your application and unfortunately, we are unable to approve your seller account at this time.\n\n";
+    $textContent .= "Rejection Reason:\n{$rejectionReason}\n\n";
+    $textContent .= "What You Can Do Next:\n";
+    $textContent .= "- Review the rejection reason above\n";
+    $textContent .= "- Update your shop information with the correct details\n";
+    $textContent .= "- Ensure your valid ID and store photos are clear and legitimate\n";
+    $textContent .= "- Reapply once you've addressed the issues mentioned\n\n";
+    $textContent .= "Log in to update your shop: https://capstone-app-api-r1ux.onrender.com/seller/ui/shop-form.php\n\n";
+    $textContent .= "© " . date('Y') . " PalitOra. All rights reserved.";
+    
+    // Prepare JSON payload
+    $data = [
+        "sender" => [
+            "name" => "PalitOra Admin",
+            "email" => "christiantitoy@gmail.com"
+        ],
+        "to" => [
+            ["email" => $sellerEmail]
+        ],
+        "subject" => "Update on Your PalitOra Seller Application",
+        "htmlContent" => $htmlContent,
+        "textContent" => $textContent
+    ];
+    
+    // Send email using cURL
+    $ch = curl_init("https://api.brevo.com/v3/smtp/email");
+    
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        "accept: application/json",
+        "content-type: application/json",
+        "api-key: $apiKey"
+    ]);
+    
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+    
+    $response = curl_exec($ch);
+    $error = curl_error($ch);
+    
+    curl_close($ch);
+    
+    if ($error) {
+        error_log("Rejection email send failed for {$sellerEmail}: $error");
+        return false;
+    }
+    
+    $json = json_decode($response, true);
+    
+    if (isset($json['messageId'])) {
+        error_log("Rejection email sent successfully to {$sellerEmail}. Message ID: {$json['messageId']}");
+        return true;
+    } else {
+        error_log("Brevo API error for rejection email: " . $response);
+        return false;
+    }
+}
+
 try {
     $conn->beginTransaction();
+    
+    // Get seller email and name before updating
+    $stmt = $conn->prepare("SELECT full_name, email FROM sellers WHERE id = ?");
+    $stmt->execute([$sellerId]);
+    $seller = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$seller) {
+        throw new Exception('Seller not found');
+    }
     
     if ($status === 'rejected') {
         // Update with rejection reason
@@ -44,6 +187,16 @@ try {
             WHERE id = ?
         ");
         $stmt->execute([$status, $reason, $sellerId]);
+        
+        $conn->commit();
+        
+        // Send rejection email (after commit so DB is updated)
+        $emailSent = sendRejectionEmail($seller['email'], $seller['full_name'], $reason);
+        
+        echo json_encode([
+            'success' => true,
+            'message' => "Seller status updated to {$status}" . ($emailSent ? '. Rejection email sent.' : ' (Email notification failed)')
+        ]);
     } else {
         // Update without reason (clear rejection reason if approved)
         $stmt = $conn->prepare("
@@ -54,20 +207,26 @@ try {
             WHERE id = ?
         ");
         $stmt->execute([$status, $sellerId]);
+        
+        $conn->commit();
+        
+        echo json_encode([
+            'success' => true,
+            'message' => "Seller status updated to {$status}"
+        ]);
     }
-    
-    $conn->commit();
-    
-    echo json_encode([
-        'success' => true,
-        'message' => "Seller status updated to {$status}"
-    ]);
     
 } catch (PDOException $e) {
     $conn->rollBack();
     echo json_encode([
         'success' => false,
         'message' => 'Database error: ' . $e->getMessage()
+    ]);
+} catch (Exception $e) {
+    $conn->rollBack();
+    echo json_encode([
+        'success' => false,
+        'message' => 'Error: ' . $e->getMessage()
     ]);
 } finally {
     $conn = null;
