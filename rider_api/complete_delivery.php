@@ -11,6 +11,98 @@ use Cloudinary\Configuration\Configuration;
 use Cloudinary\Api\Upload\UploadApi;
 use Cloudinary\Api\Exception\ApiError;
 
+// ✅ Notification function (ADDED)
+function sendPushNotification($user_id, $title, $message) {
+    $url = 'https://capstone-app-api-r1ux.onrender.com/connection/notif/sendNotification.php';
+    
+    $data = json_encode([
+        'user_id' => $user_id,
+        'title' => $title,
+        'message' => $message
+    ]);
+    
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+    
+    $response = curl_exec($ch);
+    curl_close($ch);
+    
+    return json_decode($response, true);
+}
+
+// ✅ Get delivery completion message (ADDED)
+function getDeliveredMessage($order_id) {
+    return "Your order #$order_id has been delivered successfully! Thank you for shopping with PalitOra. We hope you love your purchase!";
+}
+
+// ✅ Send delivery notification (ADDED)
+function sendDeliveryNotification($conn, $order_id) {
+    try {
+        // Get buyer_id from orders table
+        $stmt = $conn->prepare("SELECT buyer_id FROM orders WHERE id = ?");
+        $stmt->execute([$order_id]);
+        $order = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$order || !isset($order['buyer_id'])) {
+            error_log("Delivery Notification: Could not find buyer_id for order $order_id");
+            return false;
+        }
+        
+        $buyer_id = $order['buyer_id'];
+        $title = "✅ Order Delivered!";
+        $message = getDeliveredMessage($order_id);
+        
+        $result = sendPushNotification($buyer_id, $title, $message);
+        error_log("Delivery notification sent for order $order_id: " . ($result['success'] ? 'Success' : 'Failed'));
+        
+        return $result['success'] ?? false;
+        
+    } catch (Exception $e) {
+        error_log("Delivery Notification error: " . $e->getMessage());
+        return false;
+    }
+}
+
+// ✅ Send notification to seller (ADDED)
+function sendSellerNotification($conn, $order_id) {
+    try {
+        // Get seller_id from order_items and items tables
+        $sql = "
+            SELECT DISTINCT i.seller_id 
+            FROM order_items oi
+            JOIN items i ON oi.product_id = i.id
+            WHERE oi.order_id = ?
+            LIMIT 1
+        ";
+        
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([$order_id]);
+        $seller = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$seller || !isset($seller['seller_id'])) {
+            error_log("Seller Notification: Could not find seller_id for order $order_id");
+            return false;
+        }
+        
+        $seller_id = $seller['seller_id'];
+        $title = "🎉 Order Completed!";
+        $message = "Great news! Order #$order_id has been successfully delivered to the buyer. The earnings have been added to your account.";
+        
+        $result = sendPushNotification($seller_id, $title, $message);
+        error_log("Seller notification sent for order $order_id: " . ($result['success'] ? 'Success' : 'Failed'));
+        
+        return $result['success'] ?? false;
+        
+    } catch (Exception $e) {
+        error_log("Seller Notification error: " . $e->getMessage());
+        return false;
+    }
+}
+
 try {
     // Configure Cloudinary
     Configuration::instance(getenv('CLOUDINARY_URL'));
@@ -183,6 +275,10 @@ try {
 
         $conn->commit();
 
+        // ✅ Send notifications after successful commit (ADDED)
+        $buyer_notified = sendDeliveryNotification($conn, $order_id);
+        $seller_notified = sendSellerNotification($conn, $order_id);
+
         echo json_encode([
             "success" => true,
             "message" => "Order marked as delivered successfully",
@@ -192,7 +288,11 @@ try {
                 "total_amount" => $total_amount
             ],
             "sold_items_recorded" => $itemsInserted,
-            "products_sold_updated" => $productsUpdated
+            "products_sold_updated" => $productsUpdated,
+            "notifications" => [  // ✅ Added to response
+                "buyer_notified" => $buyer_notified,
+                "seller_notified" => $seller_notified
+            ]
         ]);
 
     } catch (Exception $e) {

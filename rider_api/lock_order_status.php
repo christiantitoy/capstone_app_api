@@ -6,6 +6,99 @@ require '/var/www/html/connection/db_connection.php';
 // ✅ Enable error logging
 error_log("=== Update Order Status API Called ===");
 
+// ✅ Notification function (ADDED)
+function sendPushNotification($user_id, $title, $message) {
+    $url = 'https://capstone-app-api-r1ux.onrender.com/connection/notif/sendNotification.php';
+    
+    $data = json_encode([
+        'user_id' => $user_id,
+        'title' => $title,
+        'message' => $message
+    ]);
+    
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+    
+    $response = curl_exec($ch);
+    curl_close($ch);
+    
+    return json_decode($response, true);
+}
+
+// ✅ Get status message function (ADDED)
+function getStatusMessage($order_id, $status) {
+    $messages = [
+        "assigned" => "Great news! A rider has been assigned to your order #$order_id. They will pick up your package shortly. Track your delivery in real-time!",
+        
+        "packed" => "Great news! Your order #$order_id has been carefully packed and is ready for shipping. You'll receive tracking information once it's on the way.",
+        
+        "shipped" => "Your order #$order_id is on the way! It has been shipped and is now waiting for rider assignment. Track your delivery in real-time.",
+        
+        "delivered" => "Your order #$order_id has been delivered successfully! Thank you for shopping with DaguitZone. We hope you love your purchase!",
+        
+        "complete" => "Order #$order_id has been completed. Thank you for choosing DaguitZone! Please rate your experience.",
+        
+        "cancelled" => "Order #$order_id has been cancelled. If you have any questions, please contact our support team."
+    ];
+    
+    return $messages[$status] ?? "Your order #$order_id status has been updated to: $status";
+}
+
+// ✅ Get notification title function (ADDED)
+function getStatusTitle($status) {
+    $titles = [
+        "assigned" => "🛵 Rider Assigned to Your Order",
+        "packed" => "📦 Order Packed & Ready",
+        "shipped" => "🚚 Order On The Way",
+        "delivered" => "✅ Order Delivered",
+        "complete" => "🎉 Order Complete",
+        "cancelled" => "❌ Order Cancelled"
+    ];
+    
+    return $titles[$status] ?? "📋 Order Status Update";
+}
+
+// ✅ Check if status should trigger notification (ADDED)
+function shouldSendNotification($status) {
+    $notify_statuses = ["assigned", "packed", "shipped", "delivered", "complete", "cancelled"];
+    return in_array($status, $notify_statuses);
+}
+
+// ✅ Send notification function (ADDED)
+function sendOrderNotification($conn, $order_id, $status) {
+    try {
+        // Get buyer_id from orders table
+        $stmt = $conn->prepare("SELECT buyer_id FROM orders WHERE id = ?");
+        $stmt->execute([$order_id]);
+        $order = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$order || !isset($order['buyer_id'])) {
+            error_log("Notification: Could not find buyer_id for order $order_id");
+            return false;
+        }
+        
+        $buyer_id = $order['buyer_id'];
+        
+        if (shouldSendNotification($status)) {
+            $title = getStatusTitle($status);
+            $message = getStatusMessage($order_id, $status);
+            
+            $result = sendPushNotification($buyer_id, $title, $message);
+            error_log("Notification sent for order $order_id, status $status: " . ($result['success'] ? 'Success' : 'Failed'));
+            return $result['success'] ?? false;
+        }
+        
+        return false;
+    } catch (Exception $e) {
+        error_log("Notification error: " . $e->getMessage());
+        return false;
+    }
+}
+
 try {
     // Handle both JSON and form-data input
     $order_id = 0;
@@ -105,10 +198,19 @@ try {
     }
 
     if ($success && $stmt->rowCount() > 0) {
+        
+        // ✅ Send notification if applicable (ADDED)
+        $notification_sent = false;
+        if (shouldSendNotification($status)) {
+            $notification_sent = sendOrderNotification($conn, $order_id, $status);
+        }
+        
         echo json_encode([
             'status' => 'success',
-            'message' => "Order $order_id updated to $status"
+            'message' => "Order $order_id updated to $status",
+            'notification_sent' => $notification_sent  // ✅ Added to response
         ]);
+        
     } elseif ($success && $stmt->rowCount() === 0) {
         echo json_encode([
             'status' => 'error',
