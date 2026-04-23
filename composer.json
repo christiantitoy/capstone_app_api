@@ -3,7 +3,8 @@
   "description": "Capstone API",
   "require": {
     "cloudinary/cloudinary_php": "^2.0",
-    "phpmailer/phpmailer": "^6.9"
+    "phpmailer/phpmailer": "^6.9",
+    "google/auth": "^1.35"
   },
   "autoload": {
     "psr-4": {
