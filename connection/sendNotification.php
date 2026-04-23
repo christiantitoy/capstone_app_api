@@ -43,28 +43,13 @@ try {
     // ✅ 4. Get project ID
     $projectId = $credentialsArray['project_id'];
 
-    // ✅ 5. Simplified payload that matches your Android setup
+    // ✅ 5. SIMPLE payload that ALWAYS works
     $payload = [
         "message" => [
             "token" => $fcmToken,
-            "priority" => "high",
             "notification" => [
                 "title" => "Test Notification 🚀",
                 "body" => "This is a test from PHP Firebase!"
-            ],
-            "data" => [
-                "title" => "Test Notification 🚀",
-                "body" => "This is a test from PHP Firebase!",
-                "click_action" => "OPEN_ACTIVITY",
-                "screen" => "home"
-            ],
-            "android" => [
-                "priority" => "high",
-                "notification" => [
-                    "channel_id" => "high_importance_channel", // ✅ Must match Android
-                    "sound" => "default",
-                    "priority" => "max"
-                ]
             ]
         ]
     ];
@@ -80,38 +65,26 @@ try {
     ]);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlError = curl_error($ch);
-    
-    curl_close($ch);
 
     if ($response === false) {
-        throw new Exception("Curl error: " . $curlError);
+        throw new Exception("Curl error: " . curl_error($ch));
     }
+
+    curl_close($ch);
 
     $responseData = json_decode($response, true);
-    
-    // Check if Firebase returned an error
+
     if ($httpCode !== 200) {
-        throw new Exception("Firebase API error (HTTP $httpCode): " . ($responseData['error']['message'] ?? 'Unknown error'));
+        throw new Exception("Firebase API error (HTTP $httpCode): " . json_encode($responseData));
     }
 
-    // ✅ 7. Return success response with details
     echo json_encode([
         "success" => true,
-        "http_code" => $httpCode,
-        "firebase_response" => $responseData,
-        "message_name" => $responseData['name'] ?? 'N/A',
-        "debug_info" => [
-            "token_preview" => substr($fcmToken, 0, 20) . "...",
-            "project_id" => $projectId,
-            "platform_specific" => "Android, iOS, Web configured"
-        ]
-    ], JSON_PRETTY_PRINT);
+        "firebase_response" => $responseData
+    ]);
 
 } catch (Exception $e) {
 
@@ -119,10 +92,6 @@ try {
 
     echo json_encode([
         "success" => false,
-        "message" => $e->getMessage(),
-        "trace" => $e->getTraceAsString() // Remove in production
-    ], JSON_PRETTY_PRINT);
-    
-    // Log error for debugging
-    error_log("FCM Send Error: " . $e->getMessage());
+        "message" => $e->getMessage()
+    ]);
 }
