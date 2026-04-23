@@ -6,15 +6,78 @@ header("Access-Control-Allow-Headers: Content-Type");
 
 require_once '/var/www/html/connection/db_connection.php';
 
+// Function to call sendNotification.php internally
+function sendPushNotification($user_id, $title, $message) {
+    $url = 'https://capstone-app-api-r1ux.onrender.com/connection/notif/sendNotification.php';
+    
+    $data = json_encode([
+        'user_id' => $user_id,
+        'title' => $title,
+        'message' => $message
+    ]);
+    
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 5); // Don't block the main request
+    
+    $response = curl_exec($ch);
+    curl_close($ch);
+    
+    return json_decode($response, true);
+}
+
+// Function to generate professional status messages
+function getStatusMessage($order_id, $status) {
+    $messages = [
+        "packed" => "Great news! Your order #$order_id has been carefully packed and is ready for shipping. You'll receive tracking information once it's on the way.",
+        
+        "shipped" => "Your order #$order_id is on the way! It has been shipped and is now waiting for rider assignment. Track your delivery in real-time.",
+        
+        "delivered" => "Your order #$order_id has been delivered successfully! Thank you for shopping with DaguitZone. We hope you love your purchase!",
+        
+        "assigned" => "A rider has been assigned to your order #$order_id. They will pick up your package shortly.",
+        
+        "complete" => "Order #$order_id has been completed. Thank you for choosing DaguitZone! Please rate your experience.",
+        
+        "cancelled" => "Order #$order_id has been cancelled. If you have any questions, please contact our support team."
+    ];
+    
+    return $messages[$status] ?? "Your order #$order_id status has been updated to: $status";
+}
+
+// Function to get notification title
+function getStatusTitle($status) {
+    $titles = [
+        "packed" => "📦 Order Packed & Ready",
+        "shipped" => "🚚 Order On The Way",
+        "delivered" => "✅ Order Delivered",
+        "assigned" => "🛵 Rider Assigned",
+        "complete" => "🎉 Order Complete",
+        "cancelled" => "❌ Order Cancelled"
+    ];
+    
+    return $titles[$status] ?? "📋 Order Status Update";
+}
+
+// Statuses that should trigger notifications
+function shouldSendNotification($status) {
+    $notify_statuses = ["packed", "shipped", "delivered", "assigned", "complete", "cancelled"];
+    return in_array($status, $notify_statuses);
+}
+
 try {
     // Get inputs
+    $buyer_id = $_POST['buyer_id'] ?? $_GET['buyer_id'] ?? null;
     $order_id = $_POST['order_id'] ?? $_GET['order_id'] ?? null;
     $status   = $_POST['status'] ?? $_GET['status'] ?? null;
 
-    if (!$order_id || !$status) {
+    if (!$buyer_id || !$order_id || !$status) {
         echo json_encode([
             "status" => "error",
-            "message" => "order_id and status are required"
+            "message" => "buyer_id, order_id and status are required"
         ]);
         exit;
     }
@@ -40,6 +103,7 @@ try {
         exit;
     }
 
+    $buyer_id = intval($buyer_id);
     $order_id = intval($order_id);
 
     // Update query
@@ -56,12 +120,28 @@ try {
     $rowCount = $stmt->rowCount();
 
     if ($rowCount > 0) {
+        
+        $notification_sent = false;
+        $notification_result = null;
+        
+        // Send notification for specific statuses
+        if (shouldSendNotification($status)) {
+            $title = getStatusTitle($status);
+            $message = getStatusMessage($order_id, $status);
+            
+            // Call the notification API
+            $notification_result = sendPushNotification($buyer_id, $title, $message);
+            $notification_sent = $notification_result['success'] ?? false;
+        }
+        
         echo json_encode([
             "status" => "success",
             "message" => "Order status updated successfully",
             "order_id" => $order_id,
-            "new_status" => $status
+            "new_status" => $status,
+            "notification_sent" => $notification_sent
         ]);
+        
     } else {
         echo json_encode([
             "status" => "error",
