@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// Function to save notification directly to database
+// ✅ ADDED: Function to save notification directly to database with title
 function saveNotification($conn, $user_id, $title, $message) {
     try {
         $stmt = $conn->prepare("
@@ -25,104 +25,63 @@ function saveNotification($conn, $user_id, $title, $message) {
     }
 }
 
-// Function to get user's FCM token and send push
-function sendPushIfTokenExists($conn, $user_id, $title, $message) {
-    try {
-        // Get user's FCM token
-        $stmt = $conn->prepare("SELECT fcm_token FROM user_tokens WHERE user_id = ? ORDER BY updated_at DESC LIMIT 1");
-        $stmt->execute([$user_id]);
-        $tokenRow = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        if (!$tokenRow || empty($tokenRow['fcm_token'])) {
-            return false;
-        }
-        
-        $fcmToken = $tokenRow['fcm_token'];
-        
-        // Load Firebase credentials
-        $firebaseJson = getenv('FIREBASE_CREDENTIALS');
-        if (!$firebaseJson) {
-            error_log("FIREBASE_CREDENTIALS not found");
-            return false;
-        }
-        
-        $credentialsArray = json_decode($firebaseJson, true);
-        $projectId = $credentialsArray['project_id'];
-        
-        // Generate OAuth2 Access Token
-        $scopes = ['https://www.googleapis.com/auth/firebase.messaging'];
-        $creds = new Google\Auth\Credentials\ServiceAccountCredentials($scopes, $credentialsArray);
-        $tokenData = $creds->fetchAuthToken();
-        $accessToken = $tokenData['access_token'];
-        
-        // Send to Firebase
-        $payload = [
-            "message" => [
-                "token" => $fcmToken,
-                "notification" => [
-                    "title" => $title,
-                    "body" => $message
-                ]
-            ]
-        ];
-        
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, "https://fcm.googleapis.com/v1/projects/$projectId/messages:send");
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            "Authorization: Bearer $accessToken",
-            "Content-Type: application/json"
-        ]);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-        
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        
-        return $httpCode === 200;
-        
-    } catch (Exception $e) {
-        error_log("Push notification error: " . $e->getMessage());
-        return false;
-    }
+// ✅ Notification function (ADDED)
+function sendPushNotification($user_id, $title, $message) {
+    $url = 'https://capstone-app-api-r1ux.onrender.com/connection/notif/sendNotification.php';
+    
+    $data = json_encode([
+        'user_id' => $user_id,
+        'title' => $title,
+        'message' => $message
+    ]);
+    
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+    
+    $response = curl_exec($ch);
+    curl_close($ch);
+    
+    return json_decode($response, true);
 }
 
-// Get verified message
+// ✅ Get verified message (ADDED)
 function getVerifiedMessage($order_id) {
     return "Great news! Your GCash payment for order #$order_id has been verified successfully. Your order is now being processed and will be packed soon. Thank you for shopping with DaguitZone!";
 }
 
-// Get rejected message
+// ✅ Get rejected message (ADDED)
 function getRejectedMessage($order_id, $reason) {
     return "Your GCash payment for order #$order_id has been rejected. Reason: $reason The order has been cancelled. Please place a new order or contact support for assistance.";
 }
 
-// Send payment notification (save + push)
+// ✅ Send payment notification (ADDED)
 function sendPaymentNotification($conn, $buyer_id, $order_id, $status, $reason = null) {
     try {
         if ($status === 'verified') {
-            $title = "Payment Verified";
+            $title = "Payment Verified"; // ✅ MODIFIED (removed emoji)
             $message = getVerifiedMessage($order_id);
         } else {
-            $title = "Payment Rejected";
+            $title = "Payment Rejected"; // ✅ MODIFIED (removed emoji)
             $message = getRejectedMessage($order_id, $reason);
         }
         
-        // Save to database
+        // ✅ ADDED: Save to database directly with title
         $saved = saveNotification($conn, $buyer_id, $title, $message);
         error_log("Payment notification saved for order $order_id ($status): " . ($saved ? 'Success' : 'Failed'));
         
-        // Send push notification
-        $sent = sendPushIfTokenExists($conn, $buyer_id, $title, $message);
-        error_log("Payment push sent for order $order_id ($status): " . ($sent ? 'Success' : 'Failed'));
+        $result = sendPushNotification($buyer_id, $title, $message);
+        $sent = $result['success'] ?? false;
+        error_log("Payment notification sent for order $order_id ($status): " . ($sent ? 'Success' : 'Failed'));
         
-        return ['saved' => $saved, 'sent' => $sent];
+        return ['saved' => $saved, 'sent' => $sent]; // ✅ MODIFIED return type
         
     } catch (Exception $e) {
         error_log("Payment Notification error: " . $e->getMessage());
-        return ['saved' => false, 'sent' => false];
+        return ['saved' => false, 'sent' => false]; // ✅ MODIFIED return type
     }
 }
 
@@ -192,7 +151,7 @@ try {
         ");
         $stmt->execute([$status, $proofId]);
         
-        // Update order status to 'pending'
+        // Update order status to 'pending' (not pending_payment)
         $stmt = $conn->prepare("
             UPDATE orders 
             SET status = 'pending', 
@@ -206,16 +165,16 @@ try {
     
     $conn->commit();
     
-    // Send notification after successful commit
-    $notification_result = sendPaymentNotification($conn, $buyerId, $orderId, $status, $reason);
+    // ✅ Send notification after successful commit (ADDED)
+    $notification_result = sendPaymentNotification($conn, $buyerId, $orderId, $status, $reason); // ✅ MODIFIED
     
     echo json_encode([
         'success' => true,
         'message' => "Payment proof {$status} successfully! {$orderMessage}",
         'order_id' => $orderId,
         'buyer_id' => $buyerId,
-        'notification_saved' => $notification_result['saved'],
-        'notification_sent' => $notification_result['sent']
+        'notification_saved' => $notification_result['saved'], // ✅ ADDED
+        'notification_sent' => $notification_result['sent']    // ✅ MODIFIED
     ]);
     
 } catch (PDOException $e) {
