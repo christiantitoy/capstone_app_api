@@ -43,89 +43,27 @@ try {
     // ✅ 4. Get project ID
     $projectId = $credentialsArray['project_id'];
 
-    // ✅ 5. Enhanced Notification payload with cross-platform support
+    // ✅ 5. Simplified payload that matches your Android setup
     $payload = [
         "message" => [
             "token" => $fcmToken,
             "priority" => "high",
-            
-            // Basic notification (works for foreground on both platforms)
             "notification" => [
                 "title" => "Test Notification 🚀",
                 "body" => "This is a test from PHP Firebase!"
             ],
-            
-            // Data payload (helps with background handling)
             "data" => [
-                "click_action" => "FLUTTER_NOTIFICATION_CLICK",
-                "screen" => "home",
-                "test_key" => "test_value"
+                "title" => "Test Notification 🚀",
+                "body" => "This is a test from PHP Firebase!",
+                "click_action" => "OPEN_ACTIVITY",
+                "screen" => "home"
             ],
-            
-            // Android specific configuration
             "android" => [
                 "priority" => "high",
-                "ttl" => "86400s",
                 "notification" => [
-                    "channel_id" => "high_importance_channel",
+                    "channel_id" => "high_importance_channel", // ✅ Must match Android
                     "sound" => "default",
-                    "priority" => "max",
-                    "visibility" => "public",
-                    "click_action" => "FLUTTER_NOTIFICATION_CLICK",
-                    "notification_priority" => "PRIORITY_MAX",
-                    "default_sound" => true,
-                    "default_vibrate_timings" => true
-                ],
-                "fcm_options" => [
-                    "analytics_label" => "test_notification"
-                ]
-            ],
-            
-            // iOS specific configuration
-            "apns" => [
-                "headers" => [
-                    "apns-priority" => "10",
-                    "apns-expiration" => strtotime("+1 day")
-                ],
-                "payload" => [
-                    "aps" => [
-                        "alert" => [
-                            "title" => "Test Notification 🚀",
-                            "body" => "This is a test from PHP Firebase!"
-                        ],
-                        "sound" => "default",
-                        "badge" => 1,
-                        "content-available" => 1,
-                        "mutable-content" => 1,
-                        "category" => "test_category"
-                    ],
-                    "custom_data" => [
-                        "screen" => "home"
-                    ]
-                ]
-            ],
-            
-            // Web Push configuration
-            "webpush" => [
-                "headers" => [
-                    "Urgency" => "high",
-                    "TTL" => "86400"
-                ],
-                "notification" => [
-                    "title" => "Test Notification 🚀",
-                    "body" => "This is a test from PHP Firebase!",
-                    "icon" => "https://example.com/icon.png",
-                    "badge" => "https://example.com/badge.png",
-                    "requireInteraction" => true,
-                    "actions" => [
-                        [
-                            "action" => "open",
-                            "title" => "Open App"
-                        ]
-                    ]
-                ],
-                "fcm_options" => [
-                    "link" => "https://yourapp.com"
+                    "priority" => "max"
                 ]
             ]
         ]
