@@ -10,6 +10,61 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+// ✅ Notification function (ADDED)
+function sendPushNotification($user_id, $title, $message) {
+    $url = 'https://capstone-app-api-r1ux.onrender.com/connection/notif/sendNotification.php';
+    
+    $data = json_encode([
+        'user_id' => $user_id,
+        'title' => $title,
+        'message' => $message
+    ]);
+    
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+    
+    $response = curl_exec($ch);
+    curl_close($ch);
+    
+    return json_decode($response, true);
+}
+
+// ✅ Get verified message (ADDED)
+function getVerifiedMessage($order_id) {
+    return "Great news! Your GCash payment for order #$order_id has been verified successfully. Your order is now being processed and will be packed soon. Thank you for shopping with PalitOra!";
+}
+
+// ✅ Get rejected message (ADDED)
+function getRejectedMessage($order_id, $reason) {
+    return "Your GCash payment for order #$order_id has been rejected. Reason: $reason The order has been cancelled. Please place a new order.";
+}
+
+// ✅ Send payment notification (ADDED)
+function sendPaymentNotification($conn, $buyer_id, $order_id, $status, $reason = null) {
+    try {
+        if ($status === 'verified') {
+            $title = "✅ Payment Verified!";
+            $message = getVerifiedMessage($order_id);
+        } else {
+            $title = "❌ Payment Rejected";
+            $message = getRejectedMessage($order_id, $reason);
+        }
+        
+        $result = sendPushNotification($buyer_id, $title, $message);
+        error_log("Payment notification sent for order $order_id ($status): " . ($result['success'] ? 'Success' : 'Failed'));
+        
+        return $result['success'] ?? false;
+        
+    } catch (Exception $e) {
+        error_log("Payment Notification error: " . $e->getMessage());
+        return false;
+    }
+}
+
 $input = json_decode(file_get_contents('php://input'), true);
 $proofId = $input['proof_id'] ?? null;
 $status = $input['status'] ?? null;
@@ -34,8 +89,8 @@ if ($status === 'rejected' && empty($reason)) {
 try {
     $conn->beginTransaction();
     
-    // Get the order_id from the payment proof
-    $stmt = $conn->prepare("SELECT order_id FROM payment_proofs WHERE id = ?");
+    // Get the order_id and buyer_id from the payment proof
+    $stmt = $conn->prepare("SELECT order_id, buyer_id FROM payment_proofs WHERE id = ?");
     $stmt->execute([$proofId]);
     $paymentProof = $stmt->fetch(PDO::FETCH_ASSOC);
     
@@ -44,6 +99,7 @@ try {
     }
     
     $orderId = $paymentProof['order_id'];
+    $buyerId = $paymentProof['buyer_id'];
     
     if ($status === 'rejected') {
         // Update payment proof with rejection reason
@@ -89,10 +145,15 @@ try {
     
     $conn->commit();
     
+    // ✅ Send notification after successful commit (ADDED)
+    $notification_sent = sendPaymentNotification($conn, $buyerId, $orderId, $status, $reason);
+    
     echo json_encode([
         'success' => true,
         'message' => "Payment proof {$status} successfully! {$orderMessage}",
-        'order_id' => $orderId
+        'order_id' => $orderId,
+        'buyer_id' => $buyerId,  // ✅ Added to response
+        'notification_sent' => $notification_sent  // ✅ Added to response
     ]);
     
 } catch (PDOException $e) {
