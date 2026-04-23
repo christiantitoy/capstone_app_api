@@ -44,7 +44,9 @@ try {
             st.id_type,
             st.valid_id_files,
             st.store_photo_files,
-            st.created_at as store_created_at
+            st.created_at as store_created_at,
+            st.gcash_name,
+            st.gcash_number
         FROM sellers s
         LEFT JOIN stores st ON s.id = st.seller_id
         WHERE s.id = ?

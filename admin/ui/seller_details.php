@@ -448,6 +448,8 @@ if (!$sellerId) {
             <p><strong>Category:</strong> ${escapeHtml(seller.category || 'Not set')}</p>
             <p><strong>Contact:</strong> ${escapeHtml(seller.contact_number || 'Not set')}</p>
             <p><strong>Description:</strong> ${escapeHtml(seller.description || 'No description')}</p>
+            <p><strong>GCash Name:</strong> ${escapeHtml(seller.gcash_name || 'Not set')}</p>
+            <p><strong>GCash Number:</strong> ${escapeHtml(seller.gcash_number || 'Not set')}</p>
             <p><strong>Joined:</strong> ${new Date(seller.created_at).toLocaleDateString()}</p>
         `;
         

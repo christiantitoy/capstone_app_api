@@ -69,8 +69,8 @@
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
-                    <h3>Mobile Ready</h3>
-                    <p>Manage everything from your phone — anytime, anywhere.</p>
+                    <h3>Never Miss a Sale</h3>
+                    <p>Accept orders online and in-store — all in one place. More channels mean more revenue.</p>
                 </div>
             </div>
         </div>
