@@ -27,9 +27,13 @@ try {
         throw new Exception("message is required");
     }
 
-    // ✅ 2. Save notification to database first
-    $stmt = $conn->prepare("INSERT INTO notifications (user_id, notif_message, created_at) VALUES (?, ?, NOW()) RETURNING id");
-    $stmt->execute([$user_id, $message]);
+    // ✅ 2. Save notification to database with title column
+    $stmt = $conn->prepare("
+        INSERT INTO notifications (user_id, title, notif_message, created_at) 
+        VALUES (?, ?, ?, NOW()) 
+        RETURNING id
+    ");
+    $stmt->execute([$user_id, $title, $message]);
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
     $notification_id = $result['id'];
 
