@@ -6,22 +6,7 @@ require '/var/www/html/connection/db_connection.php';
 // ✅ Enable error logging
 error_log("=== Update Order Status API Called ===");
 
-// ✅ ADDED: Function to save notification directly to database with title
-function saveNotification($conn, $user_id, $title, $message) {
-    try {
-        $stmt = $conn->prepare("
-            INSERT INTO notifications (user_id, title, notif_message, created_at) 
-            VALUES (?, ?, ?, NOW())
-        ");
-        $stmt->execute([$user_id, $title, $message]);
-        return true;
-    } catch (Exception $e) {
-        error_log("Failed to save notification: " . $e->getMessage());
-        return false;
-    }
-}
-
-// ✅ Notification function (ADDED)
+// ✅ Notification function
 function sendPushNotification($user_id, $title, $message) {
     $url = 'https://capstone-app-api-r1ux.onrender.com/connection/notif/sendNotification.php';
     
@@ -44,26 +29,21 @@ function sendPushNotification($user_id, $title, $message) {
     return json_decode($response, true);
 }
 
-// ✅ Get status message function (ADDED)
+// ✅ Get status message function
 function getStatusMessage($order_id, $status) {
     $messages = [
         "assigned" => "Great news! A rider has been assigned to your order #$order_id. They will pick up your package shortly. Track your delivery in real-time!",
-        
         "packed" => "Great news! Your order #$order_id has been carefully packed and is ready for shipping. You'll receive tracking information once it's on the way.",
-        
         "shipped" => "Your order #$order_id is on the way! It has been shipped and is now waiting for rider assignment. Track your delivery in real-time.",
-        
         "delivered" => "Your order #$order_id has been delivered successfully! Thank you for shopping with DaguitZone. We hope you love your purchase!",
-        
         "complete" => "Order #$order_id has been completed. Thank you for choosing DaguitZone! Please rate your experience.",
-        
         "cancelled" => "Order #$order_id has been cancelled. If you have any questions, please contact our support team."
     ];
     
     return $messages[$status] ?? "Your order #$order_id status has been updated to: $status";
 }
 
-// ✅ Get notification title function (ADDED)
+// ✅ Get notification title function
 function getStatusTitle($status) {
     $titles = [
         "assigned" => "🛵 Rider Assigned to Your Order",
@@ -77,13 +57,13 @@ function getStatusTitle($status) {
     return $titles[$status] ?? "📋 Order Status Update";
 }
 
-// ✅ Check if status should trigger notification (ADDED)
+// ✅ Check if status should trigger notification
 function shouldSendNotification($status) {
     $notify_statuses = ["assigned", "packed", "shipped", "delivered", "complete", "cancelled"];
     return in_array($status, $notify_statuses);
 }
 
-// ✅ Send notification function (ADDED)
+// ✅ Send notification function (calls sendNotification.php which handles save + push)
 function sendOrderNotification($conn, $order_id, $status) {
     try {
         // Get buyer_id from orders table
@@ -93,7 +73,7 @@ function sendOrderNotification($conn, $order_id, $status) {
         
         if (!$order || !isset($order['buyer_id'])) {
             error_log("Notification: Could not find buyer_id for order $order_id");
-            return ['saved' => false, 'sent' => false]; // ✅ MODIFIED return type
+            return ['saved' => false, 'sent' => false];
         }
         
         $buyer_id = $order['buyer_id'];
@@ -102,22 +82,21 @@ function sendOrderNotification($conn, $order_id, $status) {
             $title = getStatusTitle($status);
             $message = getStatusMessage($order_id, $status);
             
-            // ✅ ADDED: Save to database directly with title
-            $saved = saveNotification($conn, $buyer_id, $title, $message);
-            error_log("Notification saved for order $order_id, status $status: " . ($saved ? 'Success' : 'Failed'));
-            
+            // ✅ Call sendNotification.php - it handles BOTH saving and sending
             $result = sendPushNotification($buyer_id, $title, $message);
+            $saved = $result['notification_saved'] ?? $result['success'] ?? false;
             $sent = $result['success'] ?? false;
-            error_log("Notification sent for order $order_id, status $status: " . ($sent ? 'Success' : 'Failed'));
             
-            return ['saved' => $saved, 'sent' => $sent]; // ✅ MODIFIED return type
+            error_log("Notification for order $order_id, status $status - Saved: " . ($saved ? 'Yes' : 'No') . ", Sent: " . ($sent ? 'Yes' : 'No'));
+            
+            return ['saved' => $saved, 'sent' => $sent];
         }
         
-        return ['saved' => false, 'sent' => false]; // ✅ MODIFIED return type
+        return ['saved' => false, 'sent' => false];
         
     } catch (Exception $e) {
         error_log("Notification error: " . $e->getMessage());
-        return ['saved' => false, 'sent' => false]; // ✅ MODIFIED return type
+        return ['saved' => false, 'sent' => false];
     }
 }
 
@@ -187,7 +166,7 @@ try {
         // ✅ Log rider's current status
         error_log("Rider found - ID: {$rider['id']}, Status: {$rider['status']}");
 
-        // ✅ Check if rider is delivering (was 'busy')
+        // ✅ Check if rider is delivering
         if ($rider['status'] === 'delivering') {
             error_log("BLOCKED: Rider is delivering");
             echo json_encode([
@@ -221,17 +200,17 @@ try {
 
     if ($success && $stmt->rowCount() > 0) {
         
-        // ✅ Send notification if applicable (ADDED)
-        $notification_result = ['saved' => false, 'sent' => false]; // ✅ MODIFIED
+        // Send notification if applicable
+        $notification_result = ['saved' => false, 'sent' => false];
         if (shouldSendNotification($status)) {
-            $notification_result = sendOrderNotification($conn, $order_id, $status); // ✅ MODIFIED
+            $notification_result = sendOrderNotification($conn, $order_id, $status);
         }
         
         echo json_encode([
             'status' => 'success',
             'message' => "Order $order_id updated to $status",
-            'notification_saved' => $notification_result['saved'], // ✅ ADDED
-            'notification_sent' => $notification_result['sent']    // ✅ MODIFIED
+            'notification_saved' => $notification_result['saved'],
+            'notification_sent' => $notification_result['sent']
         ]);
         
     } elseif ($success && $stmt->rowCount() === 0) {

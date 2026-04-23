@@ -3,22 +3,7 @@ header("Content-Type: application/json");
 
 require_once "/var/www/html/connection/db_connection.php"; // Updated to match your path
 
-// ✅ ADDED: Function to save notification directly to database with title
-function saveNotification($conn, $user_id, $title, $message) {
-    try {
-        $stmt = $conn->prepare("
-            INSERT INTO notifications (user_id, title, notif_message, created_at) 
-            VALUES (?, ?, ?, NOW())
-        ");
-        $stmt->execute([$user_id, $title, $message]);
-        return true;
-    } catch (Exception $e) {
-        error_log("Failed to save notification: " . $e->getMessage());
-        return false;
-    }
-}
-
-// ✅ Notification function (ADDED)
+// ✅ Notification function
 function sendPushNotification($user_id, $title, $message) {
     $url = 'https://capstone-app-api-r1ux.onrender.com/connection/notif/sendNotification.php';
     
@@ -41,12 +26,12 @@ function sendPushNotification($user_id, $title, $message) {
     return json_decode($response, true);
 }
 
-// ✅ Get pickup notification message (ADDED)
+// ✅ Get pickup notification message
 function getPickupMessage($order_id) {
     return "Great news! Your order #$order_id has been picked up by our rider and is now on its way to you. Track your delivery in real-time!";
 }
 
-// ✅ Send pickup notification (ADDED)
+// ✅ Send pickup notification (calls sendNotification.php which handles save + push)
 function sendPickupNotification($conn, $delivery_id) {
     try {
         // Get order_id and buyer_id from order_deliveries and orders tables
@@ -63,7 +48,7 @@ function sendPickupNotification($conn, $delivery_id) {
         
         if (!$delivery || !isset($delivery['buyer_id'])) {
             error_log("Pickup Notification: Could not find buyer_id for delivery $delivery_id");
-            return ['saved' => false, 'sent' => false]; // ✅ MODIFIED return type
+            return ['saved' => false, 'sent' => false];
         }
         
         $buyer_id = $delivery['buyer_id'];
@@ -72,19 +57,18 @@ function sendPickupNotification($conn, $delivery_id) {
         $title = "🛵 Order Picked Up!";
         $message = getPickupMessage($order_id);
         
-        // ✅ ADDED: Save to database directly with title
-        $saved = saveNotification($conn, $buyer_id, $title, $message);
-        error_log("Pickup notification saved for order $order_id: " . ($saved ? 'Success' : 'Failed'));
-        
+        // ✅ Call sendNotification.php - it handles BOTH saving and sending
         $result = sendPushNotification($buyer_id, $title, $message);
+        $saved = $result['notification_saved'] ?? $result['success'] ?? false;
         $sent = $result['success'] ?? false;
-        error_log("Pickup notification sent for order $order_id: " . ($sent ? 'Success' : 'Failed'));
         
-        return ['saved' => $saved, 'sent' => $sent]; // ✅ MODIFIED return type
+        error_log("Pickup notification for order $order_id - Saved: " . ($saved ? 'Yes' : 'No') . ", Sent: " . ($sent ? 'Yes' : 'No'));
+        
+        return ['saved' => $saved, 'sent' => $sent];
         
     } catch (Exception $e) {
         error_log("Pickup Notification error: " . $e->getMessage());
-        return ['saved' => false, 'sent' => false]; // ✅ MODIFIED return type
+        return ['saved' => false, 'sent' => false];
     }
 }
 
@@ -124,14 +108,14 @@ try {
         // Check if any row was actually updated
         if ($stmt->rowCount() > 0) {
             
-            // ✅ Send pickup notification (ADDED)
-            $notification_result = sendPickupNotification($conn, $delivery_id); // ✅ MODIFIED
+            // Send pickup notification
+            $notification_result = sendPickupNotification($conn, $delivery_id);
             
             echo json_encode([
                 "success" => true,
                 "message" => "Order picked up successfully",
-                "notification_saved" => $notification_result['saved'], // ✅ ADDED
-                "notification_sent" => $notification_result['sent']     // ✅ MODIFIED
+                "notification_saved" => $notification_result['saved'],
+                "notification_sent" => $notification_result['sent']
             ]);
             
         } else {

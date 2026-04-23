@@ -21,7 +21,7 @@ function sendPushNotification($user_id, $title, $message) {
     curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 5); // Don't block the main request
+    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
     
     $response = curl_exec($ch);
     curl_close($ch);
@@ -29,34 +29,17 @@ function sendPushNotification($user_id, $title, $message) {
     return json_decode($response, true);
 }
 
-// ✅ ADDED: Function to save notification directly to database with title
-function saveNotification($conn, $user_id, $title, $message) {
-    try {
-        $stmt = $conn->prepare("
-            INSERT INTO notifications (user_id, title, notif_message, created_at) 
-            VALUES (?, ?, ?, NOW())
-        ");
-        $stmt->execute([$user_id, $title, $message]);
-        return true;
-    } catch (Exception $e) {
-        error_log("Failed to save notification: " . $e->getMessage());
-        return false;
-    }
-}
+// ❌ REMOVE THIS FUNCTION - It causes duplicates
+// function saveNotification($conn, $user_id, $title, $message) { ... }
 
 // Function to generate professional status messages
 function getStatusMessage($order_id, $status) {
     $messages = [
         "packed" => "Great news! Your order #$order_id has been carefully packed and is ready for shipping. You'll receive tracking information once it's on the way.",
-        
         "shipped" => "Your order #$order_id is on the way! It has been shipped and is now waiting for rider assignment. Track your delivery in real-time.",
-        
         "delivered" => "Your order #$order_id has been delivered successfully! Thank you for shopping with DaguitZone. We hope you love your purchase!",
-        
         "assigned" => "A rider has been assigned to your order #$order_id. They will pick up your package shortly.",
-        
         "complete" => "Order #$order_id has been completed. Thank you for choosing DaguitZone! Please rate your experience.",
-        
         "cancelled" => "Order #$order_id has been cancelled. If you have any questions, please contact our support team."
     ];
     
@@ -137,20 +120,17 @@ try {
     if ($rowCount > 0) {
         
         $notification_sent = false;
-        $notification_result = null;
-        $notification_saved = false; // ✅ ADDED
+        $notification_saved = false;
         
         // Send notification for specific statuses
         if (shouldSendNotification($status)) {
             $title = getStatusTitle($status);
             $message = getStatusMessage($order_id, $status);
             
-            // ✅ ADDED: Save to database directly with title
-            $notification_saved = saveNotification($conn, $buyer_id, $title, $message);
-            
-            // Call the notification API
+            // ✅ JUST call sendPushNotification - it handles saving AND sending
             $notification_result = sendPushNotification($buyer_id, $title, $message);
             $notification_sent = $notification_result['success'] ?? false;
+            $notification_saved = $notification_result['notification_saved'] ?? false;
         }
         
         echo json_encode([
@@ -158,7 +138,7 @@ try {
             "message" => "Order status updated successfully",
             "order_id" => $order_id,
             "new_status" => $status,
-            "notification_saved" => $notification_saved, // ✅ ADDED
+            "notification_saved" => $notification_saved,
             "notification_sent" => $notification_sent
         ]);
         
@@ -181,5 +161,5 @@ try {
     ]);
 }
 
-$conn = null; // Close PDO connection
+$conn = null;
 ?>

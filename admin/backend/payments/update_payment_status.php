@@ -10,22 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// ✅ ADDED: Function to save notification directly to database with title
-function saveNotification($conn, $user_id, $title, $message) {
-    try {
-        $stmt = $conn->prepare("
-            INSERT INTO notifications (user_id, title, notif_message, created_at) 
-            VALUES (?, ?, ?, NOW())
-        ");
-        $stmt->execute([$user_id, $title, $message]);
-        return true;
-    } catch (Exception $e) {
-        error_log("Failed to save notification: " . $e->getMessage());
-        return false;
-    }
-}
-
-// ✅ Notification function (ADDED)
+// ✅ Notification function
 function sendPushNotification($user_id, $title, $message) {
     $url = 'https://capstone-app-api-r1ux.onrender.com/connection/notif/sendNotification.php';
     
@@ -48,40 +33,39 @@ function sendPushNotification($user_id, $title, $message) {
     return json_decode($response, true);
 }
 
-// ✅ Get verified message (ADDED)
+// ✅ Get verified message
 function getVerifiedMessage($order_id) {
     return "Great news! Your GCash payment for order #$order_id has been verified successfully. Your order is now being processed and will be packed soon. Thank you for shopping with DaguitZone!";
 }
 
-// ✅ Get rejected message (ADDED)
+// ✅ Get rejected message
 function getRejectedMessage($order_id, $reason) {
     return "Your GCash payment for order #$order_id has been rejected. Reason: $reason The order has been cancelled. Please place a new order or contact support for assistance.";
 }
 
-// ✅ Send payment notification (ADDED)
+// ✅ Send payment notification (calls sendNotification.php which handles save + push)
 function sendPaymentNotification($conn, $buyer_id, $order_id, $status, $reason = null) {
     try {
         if ($status === 'verified') {
-            $title = "Payment Verified"; // ✅ MODIFIED (removed emoji)
+            $title = "Payment Verified";
             $message = getVerifiedMessage($order_id);
         } else {
-            $title = "Payment Rejected"; // ✅ MODIFIED (removed emoji)
+            $title = "Payment Rejected";
             $message = getRejectedMessage($order_id, $reason);
         }
         
-        // ✅ ADDED: Save to database directly with title
-        $saved = saveNotification($conn, $buyer_id, $title, $message);
-        error_log("Payment notification saved for order $order_id ($status): " . ($saved ? 'Success' : 'Failed'));
-        
+        // ✅ Call sendNotification.php - it handles BOTH saving and sending
         $result = sendPushNotification($buyer_id, $title, $message);
+        $saved = $result['notification_saved'] ?? $result['success'] ?? false;
         $sent = $result['success'] ?? false;
-        error_log("Payment notification sent for order $order_id ($status): " . ($sent ? 'Success' : 'Failed'));
         
-        return ['saved' => $saved, 'sent' => $sent]; // ✅ MODIFIED return type
+        error_log("Payment notification for order $order_id ($status) - Saved: " . ($saved ? 'Yes' : 'No') . ", Sent: " . ($sent ? 'Yes' : 'No'));
+        
+        return ['saved' => $saved, 'sent' => $sent];
         
     } catch (Exception $e) {
         error_log("Payment Notification error: " . $e->getMessage());
-        return ['saved' => false, 'sent' => false]; // ✅ MODIFIED return type
+        return ['saved' => false, 'sent' => false];
     }
 }
 
@@ -151,7 +135,7 @@ try {
         ");
         $stmt->execute([$status, $proofId]);
         
-        // Update order status to 'pending' (not pending_payment)
+        // Update order status to 'pending'
         $stmt = $conn->prepare("
             UPDATE orders 
             SET status = 'pending', 
@@ -165,16 +149,16 @@ try {
     
     $conn->commit();
     
-    // ✅ Send notification after successful commit (ADDED)
-    $notification_result = sendPaymentNotification($conn, $buyerId, $orderId, $status, $reason); // ✅ MODIFIED
+    // Send notification after successful commit
+    $notification_result = sendPaymentNotification($conn, $buyerId, $orderId, $status, $reason);
     
     echo json_encode([
         'success' => true,
         'message' => "Payment proof {$status} successfully! {$orderMessage}",
         'order_id' => $orderId,
         'buyer_id' => $buyerId,
-        'notification_saved' => $notification_result['saved'], // ✅ ADDED
-        'notification_sent' => $notification_result['sent']    // ✅ MODIFIED
+        'notification_saved' => $notification_result['saved'],
+        'notification_sent' => $notification_result['sent']
     ]);
     
 } catch (PDOException $e) {

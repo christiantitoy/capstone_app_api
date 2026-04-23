@@ -11,22 +11,7 @@ use Cloudinary\Configuration\Configuration;
 use Cloudinary\Api\Upload\UploadApi;
 use Cloudinary\Api\Exception\ApiError;
 
-// ✅ ADDED: Function to save notification directly to database with title
-function saveNotification($conn, $user_id, $title, $message) {
-    try {
-        $stmt = $conn->prepare("
-            INSERT INTO notifications (user_id, title, notif_message, created_at) 
-            VALUES (?, ?, ?, NOW())
-        ");
-        $stmt->execute([$user_id, $title, $message]);
-        return true;
-    } catch (Exception $e) {
-        error_log("Failed to save notification: " . $e->getMessage());
-        return false;
-    }
-}
-
-// ✅ Notification function (ADDED)
+// ✅ Notification function
 function sendPushNotification($user_id, $title, $message) {
     $url = 'https://capstone-app-api-r1ux.onrender.com/connection/notif/sendNotification.php';
     
@@ -49,12 +34,12 @@ function sendPushNotification($user_id, $title, $message) {
     return json_decode($response, true);
 }
 
-// ✅ Get delivery completion message (ADDED)
+// ✅ Get delivery completion message
 function getDeliveredMessage($order_id) {
     return "Your order #$order_id has been delivered successfully! Thank you for shopping with DaguitZone. We hope you love your purchase!";
 }
 
-// ✅ Send delivery notification (ADDED)
+// ✅ Send delivery notification to buyer
 function sendDeliveryNotification($conn, $order_id) {
     try {
         // Get buyer_id from orders table
@@ -64,30 +49,29 @@ function sendDeliveryNotification($conn, $order_id) {
         
         if (!$order || !isset($order['buyer_id'])) {
             error_log("Delivery Notification: Could not find buyer_id for order $order_id");
-            return ['saved' => false, 'sent' => false]; // ✅ MODIFIED return type
+            return ['saved' => false, 'sent' => false];
         }
         
         $buyer_id = $order['buyer_id'];
-        $title = "Order Delivered"; // ✅ MODIFIED (removed emoji)
+        $title = "Order Delivered";
         $message = getDeliveredMessage($order_id);
         
-        // ✅ ADDED: Save to database directly with title
-        $saved = saveNotification($conn, $buyer_id, $title, $message);
-        error_log("Delivery notification saved for order $order_id: " . ($saved ? 'Success' : 'Failed'));
-        
+        // ✅ Call sendNotification.php - it handles BOTH saving and sending
         $result = sendPushNotification($buyer_id, $title, $message);
+        $saved = $result['notification_saved'] ?? $result['success'] ?? false;
         $sent = $result['success'] ?? false;
-        error_log("Delivery notification sent for order $order_id: " . ($sent ? 'Success' : 'Failed'));
         
-        return ['saved' => $saved, 'sent' => $sent]; // ✅ MODIFIED return type
+        error_log("Delivery notification for order $order_id - Saved: " . ($saved ? 'Yes' : 'No') . ", Sent: " . ($sent ? 'Yes' : 'No'));
+        
+        return ['saved' => $saved, 'sent' => $sent];
         
     } catch (Exception $e) {
         error_log("Delivery Notification error: " . $e->getMessage());
-        return ['saved' => false, 'sent' => false]; // ✅ MODIFIED return type
+        return ['saved' => false, 'sent' => false];
     }
 }
 
-// ✅ Send notification to seller (ADDED)
+// ✅ Send notification to seller
 function sendSellerNotification($conn, $order_id) {
     try {
         // Get seller_id from order_items and items tables
@@ -105,26 +89,25 @@ function sendSellerNotification($conn, $order_id) {
         
         if (!$seller || !isset($seller['seller_id'])) {
             error_log("Seller Notification: Could not find seller_id for order $order_id");
-            return ['saved' => false, 'sent' => false]; // ✅ MODIFIED return type
+            return ['saved' => false, 'sent' => false];
         }
         
         $seller_id = $seller['seller_id'];
-        $title = "Order Completed"; // ✅ MODIFIED (removed emoji)
+        $title = "Order Completed";
         $message = "Great news! Order #$order_id has been successfully delivered to the buyer. The earnings have been added to your account.";
         
-        // ✅ ADDED: Save to database directly with title
-        $saved = saveNotification($conn, $seller_id, $title, $message);
-        error_log("Seller notification saved for order $order_id: " . ($saved ? 'Success' : 'Failed'));
-        
+        // ✅ Call sendNotification.php - it handles BOTH saving and sending
         $result = sendPushNotification($seller_id, $title, $message);
+        $saved = $result['notification_saved'] ?? $result['success'] ?? false;
         $sent = $result['success'] ?? false;
-        error_log("Seller notification sent for order $order_id: " . ($sent ? 'Success' : 'Failed'));
         
-        return ['saved' => $saved, 'sent' => $sent]; // ✅ MODIFIED return type
+        error_log("Seller notification for order $order_id - Saved: " . ($saved ? 'Yes' : 'No') . ", Sent: " . ($sent ? 'Yes' : 'No'));
+        
+        return ['saved' => $saved, 'sent' => $sent];
         
     } catch (Exception $e) {
         error_log("Seller Notification error: " . $e->getMessage());
-        return ['saved' => false, 'sent' => false]; // ✅ MODIFIED return type
+        return ['saved' => false, 'sent' => false];
     }
 }
 
@@ -300,9 +283,9 @@ try {
 
         $conn->commit();
 
-        // ✅ Send notifications after successful commit (ADDED)
-        $buyer_result = sendDeliveryNotification($conn, $order_id); // ✅ MODIFIED
-        $seller_result = sendSellerNotification($conn, $order_id);  // ✅ MODIFIED
+        // ✅ Send notifications after successful commit
+        $buyer_result = sendDeliveryNotification($conn, $order_id);
+        $seller_result = sendSellerNotification($conn, $order_id);
 
         echo json_encode([
             "success" => true,
@@ -314,7 +297,7 @@ try {
             ],
             "sold_items_recorded" => $itemsInserted,
             "products_sold_updated" => $productsUpdated,
-            "notifications" => [  // ✅ MODIFIED response structure
+            "notifications" => [
                 "buyer" => [
                     "saved" => $buyer_result['saved'],
                     "sent" => $buyer_result['sent']
