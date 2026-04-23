@@ -67,14 +67,14 @@ try {
         exit;
     }
 
-    // Original list-all-products code with additional seller info
+    // ✅ UPDATED: Original list-all-products with RANDOM ORDER
     $sql = "SELECT p.id, p.product_name, p.price, p.sold, p.main_image_url, p.seller_id, 
                    s.store_name as shop_name, s.logo_url, s.contact_number,
                    (SELECT COUNT(*) FROM items WHERE seller_id = s.seller_id AND status = 'approved') as seller_products_count
             FROM items p 
             JOIN stores s ON p.seller_id = s.seller_id
             WHERE p.status = 'approved' 
-            ORDER BY p.id DESC";
+            ORDER BY RANDOM()";  // ✅ PostgreSQL: RANDOM() instead of RAND()
 
     $stmt = $conn->query($sql);
     $result = $stmt->fetchAll(PDO::FETCH_ASSOC);

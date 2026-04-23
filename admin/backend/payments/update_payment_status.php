@@ -40,7 +40,7 @@ function getVerifiedMessage($order_id) {
 
 // ✅ Get rejected message
 function getRejectedMessage($order_id, $reason) {
-    return "Your GCash payment for order #$order_id has been rejected. Reason: $reason The order has been cancelled. Please place a new order or contact support for assistance.";
+    return "Your GCash payment for order #$order_id has been rejected. Reason: $reason The order has been cancelled. Please place a new order.";
 }
 
 // ✅ Send payment notification (calls sendNotification.php which handles save + push)
