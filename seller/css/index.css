@@ -55,7 +55,7 @@ body {
 }
 
 .hamburger.active span:nth-child(1) {
-    transform: rotate(45deg) translate(11px, 11px);
+    transform: rotate(45deg) translate(9px, 9px);
 }
 
 .hamburger.active span:nth-child(2) {
@@ -63,7 +63,7 @@ body {
 }
 
 .hamburger.active span:nth-child(3) {
-    transform: rotate(-45deg) translate(7px, -7px);
+    transform: rotate(-45deg) translate(9px, -9px);
 }
 
 @media (max-width: 768px) {
@@ -450,11 +450,67 @@ input[type="radio"]:checked + .toggle-option {
 
 @media (max-width: 1024px) {
     .pricing-grid { grid-template-columns:repeat(2, 1fr); }
+    .hero h1 { font-size: 2.8rem; }
+    .hero p { font-size: 1.15rem; }
 }
+
 @media (max-width: 768px) {
     .pricing-grid { grid-template-columns:1fr; }
     .pricing-card.popular { transform:none; }
     .popular-badge, .free-badge { font-size:0.8rem; padding:0.35rem 2.8rem; right:auto; left:-45px; transform:rotate(-45deg); }
     .toggle-group { padding:0.4rem; }
     .toggle-option { padding:0.65rem 1.4rem; font-size:0.98rem; }
+
+    /* Hero adjustments */
+    .hero { padding: 5rem 0 4rem; }
+    .hero h1 { font-size: 2.2rem; }
+    .hero p { font-size: 1.05rem; max-width: 100%; }
+    .hero-buttons { flex-direction: column; gap: 0.8rem; }
+    .hero-btn { width: 100%; }
+
+    /* Features adjustments */
+    .features-section { padding: 4rem 0; }
+    .section-title h2 { font-size: 2rem; }
+    .feature-card { padding: 1.8rem 1.2rem; }
+
+    /* Pricing adjustments */
+    .pricing-section { padding: 4rem 0; }
+    .pricing-card { border-radius: 12px; }
+    .pricing-header { padding: 2rem 1.2rem; }
+    .pricing-body { padding: 1.5rem 1.2rem; }
+    .pricing-btn { padding: 0.95rem; font-size: 1rem; }
+    .price { font-size: 2.8rem; }
+    .price-free { font-size: 2.2rem; }
+
+    /* Modal adjustments for mobile */
+    .modal-overlay {
+        backdrop-filter: blur(4px);
+    }
+
+    .modal-content {
+        max-width: 90%;
+        margin: 1rem;
+    }
+
+    .modal-header {
+        padding: 1.2rem 1.5rem;
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .modal-footer {
+        padding: 1rem 1.5rem;
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+
+    .btn {
+        width: 100%;
+        min-width: unset;
+    }
+
+    /* Container adjustments */
+    .container { padding: 0 1rem; }
 }
