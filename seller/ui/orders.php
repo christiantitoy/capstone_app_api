@@ -317,18 +317,20 @@ require_once __DIR__ . '/../backend/session/auth.php';
     <main class="main-content">
         <header class="main-header">
             <div class="header-left">
-                <button class="mobile-menu-btn" onclick="toggleSidebar()">
-                    <i class="fas fa-bars"></i>
-                </button>
                 <h1>Orders Management</h1>
                 <p>Manage customer orders and fulfillment</p>
             </div>
             <div class="header-right">
+                <div class="mobile-top-right">
+                    <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open navigation">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="date-display" id="dateDisplay"></div>
+                </div>
                 <div class="search-box">
                     <i class="fas fa-search"></i>
                     <input type="text" id="searchInput" placeholder="Search orders...">
                 </div>
-                <div class="date-display" id="dateDisplay"></div>
             </div>
         </header>
 

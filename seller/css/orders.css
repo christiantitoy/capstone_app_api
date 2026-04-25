@@ -175,13 +175,13 @@ footer.main-footer {
     flex-wrap: wrap;
 }
 
-.search-box {
-    display: flex;
-    align-items: center;
-    background: white;
-    border: 1px solid #d1d9e0;
-    border-radius: 6px;
-    padding: 0.5rem 1rem;
+    .mobile-top-right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.35rem;
+    }
+
 }
 
 .search-box input {
@@ -193,8 +193,10 @@ footer.main-footer {
 
 .date-display { color: #7f8c8d; font-size: 0.95rem; white-space: nowrap; }
 
-.mobile-menu-btn {
-    display: none;
+    .sidebar-close-btn {
+        display: none;
+    }
+
 }
 
 .orders-header {
@@ -350,6 +352,39 @@ tr:hover { background: #f8fafc; }
         background: rgba(0,0,0,0.45);
         z-index: 1150;
         pointer-events: auto;
+    }
+
+    .main-header {
+        position: relative;
+        padding-right: 0;
+        align-items: flex-start;
+    }
+
+    .header-right {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+
+    .mobile-top-right {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.35rem;
+    }
+
+    .search-box {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .search-box input {
+        width: 100%;
+        min-width: 0;
     }
 
     .mobile-menu-btn {

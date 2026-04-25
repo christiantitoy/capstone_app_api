@@ -769,18 +769,16 @@ footer.main-footer {
 @media (max-width: 900px) {
     .main-header {
         position: relative;
-        padding-right: 110px;
+        padding-right: 0;
         align-items: flex-start;
     }
 
     .header-right {
-        position: absolute;
-        top: 1.5rem;
-        right: 1.5rem;
+        width: 100%;
         display: flex;
         flex-direction: column;
-        align-items: flex-end;
-        gap: 0.5rem;
+        align-items: stretch;
+        gap: 0.75rem;
     }
 
     .mobile-top-right {
@@ -788,6 +786,18 @@ footer.main-footer {
         flex-direction: column;
         align-items: flex-end;
         gap: 0.35rem;
+        width: 100%;
+    }
+
+    .search-box {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .search-box input {
+        width: 100%;
+        min-width: 0;
     }
 
     .mobile-menu-btn {
