@@ -646,37 +646,37 @@ footer.main-footer {
         opacity: 1;
         pointer-events: auto;
     }
+
+    /* Hide hamburger when sidebar is open */
+    .sidebar.active ~ .main-content .mobile-menu-btn {
+        opacity: 0;
+        pointer-events: none;
+    }
     
-    /* Main header adjustments for mobile */
+    /* Main header adjustments for mobile - EXACT COPY FROM DASHBOARD */
     .main-header {
         position: relative;
-        flex-direction: column;
-        align-items: stretch;
-        gap: 1rem;
+        padding-right: 100px;
+        align-items: flex-start;
     }
-    
-    .header-left {
-        flex: 1;
-    }
-    
+
     .header-right {
+        position: absolute;
+        top: 1.5rem;
+        right: 1.5rem;
         display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        width: 100%;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.5rem;
     }
-    
-    .search-box {
-        flex: 1;
-        min-width: 0;
+
+    .mobile-top-right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.35rem;
     }
-    
-    .search-box input {
-        width: 100%;
-        min-width: 0;
-    }
-    
-    /* Show hamburger menu button on mobile - TOP RIGHT */
+
     .mobile-menu-btn {
         display: flex;
         align-items: center;
@@ -685,23 +685,23 @@ footer.main-footer {
         height: 44px;
         font-size: 1.5rem;
         color: var(--dark);
-        background: white;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
+        background: none;
+        border: none;
         cursor: pointer;
-        flex-shrink: 0;
-        transition: all 0.2s;
-        order: 1;
     }
     
     .mobile-menu-btn:hover {
         color: var(--primary);
-        background: #f8f9fa;
-        border-color: var(--primary);
     }
-    
-    .mobile-menu-btn:active {
-        transform: scale(0.95);
+
+    /* Search box on mobile */
+    .search-box {
+        margin-top: 0.5rem;
+        width: 100%;
+    }
+
+    .search-box input {
+        width: 100%;
     }
 
     /* Show close button in sidebar on mobile */
@@ -712,22 +712,17 @@ footer.main-footer {
     
     .sidebar-close-btn {
         display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 40px;
-        height: 40px;
-        font-size: 1.5rem;
+        font-size: 2rem;
+        line-height: 1;
         color: #95a5a6;
         background: none;
         border: none;
         cursor: pointer;
-        border-radius: 8px;
-        transition: all 0.2s;
+        padding: 0.5rem;
     }
     
     .sidebar-close-btn:hover {
         color: var(--danger);
-        background: #fef2f2;
     }
 }
 
@@ -743,19 +738,8 @@ footer.main-footer {
     
     .main-header {
         flex-direction: column;
-        align-items: stretch;
-    }
-    
-    .header-right {
-        width: 100%;
-    }
-    
-    .search-box {
-        flex: 1;
-    }
-    
-    .search-box input {
-        width: 100%;
+        align-items: flex-start;
+        padding-right: 100px;
     }
 }
 
@@ -777,10 +761,11 @@ footer.main-footer {
     }
     
     .main-header {
-        gap: 0.75rem;
+        padding-right: 80px;
     }
     
     .header-right {
-        gap: 0.5rem;
+        top: 0.8rem;
+        right: 0.8rem;
     }
 }
