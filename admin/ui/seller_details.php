@@ -18,6 +18,180 @@ if (!$sellerId) {
     <link rel="icon" type="image/png" href="../admin/images/app_icon.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/seller_details.css?v=<?= time() ?>">
+    <style>
+        /* Store Photos Gallery */
+        .store-photos-section {
+            margin-top: 20px;
+        }
+        
+        .store-photos-section h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .store-photos-section h3 i {
+            color: #3498db;
+        }
+        
+        .store-photos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+        }
+        
+        .store-photo-item {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid #eee;
+            transition: all 0.2s;
+            background: #f8fafc;
+        }
+        
+        .store-photo-item:hover {
+            border-color: #3498db;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .store-photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        
+        .store-photo-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+            color: white;
+            font-size: 1.5rem;
+        }
+        
+        .store-photo-item:hover .store-photo-overlay {
+            opacity: 1;
+        }
+        
+        .no-photos {
+            text-align: center;
+            padding: 20px;
+            color: #95a5a6;
+            font-size: 0.9rem;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+        
+        .no-photos i {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            opacity: 0.5;
+        }
+        
+        /* Store Photo Viewer Modal */
+        .store-photo-viewer-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 10001;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .store-photo-viewer-modal.active {
+            display: flex;
+        }
+        
+        .store-photo-viewer-content {
+            max-width: 90%;
+            max-height: 90%;
+            position: relative;
+        }
+        
+        .store-photo-viewer-content img {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+        
+        .photo-viewer-close {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            padding: 8px;
+            transition: opacity 0.2s;
+        }
+        
+        .photo-viewer-close:hover {
+            opacity: 0.7;
+        }
+        
+        .photo-viewer-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            padding: 15px 10px;
+            transition: background 0.2s;
+            border-radius: 4px;
+        }
+        
+        .photo-viewer-nav:hover {
+            background: rgba(255,255,255,0.4);
+        }
+        
+        .photo-viewer-nav.prev {
+            left: -50px;
+        }
+        
+        .photo-viewer-nav.next {
+            right: -50px;
+        }
+        
+        @media (max-width: 768px) {
+            .store-photos-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 8px;
+            }
+            
+            .photo-viewer-nav.prev {
+                left: 10px;
+            }
+            
+            .photo-viewer-nav.next {
+                right: 10px;
+            }
+        }
+    </style>
 </head>
 <body>
 
@@ -142,6 +316,19 @@ if (!$sellerId) {
             </div>
         </div>
 
+        <!-- Store Photos Gallery -->
+        <div class="info-card" id="storePhotosCard" style="display: none;">
+            <div class="card-header">
+                <i class="fas fa-images"></i>
+                <h3>Store Photos</h3>
+            </div>
+            <div class="card-body">
+                <div class="store-photos-grid" id="storePhotosGrid">
+                    <!-- Photos loaded dynamically -->
+                </div>
+            </div>
+        </div>
+
         <!-- Employees Section -->
         <div class="content-section">
             <div class="section-header">
@@ -184,6 +371,16 @@ if (!$sellerId) {
     <img id="viewerBannerImage" src="" alt="Store Banner">
 </div>
 
+<!-- Store Photo Viewer Modal -->
+<div id="storePhotoViewerModal" class="store-photo-viewer-modal">
+    <div class="store-photo-viewer-content">
+        <button class="photo-viewer-close" onclick="closeStorePhotoViewer()">&times;</button>
+        <button class="photo-viewer-nav prev" onclick="navigatePhoto(-1)"><i class="fas fa-chevron-left"></i></button>
+        <img id="viewerStorePhoto" src="" alt="Store Photo">
+        <button class="photo-viewer-nav next" onclick="navigatePhoto(1)"><i class="fas fa-chevron-right"></i></button>
+    </div>
+</div>
+
 <!-- Status Update Modal (Approve/Reject) -->
 <div id="statusModal" class="modal">
     <div class="modal-content">
@@ -224,6 +421,8 @@ if (!$sellerId) {
     const sellerId = <?= $sellerId ?>;
     let bannerUrl = '';
     let currentSeller = null;
+    let storePhotos = [];
+    let currentPhotoIndex = 0;
     
     // Load seller details
     async function loadSellerDetails() {
@@ -238,7 +437,9 @@ if (!$sellerId) {
             if (result.success) {
                 const data = result.data;
                 currentSeller = data.seller;
+                storePhotos = data.seller.store_photo_files || [];
                 displaySellerDetails(data);
+                displayStorePhotos(storePhotos);
                 updateActionButtons(currentSeller);
                 
                 loadingState.style.display = 'none';
@@ -254,6 +455,55 @@ if (!$sellerId) {
             errorState.style.display = 'block';
             document.getElementById('errorMessage').textContent = error.message;
         }
+    }
+    
+    function displayStorePhotos(photos) {
+        const photosCard = document.getElementById('storePhotosCard');
+        const photosGrid = document.getElementById('storePhotosGrid');
+        
+        if (!photos || photos.length === 0) {
+            photosCard.style.display = 'none';
+            return;
+        }
+        
+        photosCard.style.display = 'block';
+        
+        photosGrid.innerHTML = photos.map((photo, index) => `
+            <div class="store-photo-item" onclick="openStorePhotoViewer(${index})">
+                <img src="${photo}" alt="Store Photo ${index + 1}" loading="lazy">
+                <div class="store-photo-overlay">
+                    <i class="fas fa-search-plus"></i>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    function openStorePhotoViewer(index) {
+        currentPhotoIndex = index;
+        const modal = document.getElementById('storePhotoViewerModal');
+        const img = document.getElementById('viewerStorePhoto');
+        
+        img.src = storePhotos[index];
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeStorePhotoViewer() {
+        const modal = document.getElementById('storePhotoViewerModal');
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    
+    function navigatePhoto(direction) {
+        currentPhotoIndex += direction;
+        
+        if (currentPhotoIndex < 0) {
+            currentPhotoIndex = storePhotos.length - 1;
+        } else if (currentPhotoIndex >= storePhotos.length) {
+            currentPhotoIndex = 0;
+        }
+        
+        document.getElementById('viewerStorePhoto').src = storePhotos[currentPhotoIndex];
     }
     
     function updateActionButtons(seller) {
@@ -318,7 +568,6 @@ if (!$sellerId) {
         }
         
         modal.style.display = 'flex';
-        document.getElementById('rejectionReasonInput').focus();
     }
     
     function closeStatusModal() {
@@ -563,12 +812,16 @@ if (!$sellerId) {
     window.onclick = function(event) {
         const statusModal = document.getElementById('statusModal');
         const bannerModal = document.getElementById('bannerViewerModal');
+        const photoModal = document.getElementById('storePhotoViewerModal');
         
         if (event.target === statusModal) {
             closeStatusModal();
         }
         if (event.target === bannerModal) {
             closeBannerViewer();
+        }
+        if (event.target === photoModal) {
+            closeStorePhotoViewer();
         }
     }
 
@@ -577,12 +830,25 @@ if (!$sellerId) {
         if (e.key === 'Escape') {
             const statusModal = document.getElementById('statusModal');
             const bannerModal = document.getElementById('bannerViewerModal');
+            const photoModal = document.getElementById('storePhotoViewerModal');
             
             if (statusModal.style.display === 'flex') {
                 closeStatusModal();
             }
             if (bannerModal.style.display === 'flex') {
                 closeBannerViewer();
+            }
+            if (photoModal.classList.contains('active')) {
+                closeStorePhotoViewer();
+            }
+        }
+        
+        // Arrow key navigation for photo viewer
+        if (document.getElementById('storePhotoViewerModal').classList.contains('active')) {
+            if (e.key === 'ArrowLeft') {
+                navigatePhoto(-1);
+            } else if (e.key === 'ArrowRight') {
+                navigatePhoto(1);
             }
         }
     });
