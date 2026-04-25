@@ -755,6 +755,11 @@ footer.main-footer {
     }
 }
 
+/* Hide sidebar close button on desktop */
+.sidebar-close-btn {
+    display: none;
+}
+
 /* Hide hamburger on desktop */
 .mobile-menu-btn {
     display: none;
@@ -762,6 +767,29 @@ footer.main-footer {
 
 /* Hamburger menu button - add this in header on mobile */
 @media (max-width: 900px) {
+    .main-header {
+        position: relative;
+        padding-right: 110px;
+        align-items: flex-start;
+    }
+
+    .header-right {
+        position: absolute;
+        top: 1.5rem;
+        right: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.5rem;
+    }
+
+    .mobile-top-right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.35rem;
+    }
+
     .mobile-menu-btn {
         display: flex;
         align-items: center;
@@ -773,21 +801,19 @@ footer.main-footer {
         background: none;
         border: none;
         cursor: pointer;
-        margin-right: 12px;
     }
     
     .mobile-menu-btn:hover {
         color: var(--primary);
     }
-}
 
-@media (max-width: 900px) {
     .sidebar-header {
         justify-content: space-between;
         padding: 1rem 1.5rem;
     }
     
     .sidebar-close-btn {
+        display: inline-flex;
         font-size: 2rem;
         line-height: 1;
         color: #95a5a6;
@@ -826,7 +852,11 @@ footer.main-footer {
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 600px) {
+    .main-content {
+        padding: 0.8rem;
+    }
+
     .products-grid {
         grid-template-columns: 1fr;
     }
