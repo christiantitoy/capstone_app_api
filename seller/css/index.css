@@ -34,6 +34,84 @@ body {
 .nav-btn { padding:0.65rem 1.5rem; border-radius:6px; background:var(--secondary); color:white !important; font-weight:600; text-decoration:none; transition:all 0.25s; }
 .nav-btn:hover { background:var(--secondary-dark); transform:translateY(-1px); }
 
+/* Hamburger Menu */
+.hamburger {
+    display: none;
+    flex-direction: column;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0.5rem;
+    gap: 0.45rem;
+    z-index: 1001;
+}
+
+.hamburger span {
+    width: 28px;
+    height: 3px;
+    background: var(--dark);
+    border-radius: 3px;
+    transition: all 0.3s ease;
+}
+
+.hamburger.active span:nth-child(1) {
+    transform: rotate(45deg) translate(11px, 11px);
+}
+
+.hamburger.active span:nth-child(2) {
+    opacity: 0;
+}
+
+.hamburger.active span:nth-child(3) {
+    transform: rotate(-45deg) translate(7px, -7px);
+}
+
+@media (max-width: 768px) {
+    .hamburger {
+        display: flex;
+    }
+
+    .nav-container {
+        flex-wrap: wrap;
+    }
+
+    .nav-links {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        flex-direction: column;
+        gap: 0;
+        padding: 1.5rem;
+        border-top: 1px solid #e2e8f0;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+    }
+
+    .nav-links.active {
+        max-height: 500px;
+    }
+
+    .nav-links a {
+        padding: 1rem 0;
+        border-bottom: 1px solid #f1f5f9;
+        display: block;
+    }
+
+    .nav-links a:last-child {
+        border-bottom: none;
+    }
+
+    .nav-btn {
+        display: block;
+        text-align: center;
+        padding: 0.75rem 1.5rem;
+        margin-top: 0.5rem;
+    }
+}
+
 /* Hero */
 .hero { background:linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color:white; padding:9rem 0 7rem; text-align:center; }
 .hero h1 { font-size:3.5rem; margin-bottom:1.2rem; font-weight:700; line-height:1.1; }

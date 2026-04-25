@@ -17,7 +17,12 @@
                 <a href="index.html"><img src="../image/app_icon.png" alt="PalitOra Logo"></a>
                 <h1>Palit<span>Ora</span></h1>
             </div>
-            <div class="nav-links">
+            <button class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-links" id="navLinks">
                 <a href="#features">Features</a>
                 <a href="#pricing">Pricing</a>
                 <a href="/seller/ui/login.php" class="nav-btn">Sign In</a>
@@ -68,7 +73,7 @@
                     <p>Role-based access for employees — perfect for growing stores.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
+                    <div class="feature-icon"><i class="fa-solid fa-peso-sign"></i></div>
                     <h3>Never Miss a Sale</h3>
                     <p>Accept orders online and in-store — all in one place. More channels mean more revenue.</p>
                 </div>
@@ -243,7 +248,10 @@
         const yearlyRadio  = document.getElementById('yearlyRadio');
         const monthlyPlans = document.getElementById('monthlyPlans');
         const yearlyPlans  = document.getElementById('yearlyPlans');
+        const hamburger = document.getElementById('hamburger');
+        const navLinks = document.getElementById('navLinks');
 
+        // Pricing toggle functionality
         function updateView() {
             const isYearly = yearlyRadio.checked;
             monthlyPlans.classList.toggle('active', !isYearly);
@@ -255,6 +263,22 @@
             yearlyRadio.addEventListener('change', updateView);
             // Initial state
             updateView();
+        }
+
+        // Hamburger menu toggle
+        if (hamburger && navLinks) {
+            hamburger.addEventListener('click', () => {
+                hamburger.classList.toggle('active');
+                navLinks.classList.toggle('active');
+            });
+
+            // Close menu when a link is clicked
+            navLinks.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', () => {
+                    hamburger.classList.remove('active');
+                    navLinks.classList.remove('active');
+                });
+            });
         }
 
         // Smooth scroll for anchor links
