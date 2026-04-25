@@ -66,18 +66,6 @@ try {
             min-height: 100vh;
         }
 
-        footer.main-footer {
-            text-align: center;
-            padding: 2rem 0;
-            color: #95a5a6;
-            font-size: 0.9rem;
-            border-top: 1px solid #ebedf0;
-        }
-
-        .footer-links { margin-top: 0.6rem; }
-        .footer-links a { color: var(--primary); margin: 0 1rem; text-decoration: none; }
-
-
         .dashboard-container {
             display: grid;
             grid-template-columns: 240px 1fr;
@@ -418,7 +406,22 @@ try {
             margin-top: 2rem;
         }
 
-        /* Responsive */
+        .footer-links { margin-top: 0.6rem; }
+        .footer-links a { color: var(--primary); margin: 0 1rem; text-decoration: none; }
+
+        /* Hide hamburger and close button on desktop */
+        .mobile-menu-btn {
+            display: none;
+        }
+
+        .sidebar-close-btn {
+            display: none;
+        }
+
+        /* =========================
+           MOBILE RESPONSIVE
+        ========================= */
+
         @media (max-width: 1200px) {
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -467,6 +470,7 @@ try {
             }
 
             .sidebar-close-btn {
+                display: inline-flex;
                 font-size: 2rem;
                 line-height: 1;
                 color: #95a5a6;
@@ -479,13 +483,7 @@ try {
             .sidebar-close-btn:hover {
                 color: var(--danger);
             }
-        }
 
-        .mobile-menu-btn {
-            display: none;
-        }
-
-        @media (max-width: 900px) {
             .mobile-menu-btn {
                 display: flex;
                 align-items: center;
@@ -497,17 +495,41 @@ try {
                 border: none;
                 color: var(--dark);
                 cursor: pointer;
-                margin-right: 12px;
+                flex-shrink: 0;
             }
             
             .mobile-menu-btn:hover {
                 color: var(--primary);
             }
+
+            .main-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+            }
+
+            .header-left {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+
+            .header-left h1 {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .header-right {
+                width: 100%;
+                justify-content: flex-start;
+            }
         }
 
         @media (max-width: 600px) {
             .main-content {
-                padding: 1rem;
+                padding: 0.8rem;
             }
             
             .stats-grid {
@@ -566,9 +588,7 @@ try {
                 <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open sidebar">
                     <i class="fas fa-bars"></i>
                 </button>
-                <h1>
-                    Sales Report
-                </h1>
+                <h1>Sales Report</h1>
                 <p>View and track all your sold products</p>
             </div>
             <div class="header-right">

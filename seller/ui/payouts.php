@@ -10,7 +10,6 @@ require_once __DIR__ . '/../backend/session/auth.php';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Payouts - Seller Dashboard</title>
     <link rel="icon" type="image/png" href="/seller/image/app_icon.png">
-    <link rel="stylesheet" href="../css/dashboard.css?v=<?= time() ?>">
     <link rel="stylesheet" href="../css/payouts.css?v=<?= time() ?>">
     <link rel="stylesheet" href="../css/logout.css?v=<?= time() ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">

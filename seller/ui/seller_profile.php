@@ -533,24 +533,28 @@ require_once __DIR__ . '/../backend/session/auth.php';
             animation: spin 1s linear infinite;
         }
 
-        .sidebar-close-btn,
+        /* Footer */
+        footer.main-footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: #95a5a6;
+            font-size: 0.9rem;
+            border-top: 1px solid #ebedf0;
+            margin-top: 2rem;
+        }
+
+        /* Hide hamburger and close button on desktop */
         .mobile-menu-btn {
             display: none;
-            background: none;
-            border: none;
-            color: var(--dark);
-            cursor: pointer;
-            transition: color 0.2s ease;
         }
 
         .sidebar-close-btn {
-            font-size: 2rem;
-            line-height: 1;
+            display: none;
         }
 
-        .mobile-menu-btn {
-            font-size: 1.5rem;
-        }
+        /* =========================
+           MOBILE RESPONSIVE
+        ========================= */
 
         @media (max-width: 900px) {
             .dashboard-container {
@@ -559,15 +563,15 @@ require_once __DIR__ . '/../backend/session/auth.php';
 
             .sidebar {
                 position: fixed;
-                top: 0;
-                left: 0;
+                inset: 0 auto 0 0;
                 width: 280px;
                 max-width: 85vw;
                 height: 100%;
-                z-index: 1200;
+                background: white;
+                border-right: 1px solid #ebedf0;
                 transform: translateX(-100%);
-                transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-                box-shadow: 12px 0 40px rgba(0,0,0,0.08);
+                transition: transform 0.35s ease;
+                z-index: 1200;
             }
 
             .sidebar.active {
@@ -580,12 +584,12 @@ require_once __DIR__ . '/../backend/session/auth.php';
                 inset: 0;
                 background: rgba(0,0,0,0.45);
                 z-index: 1150;
+                pointer-events: auto;
             }
 
-            .main-content {
-                position: relative;
-                z-index: 1;
-                padding: 1rem;
+            .sidebar.active ~ .main-content .mobile-menu-btn {
+                opacity: 0;
+                pointer-events: none;
             }
 
             .sidebar-header {
@@ -594,10 +598,14 @@ require_once __DIR__ . '/../backend/session/auth.php';
             }
 
             .sidebar-close-btn {
-                display: flex;
-                align-items: center;
-                justify-content: center;
+                display: inline-flex;
+                font-size: 2rem;
+                line-height: 1;
                 color: #95a5a6;
+                background: none;
+                border: none;
+                cursor: pointer;
+                padding: 0.5rem;
             }
 
             .sidebar-close-btn:hover {
@@ -610,7 +618,12 @@ require_once __DIR__ . '/../backend/session/auth.php';
                 justify-content: center;
                 width: 44px;
                 height: 44px;
+                font-size: 1.5rem;
+                background: none;
+                border: none;
                 color: var(--dark);
+                cursor: pointer;
+                flex-shrink: 0;
             }
 
             .mobile-menu-btn:hover {
@@ -618,8 +631,22 @@ require_once __DIR__ . '/../backend/session/auth.php';
             }
 
             .main-header {
-                align-items: flex-start;
+                flex-direction: column;
+                align-items: stretch;
                 gap: 1rem;
+            }
+
+            .header-left {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+
+            .header-left h1 {
+                display: flex;
+                align-items: center;
+                gap: 10px;
             }
 
             .header-right {
@@ -627,28 +654,6 @@ require_once __DIR__ . '/../backend/session/auth.php';
                 justify-content: flex-start;
             }
 
-            .profile-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        /* Footer */
-        footer.main-footer {
-            text-align: center;
-            padding: 2rem 0;
-            color: #95a5a6;
-            font-size: 0.9rem;
-            border-top: 1px solid #ebedf0;
-            margin-top: 2rem;
-        }
-
-        /* Responsive */
-        @media (max-width: 900px) {
             .profile-grid {
                 grid-template-columns: 1fr;
             }
@@ -660,7 +665,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
 
         @media (max-width: 600px) {
             .main-content {
-                padding: 1rem;
+                padding: 0.8rem;
             }
             
             .info-row {
@@ -681,6 +686,11 @@ require_once __DIR__ . '/../backend/session/auth.php';
                 height: 100px;
                 margin-top: -50px;
             }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -719,15 +729,15 @@ require_once __DIR__ . '/../backend/session/auth.php';
     <main class="main-content">
         <header class="main-header">
             <div class="header-left">
+                <button type="button" class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open sidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
                 <h1>
                     <i class="fas fa-store" style="color: var(--primary);"></i>
                     My Store Profile
                 </h1>
                 <p>View and manage your store information</p>
             </div>
-            <button type="button" class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open navigation">
-                <i class="fas fa-bars"></i>
-            </button>
             <div class="header-right">
                 <div class="date-display"><?= date('F j, Y') ?></div>
             </div>
@@ -806,26 +816,21 @@ function viewFullImage(type, imageUrl) {
     caption.textContent = type === 'banner' ? 'Store Banner' : 'Store Logo';
     modal.classList.add('active');
     
-    // Prevent body scroll
     document.body.style.overflow = 'hidden';
 }
 
 function closeFullImage() {
     const modal = document.getElementById('fullImageModal');
     modal.classList.remove('active');
-    
-    // Restore body scroll
     document.body.style.overflow = '';
 }
 
-// Close modal with Escape key
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeFullImage();
     }
 });
 
-// Toast notification
 function showToast(type, message) {
     const existingToast = document.querySelector('.toast');
     if (existingToast) existingToast.remove();
@@ -884,7 +889,6 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// Load profile data
 async function loadProfile() {
     try {
         const response = await fetch('/seller/backend/profile/get_seller_profile.php');
@@ -905,7 +909,6 @@ function displayProfile(data) {
     const seller = data.seller;
     const store = data.store;
     
-    // Plan class mapping
     const planClass = {
         'Bronze': 'plan-bronze',
         'Silver': 'plan-silver',
@@ -914,7 +917,6 @@ function displayProfile(data) {
     
     let html = `
         <div class="profile-grid">
-            <!-- Account Information Card -->
             <div class="profile-card">
                 <div class="card-header">
                     <h2><i class="fas fa-user-circle"></i> Account Information</h2>
@@ -942,8 +944,6 @@ function displayProfile(data) {
                         </span>
                     </div>
 
-
-                    <!-- GCash Information -->
                     <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #eef2f6;">
                         <h3 style="font-size: 1rem; margin-bottom: 1rem; color: var(--dark); display: flex; align-items: center; gap: 8px;">
                             <i class="fas fa-mobile-alt" style="color: #3498db;"></i> GCash Information (For Payouts)
@@ -957,12 +957,9 @@ function displayProfile(data) {
                             <span class="info-value">${store?.gcash_number ? escapeHtml(store.gcash_number) : '<span style="color: var(--gray); font-style: italic;">Not set</span>'}</span>
                         </div>
                     </div>
-
-
                 </div>
             </div>
 
-            <!-- Subscription Card -->
             <div class="profile-card">
                 <div class="card-header">
                     <h2><i class="fas fa-crown"></i> Subscription</h2>
@@ -997,7 +994,6 @@ function displayProfile(data) {
             </div>
     `;
     
-    // Store Information Card
     if (store) {
         const categoryDisplay = store.category ? store.category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Not specified';
         
@@ -1007,7 +1003,6 @@ function displayProfile(data) {
                     <h2><i class="fas fa-store-alt"></i> Store Information</h2>
                 </div>
                 <div class="card-body" style="padding: 0;">
-                    <!-- Facebook-style Banner -->
                     <div class="store-banner-container" onclick="viewFullImage('banner', '${escapeHtml(store.banner_url || '')}')">
                         ${store.banner_url ? 
                             `<img src="${escapeHtml(store.banner_url)}" alt="Store Banner" class="store-banner-img">` : 
@@ -1023,7 +1018,6 @@ function displayProfile(data) {
                         ` : ''}
                     </div>
                     
-                    <!-- Facebook-style Logo (positioned over banner) -->
                     <div style="padding: 0 1.5rem 1.5rem 1.5rem; position: relative;">
                         <div class="store-logo-container" onclick="viewFullImage('logo', '${escapeHtml(store.logo_url || '')}')">
                             ${store.logo_url ? 
@@ -1126,10 +1120,6 @@ function showError(message) {
     `;
 }
 
-function editStore() {
-    window.location.href = '/seller/ui/edit_store.php';
-}
-
 function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/[&<>]/g, function(m) {
@@ -1140,7 +1130,6 @@ function escapeHtml(str) {
     });
 }
 
-// Load profile on page load
 document.addEventListener('DOMContentLoaded', loadProfile);
 </script>
 
