@@ -77,6 +77,9 @@ $role_display = [
     <aside class="sidebar">
         <div class="sidebar-header">
             <h2>Palit<span>Ora</span></h2>
+            <button class="sidebar-close-btn" onclick="toggleSidebar()">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
         <nav class="sidebar-nav">
             <a href="/seller/ui/dashboard.php" class="nav-item"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
@@ -319,6 +322,31 @@ $role_display = [
 
 <script src="/seller/js/logout.js"></script>
 <script>
+// Mobile sidebar toggle functionality
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+    sidebar.classList.toggle('active');
+}
+
+// Close sidebar when clicking outside
+document.addEventListener('click', function(event) {
+    const sidebar = document.querySelector('.sidebar');
+    const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+    if (!sidebar || !sidebar.classList.contains('active')) return;
+    if (!sidebar.contains(event.target) && !mobileMenuBtn.contains(event.target)) {
+        sidebar.classList.remove('active');
+    }
+});
+
+// Close sidebar with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebar) sidebar.classList.remove('active');
+    }
+});
+
 // Role descriptions
 const roleDescriptions = {
     order_manager: 'Can view all orders, update order status (packed → ready for delivery), and view customer information. Cannot add or edit products.',

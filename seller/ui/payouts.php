@@ -21,6 +21,9 @@ require_once __DIR__ . '/../backend/session/auth.php';
     <aside class="sidebar">
         <div class="sidebar-header">
             <h2>Palit<span>Ora</span></h2>
+            <button class="sidebar-close-btn" onclick="toggleSidebar()" aria-label="Close navigation">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
         <nav class="sidebar-nav">
             <a href="/seller/ui/dashboard.php" class="nav-item"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
@@ -48,6 +51,9 @@ require_once __DIR__ . '/../backend/session/auth.php';
     <main class="main-content">
         <header class="main-header">
             <div class="header-left">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open navigation">
+                    <i class="fas fa-bars"></i>
+                </button>
                 <h1>Payout History</h1>
                 <p>Track your earnings and payouts</p>
             </div>
@@ -154,6 +160,28 @@ require_once __DIR__ . '/../backend/session/auth.php';
 <script src="/seller/js/logout.js"></script>
 
 <script>
+    function toggleSidebar() {
+        const sidebar = document.querySelector('.sidebar');
+        if (!sidebar) return;
+        sidebar.classList.toggle('active');
+    }
+
+    document.addEventListener('click', function(event) {
+        const sidebar = document.querySelector('.sidebar');
+        const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+        if (!sidebar || !sidebar.classList.contains('active')) return;
+        if (!sidebar.contains(event.target) && !mobileMenuBtn.contains(event.target)) {
+            sidebar.classList.remove('active');
+        }
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebar) sidebar.classList.remove('active');
+        }
+    });
+
     let currentPayouts = [];
     
     // Load payouts

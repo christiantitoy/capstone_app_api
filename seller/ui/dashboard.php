@@ -28,6 +28,7 @@ if (!$seller_id) {
     <aside class="sidebar">
         <div class="sidebar-header">
             <h2>Palit<span>Ora</span></h2>
+            <button type="button" class="sidebar-close-btn" onclick="toggleSidebar()" aria-label="Close navigation">×</button>
         </div>
         <nav class="sidebar-nav">
             <a href="/seller/ui/dashboard.php" class="nav-item active"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
@@ -88,6 +89,9 @@ if (!$seller_id) {
                     <?= ucfirst($current_plan); ?> Seller
                 </a>
             </div>
+            <button type="button" class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open navigation">
+                <i class="fas fa-bars"></i>
+            </button>
             <div class="header-right">
                 <div class="date-display"><?= date('F j, Y') ?></div>
             </div>
@@ -166,6 +170,26 @@ if (!$seller_id) {
 <script src="/seller/js/logout.js"></script>
 
 <script>
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+    sidebar.classList.toggle('active');
+}
+
+document.addEventListener('click', function(e) {
+    const sidebar = document.querySelector('.sidebar');
+    const menuBtn = document.querySelector('.mobile-menu-btn');
+    if (!sidebar || !sidebar.classList.contains('active')) return;
+    if (sidebar.contains(e.target) || (menuBtn && menuBtn.contains(e.target))) return;
+    sidebar.classList.remove('active');
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        document.querySelector('.sidebar')?.classList.remove('active');
+    }
+});
+
     const sellerId = <?php echo json_encode($seller_id); ?>;
     
     async function loadData() {

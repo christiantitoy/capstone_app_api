@@ -431,7 +431,77 @@ try {
             }
             
             .sidebar {
-                display: none;
+                position: fixed;
+                inset: 0 auto 0 0;
+                width: 280px;
+                max-width: 85vw;
+                height: 100%;
+                background: white;
+                border-right: 1px solid #ebedf0;
+                transform: translateX(-100%);
+                transition: transform 0.35s ease;
+                z-index: 1200;
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .sidebar.active ~ .main-content::before {
+                content: "";
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.45);
+                z-index: 1150;
+                pointer-events: auto;
+            }
+
+            .sidebar.active ~ .main-content .mobile-menu-btn {
+                opacity: 0;
+                pointer-events: none;
+            }
+
+            .sidebar-header {
+                justify-content: space-between;
+                padding: 1rem 1.5rem;
+            }
+
+            .sidebar-close-btn {
+                font-size: 2rem;
+                line-height: 1;
+                color: #95a5a6;
+                background: none;
+                border: none;
+                cursor: pointer;
+                padding: 0.5rem;
+            }
+
+            .sidebar-close-btn:hover {
+                color: var(--danger);
+            }
+        }
+
+        .mobile-menu-btn {
+            display: none;
+        }
+
+        @media (max-width: 900px) {
+            .mobile-menu-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 44px;
+                height: 44px;
+                font-size: 1.5rem;
+                background: none;
+                border: none;
+                color: var(--dark);
+                cursor: pointer;
+                margin-right: 12px;
+            }
+            
+            .mobile-menu-btn:hover {
+                color: var(--primary);
             }
         }
 
@@ -462,6 +532,9 @@ try {
     <aside class="sidebar">
         <div class="sidebar-header">
            <h2>Palit<span>Ora</span></h2>
+           <button class="sidebar-close-btn" onclick="toggleSidebar()" aria-label="Close sidebar">
+               <i class="fas fa-times"></i>
+           </button>
         </div>
         <nav class="sidebar-nav">
             <a href="/seller/ui/dashboard.php" class="nav-item"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
@@ -490,6 +563,9 @@ try {
     <main class="main-content">
         <header class="main-header">
             <div class="header-left">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open sidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
                 <h1>
                     Sales Report
                 </h1>
@@ -621,6 +697,28 @@ try {
 
 <script src="/seller/js/logout.js"></script>
 <script>
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+    sidebar.classList.toggle('active');
+}
+
+document.addEventListener('click', function(event) {
+    const sidebar = document.querySelector('.sidebar');
+    const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+    if (!sidebar || !sidebar.classList.contains('active')) return;
+    if (!sidebar.contains(event.target) && !mobileMenuBtn.contains(event.target)) {
+        sidebar.classList.remove('active');
+    }
+});
+
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebar) sidebar.classList.remove('active');
+    }
+});
+
 // Fix user profile redirect
 document.addEventListener('DOMContentLoaded', function() {
     const userProfile = document.getElementById('userProfile');

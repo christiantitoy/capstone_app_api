@@ -714,14 +714,91 @@ footer.main-footer {
 
 /* Responsive Design */
 @media (max-width: 900px) {
-    .dashboard-container { 
-        grid-template-columns: 1fr; 
+    .dashboard-container { grid-template-columns: 1fr; }
+    .sidebar {
+        /* Do NOT use display: none → use visibility + transform instead */
+        position: fixed;
+        inset: 0  auto 0 0;           /* top right bottom left */
+        width: 280px;
+        max-width: 85vw;              /* safe on very narrow phones */
+        height: 100%;
+        z-index: 1200;
+        background: white;
+        border-right: 1px solid #ebedf0;
+        
+        /* Start hidden off-screen */
+        transform: translateX(-100%);
+        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        will-change: transform;       /* smoother animation */
     }
-    .sidebar { 
-        display: none; 
+
+    .sidebar.active {
+        transform: translateX(0);
     }
-    .main-content {
-        padding: 1.5rem;
+
+    /* Overlay when sidebar is open */
+    .sidebar.active ~ .main-content::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.45);
+        z-index: 1150;                /* below sidebar, above content */
+        transition: opacity 0.35s ease;
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    /* Hide hamburger when sidebar is open (optional nice touch) */
+    .sidebar.active ~ .main-content .mobile-menu-btn {
+        opacity: 0;
+        pointer-events: none;
+    }
+}
+
+/* Hide hamburger on desktop */
+.mobile-menu-btn {
+    display: none;
+}
+
+/* Hamburger menu button - add this in header on mobile */
+@media (max-width: 900px) {
+    .mobile-menu-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        font-size: 1.5rem;
+        color: var(--dark);
+        background: none;
+        border: none;
+        cursor: pointer;
+        margin-right: 12px;
+    }
+    
+    .mobile-menu-btn:hover {
+        color: var(--primary);
+    }
+}
+
+@media (max-width: 900px) {
+    .sidebar-header {
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+    }
+    
+    .sidebar-close-btn {
+        font-size: 2rem;
+        line-height: 1;
+        color: #95a5a6;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0.5rem;
+    }
+    
+    .sidebar-close-btn:hover {
+        color: var(--danger);
     }
 }
 
