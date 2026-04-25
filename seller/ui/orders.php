@@ -367,8 +367,8 @@ require_once __DIR__ . '/../backend/session/auth.php';
         <footer class="main-footer">
             <p>© <?= date('Y') ?> PalitOra. All rights reserved.</p>
             <div class="footer-links">
-                <a href="privacy.php">Privacy Policy</a> •
-                <a href="terms.php">Terms of Service</a>
+                <a href="privacy.html">Privacy Policy</a> •
+                <a href="terms.html">Terms of Service</a>
             </div>
         </footer>
     </main>

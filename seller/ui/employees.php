@@ -107,7 +107,6 @@ $role_display = [
         <header class="main-header">
             <div class="header-left">
                 <h1>
-                    <i class="fas fa-users" style="color: var(--primary);"></i>
                     Employee Management
                 </h1>
                 <p>Add and manage your team members</p>
@@ -292,8 +291,8 @@ $role_display = [
         <footer class="main-footer">
             <p>© <?= date('Y') ?> PalitOra. All rights reserved.</p>
             <div class="footer-links">
-                <a href="privacy.php">Privacy Policy</a> •
-                <a href="terms.php">Terms of Service</a>
+                <a href="privacy.html">Privacy Policy</a> •
+                <a href="terms.html">Terms of Service</a>
             </div>
         </footer>
 

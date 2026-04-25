@@ -533,6 +533,105 @@ require_once __DIR__ . '/../backend/session/auth.php';
             animation: spin 1s linear infinite;
         }
 
+        .sidebar-close-btn,
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--dark);
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .sidebar-close-btn {
+            font-size: 2rem;
+            line-height: 1;
+        }
+
+        .mobile-menu-btn {
+            font-size: 1.5rem;
+        }
+
+        @media (max-width: 900px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 280px;
+                max-width: 85vw;
+                height: 100%;
+                z-index: 1200;
+                transform: translateX(-100%);
+                transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 12px 0 40px rgba(0,0,0,0.08);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .sidebar.active ~ .main-content::before {
+                content: "";
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.45);
+                z-index: 1150;
+            }
+
+            .main-content {
+                position: relative;
+                z-index: 1;
+                padding: 1rem;
+            }
+
+            .sidebar-header {
+                justify-content: space-between;
+                padding: 1rem 1.5rem;
+            }
+
+            .sidebar-close-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #95a5a6;
+            }
+
+            .sidebar-close-btn:hover {
+                color: var(--danger);
+            }
+
+            .mobile-menu-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 44px;
+                height: 44px;
+                color: var(--dark);
+            }
+
+            .mobile-menu-btn:hover {
+                color: var(--primary);
+            }
+
+            .main-header {
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .header-right {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .profile-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
@@ -550,14 +649,6 @@ require_once __DIR__ . '/../backend/session/auth.php';
 
         /* Responsive */
         @media (max-width: 900px) {
-            .dashboard-container {
-                grid-template-columns: 1fr;
-            }
-            
-            .sidebar {
-                display: none;
-            }
-            
             .profile-grid {
                 grid-template-columns: 1fr;
             }
@@ -599,7 +690,8 @@ require_once __DIR__ . '/../backend/session/auth.php';
     <!-- Sidebar -->
     <aside class="sidebar">
         <div class="sidebar-header">
-            <h2>Seller<span>Dashboard</span></h2>
+            <h2>Palit<span>Ora</span></h2>
+            <button type="button" class="sidebar-close-btn" onclick="toggleSidebar()" aria-label="Close navigation">×</button>
         </div>
         <nav class="sidebar-nav">
             <a href="/seller/ui/dashboard.php" class="nav-item"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
@@ -633,6 +725,9 @@ require_once __DIR__ . '/../backend/session/auth.php';
                 </h1>
                 <p>View and manage your store information</p>
             </div>
+            <button type="button" class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open navigation">
+                <i class="fas fa-bars"></i>
+            </button>
             <div class="header-right">
                 <div class="date-display"><?= date('F j, Y') ?></div>
             </div>
@@ -646,7 +741,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
         </div>
 
         <footer class="main-footer">
-            <p>© <?= date('Y') ?> Seller Dashboard. All rights reserved.</p>
+            <p>© <?= date('Y') ?> PalitOra. All rights reserved.</p>
         </footer>
     </main>
 </div>
@@ -768,6 +863,26 @@ function showToast(type, message) {
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
+
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+    sidebar.classList.toggle('active');
+}
+
+document.addEventListener('click', function(e) {
+    const sidebar = document.querySelector('.sidebar');
+    const menuBtn = document.querySelector('.mobile-menu-btn');
+    if (!sidebar || !sidebar.classList.contains('active')) return;
+    if (sidebar.contains(e.target) || (menuBtn && menuBtn.contains(e.target))) return;
+    sidebar.classList.remove('active');
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        document.querySelector('.sidebar')?.classList.remove('active');
+    }
+});
 
 // Load profile data
 async function loadProfile() {
