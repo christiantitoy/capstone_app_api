@@ -89,11 +89,13 @@ if (!$seller_id) {
                     <?= ucfirst($current_plan); ?> Seller
                 </a>
             </div>
-            <button type="button" class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open navigation">
-                <i class="fas fa-bars"></i>
-            </button>
             <div class="header-right">
-                <div class="date-display"><?= date('F j, Y') ?></div>
+                <div class="mobile-top-right">
+                    <button type="button" class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open navigation">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="date-display"><?= date('F j, Y') ?></div>
+                </div>
             </div>
         </header>
 
