@@ -783,8 +783,9 @@ footer.main-footer {
 
     .mobile-top-right {
         display: flex;
-        flex-direction: column;
-        align-items: flex-end;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
         gap: 0.35rem;
         width: 100%;
     }
