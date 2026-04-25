@@ -18,9 +18,7 @@
                 <h1>Palit<span>Ora</span></h1>
             </div>
             <button class="hamburger" id="hamburger">
-                <span></span>
-                <span></span>
-                <span></span>
+                <i class="fas fa-bars" id="hamburgerIcon"></i>
             </button>
             <div class="nav-links" id="navLinks">
                 <a href="#features">Features</a>
@@ -268,15 +266,28 @@
         // Hamburger menu toggle
         if (hamburger && navLinks) {
             hamburger.addEventListener('click', () => {
+                const icon = document.getElementById('hamburgerIcon');
                 hamburger.classList.toggle('active');
                 navLinks.classList.toggle('active');
+                
+                // Toggle between bars and X icon
+                if (hamburger.classList.contains('active')) {
+                    icon.classList.remove('fa-bars');
+                    icon.classList.add('fa-times');
+                } else {
+                    icon.classList.remove('fa-times');
+                    icon.classList.add('fa-bars');
+                }
             });
 
             // Close menu when a link is clicked
             navLinks.querySelectorAll('a').forEach(link => {
                 link.addEventListener('click', () => {
+                    const icon = document.getElementById('hamburgerIcon');
                     hamburger.classList.remove('active');
                     navLinks.classList.remove('active');
+                    icon.classList.remove('fa-times');
+                    icon.classList.add('fa-bars');
                 });
             });
         }
