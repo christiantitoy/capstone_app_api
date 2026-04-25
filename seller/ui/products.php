@@ -152,14 +152,14 @@ require_once __DIR__ . '/../backend/session/auth.php';
             <div class="header-left">
                 <h1>Products Management</h1>
                 <p>Manage your products and inventory</p>
-            </div>
-            <div class="header-right">
                 <div class="mobile-top-right">
                     <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open navigation">
                         <i class="fas fa-bars"></i>
                     </button>
                     <div class="date-display" id="dateDisplay"></div>
                 </div>
+            </div>
+            <div class="header-right">
                 <div class="search-box">
                     <i class="fas fa-search"></i>
                     <input type="text" id="searchInput" placeholder="Search products...">
