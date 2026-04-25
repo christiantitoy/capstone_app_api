@@ -322,11 +322,20 @@ footer.main-footer {
 .footer-links { margin-top: 0.6rem; }
 .footer-links a { color: var(--primary); margin: 0 1rem; text-decoration: none; }
 
-/* Hide hamburger and close button on desktop */
+/* Hide hamburger on desktop */
 .mobile-menu-btn {
     display: none;
 }
 
+/* Search row layout */
+.search-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+/* Hide sidebar close button on desktop */
 .sidebar-close-btn {
     display: none;
 }
@@ -370,30 +379,7 @@ footer.main-footer {
         pointer-events: none;
     }
 
-    /* Main header adjustments for mobile - MATCHING DASHBOARD */
-    .main-header {
-        position: relative;
-        padding-right: 100px;
-        align-items: flex-start;
-    }
-
-    .header-right {
-        position: absolute;
-        top: 1.5rem;
-        right: 1.5rem;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 0.5rem;
-    }
-
-    .mobile-top-right {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 0.35rem;
-    }
-
+    /* Show hamburger */
     .mobile-menu-btn {
         display: flex;
         align-items: center;
@@ -405,20 +391,50 @@ footer.main-footer {
         border: none;
         color: var(--dark);
         cursor: pointer;
+        flex-shrink: 0;
     }
 
     .mobile-menu-btn:hover {
         color: var(--primary);
     }
 
-    /* Search box on mobile */
+    /* Header layout */
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .header-left h1 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* Search row - date and search in a row */
+    .search-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        width: 100%;
+    }
+    
+    .date-display {
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    /* Search box full width */
     .search-box {
-        margin-top: 0.5rem;
+        flex: 1;
+        min-width: 0;
         width: 100%;
     }
 
     .search-box input {
         width: 100%;
+        min-width: 0;
     }
 
     /* Show close button in sidebar on mobile */
@@ -447,6 +463,16 @@ footer.main-footer {
 @media (max-width: 768px) {
     .main-content {
         padding: 1rem;
+    }
+    
+    .main-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    
+    .header-right {
+        width: 100%;
     }
     
     .table-container {
@@ -492,15 +518,6 @@ footer.main-footer {
         padding: 0.8rem;
     }
 
-    .main-header {
-        padding-right: 80px;
-    }
-
-    .header-right {
-        top: 0.8rem;
-        right: 0.8rem;
-    }
-
     .table-container {
         margin: 0 -0.5rem;
         padding: 0 0.5rem;
@@ -512,5 +529,16 @@ footer.main-footer {
 
     th, td {
         padding: 0.6rem 0.4rem;
+    }
+    
+    /* Stack search row on very small screens */
+    .search-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+    
+    .date-display {
+        text-align: left;
     }
 }
