@@ -57,6 +57,9 @@ if (!$seller_id) {
         
         <header class="main-header">
             <div class="header-left">
+                <button type="button" class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open sidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
                 <h1>Dashboard Overview</h1>
                 <p>Welcome back, <?= htmlspecialchars(explode(' ', $seller_name)[0]) ?>!</p>
 
@@ -90,12 +93,7 @@ if (!$seller_id) {
                 </a>
             </div>
             <div class="header-right">
-                <div class="mobile-top-right">
-                    <button type="button" class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open navigation">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <div class="date-display"><?= date('F j, Y') ?></div>
-                </div>
+                <div class="date-display"><?= date('F j, Y') ?></div>
             </div>
         </header>
 

@@ -109,21 +109,20 @@ $role_display = [
 
         <header class="main-header">
             <div class="header-left">
-                <h1>
-                    Employee Management
-                </h1>
+                <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open sidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1>Employee Management</h1>
                 <p>Add and manage your team members</p>
             </div>
-            <!-- Add this button – only visible on mobile -->
-            <button class="mobile-menu-btn" onclick="toggleSidebar()">
-                <i class="fas fa-bars"></i>
-            </button>
             <div class="header-right">
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" placeholder="Search employees..." id="searchInput">
+                <div class="search-row">
+                    <div class="date-display"><?= date('F j, Y') ?></div>
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Search employees..." id="searchInput">
+                    </div>
                 </div>
-                <div class="date-display"><?= date('F j, Y') ?></div>
             </div>
         </header>
 

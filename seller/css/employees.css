@@ -550,12 +550,24 @@ tr:hover { background: #f8fafc; }
     }
 }
 
-/* Hide hamburger on desktop */
+/* Hide hamburger and close button on desktop */
 .mobile-menu-btn {
     display: none;
 }
 
-/* Hamburger menu button - add this in header on mobile */
+.sidebar-close-btn {
+    display: none;
+}
+
+/* Search row layout */
+.search-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+/* Hamburger and header layout on mobile */
 @media (max-width: 900px) {
     .mobile-menu-btn {
         display: flex;
@@ -564,39 +576,56 @@ tr:hover { background: #f8fafc; }
         width: 44px;
         height: 44px;
         font-size: 1.5rem;
-        color: var(--dark);
         background: none;
         border: none;
+        color: var(--dark);
         cursor: pointer;
+        flex-shrink: 0;
     }
     
     .mobile-menu-btn:hover {
         color: var(--primary);
     }
-}
 
-@media (max-width: 900px) {
-    .sidebar-header {
-        justify-content: space-between;
-        padding: 1rem 1.5rem;
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
     }
     
-    .sidebar-close-btn {
-        font-size: 2rem;
-        line-height: 1;
-        color: #95a5a6;
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 0.5rem;
+    .header-left h1 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* Search row - date and search in a row */
+    .search-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        width: 100%;
     }
     
-    .sidebar-close-btn:hover {
-        color: var(--danger);
+    .date-display {
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    /* Search box full width */
+    .search-box {
+        flex: 1;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .search-box input {
+        width: 100%;
+        min-width: 0;
     }
 }
 
-/* Main content padding tighter on mobile */
 @media (max-width: 768px) {
     .main-content {
         padding: 1rem;
@@ -604,7 +633,7 @@ tr:hover { background: #f8fafc; }
     
     .main-header {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
         gap: 1rem;
     }
     
@@ -614,13 +643,15 @@ tr:hover { background: #f8fafc; }
     }
     
     .search-box input {
-        width: 140px;           /* smaller input on mobile */
+        width: 100%;
+        min-width: 0;
     }
     
     .date-display {
         font-size: 0.85rem;
     }
 }
+
 .status-on_hold {
     background: #fff3cd;
     color: #856404;
@@ -936,3 +967,19 @@ tr:hover { background: #f8fafc; }
     background: #a1a1a1;
 }
 
+@media (max-width: 600px) {
+    .main-content {
+        padding: 0.8rem;
+    }
+    
+    /* Stack search row on very small screens */
+    .search-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+    
+    .date-display {
+        text-align: left;
+    }
+}
