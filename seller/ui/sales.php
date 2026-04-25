@@ -66,6 +66,18 @@ try {
             min-height: 100vh;
         }
 
+        footer.main-footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: #95a5a6;
+            font-size: 0.9rem;
+            border-top: 1px solid #ebedf0;
+        }
+
+        .footer-links { margin-top: 0.6rem; }
+        .footer-links a { color: var(--primary); margin: 0 1rem; text-decoration: none; }
+
+
         .dashboard-container {
             display: grid;
             grid-template-columns: 240px 1fr;
@@ -449,8 +461,7 @@ try {
     <!-- Sidebar -->
     <aside class="sidebar">
         <div class="sidebar-header">
-            <i class="fas fa-store logo"></i>
-            <h2>Seller<span>Dashboard</span></h2>
+           <h2>Palit<span>Ora</span></h2>
         </div>
         <nav class="sidebar-nav">
             <a href="/seller/ui/dashboard.php" class="nav-item"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
@@ -582,7 +593,11 @@ try {
         </div>
 
         <footer class="main-footer">
-            <p>© <?= date('Y') ?> Seller Dashboard. All rights reserved.</p>
+            <p>© <?= date('Y') ?> PalitOra. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="privacy.php">Privacy Policy</a> •
+                <a href="terms.php">Terms of Service</a>
+            </div>
         </footer>
     </main>
 </div>

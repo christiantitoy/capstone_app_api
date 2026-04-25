@@ -90,6 +90,8 @@ body {
         padding: 1rem 0;
         border-bottom: 1px solid #f1f5f9;
         display: block;
+        width: 100%;
+        text-align: center;
     }
 
     .nav-links a:last-child {

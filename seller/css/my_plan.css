@@ -710,14 +710,17 @@ input[type="radio"]:checked + .toggle-option {
     color: #856404;
 }
 
-footer {
-    margin-top: 2rem;
+footer.main-footer {
     text-align: center;
     padding: 2rem 0;
     color: #95a5a6;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     border-top: 1px solid #ebedf0;
 }
+
+.footer-links { margin-top: 0.6rem; }
+.footer-links a { color: var(--primary); margin: 0 1rem; text-decoration: none; }
+
 
 @media (max-width: 900px) {
     .dashboard-container { grid-template-columns: 1fr; }

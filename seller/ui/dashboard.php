@@ -27,7 +27,7 @@ if (!$seller_id) {
 <div class="dashboard-container">
     <aside class="sidebar">
         <div class="sidebar-header">
-            <h2>Seller<span>Dashboard</span></h2>
+            <h2>Palit<span>Ora</span></h2>
         </div>
         <nav class="sidebar-nav">
             <a href="/seller/ui/dashboard.php" class="nav-item active"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
@@ -135,11 +135,10 @@ if (!$seller_id) {
         </div>
 
         <footer class="main-footer">
-            <p>© <?= date('Y') ?> Seller Dashboard. All rights reserved.</p>
+            <p>© <?= date('Y') ?> PalitOra. All rights reserved.</p>
             <div class="footer-links">
-                <a href="#">Privacy Policy</a> •
-                <a href="#">Terms of Service</a> •
-                <a href="#">Help Center</a>
+                <a href="privacy.php">Privacy Policy</a> •
+                <a href="terms.php">Terms of Service</a>
             </div>
         </footer>
 

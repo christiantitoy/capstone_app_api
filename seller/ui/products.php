@@ -118,7 +118,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
     <!-- Sidebar -->
     <aside class="sidebar">
         <div class="sidebar-header">
-            <h2>Seller<span>Dashboard</span></h2>
+            <h2>Palit<span>Ora</span></h2>
         </div>
         <nav class="sidebar-nav">
             <a href="/seller/ui/dashboard.php" class="nav-item"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
@@ -165,7 +165,11 @@ require_once __DIR__ . '/../backend/session/auth.php';
         </div>
 
         <footer class="main-footer">
-            © 2026 Seller Dashboard. All rights reserved.
+            <p>© <?= date('Y') ?> PalitOra. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="privacy.php">Privacy Policy</a> •
+                <a href="terms.php">Terms of Service</a>
+            </div>
         </footer>
     </main>
 </div>

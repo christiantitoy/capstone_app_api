@@ -114,7 +114,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
 </div>
 
 <footer class="page-footer">
-    <p>&copy; 2026 PalitOra Seller Dashboard. All rights reserved.</p>
+    <p>&copy; 2026 PalitOra. All rights reserved.</p>
 </footer>
 
 <!-- QR Modal -->
