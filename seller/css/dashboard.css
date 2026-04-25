@@ -559,6 +559,11 @@ footer.main-footer {
 }
 
 @media (max-width: 600px) {
+
+    .main-content{
+        padding: 0.8rem;
+    }
+
     .table-container {
         margin: 0 -0.5rem;
         padding: 0 0.5rem;
