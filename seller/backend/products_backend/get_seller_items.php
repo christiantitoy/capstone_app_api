@@ -13,7 +13,7 @@ try {
         exit;
     }
     
-    // Query to get products with variation count
+    // Query to get ALL products including removed ones
     $stmt = $conn->prepare("
         SELECT 
             i.id,
