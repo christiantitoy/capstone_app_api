@@ -40,8 +40,8 @@ function displayProducts(products) {
     let html = '';
     
     products.forEach(product => {
-        // Skip removed products
-        if (product.status === 'removed') return;
+        // REMOVED: The line that skips removed products
+        // if (product.status === 'removed') return;
         
         // Determine stock badge class
         let stockClass = 'stock-ok';
@@ -91,8 +91,30 @@ function displayProducts(products) {
             </div>`;
         }
         
+        // Action buttons - disable for removed products
+        let actionButtonsHtml = '';
+        if (product.status === 'removed') {
+            actionButtonsHtml = `
+                <button class="action-btn edit-btn" disabled style="opacity: 0.5; cursor: not-allowed;">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                <button class="action-btn delete-btn" disabled style="opacity: 0.5; cursor: not-allowed;">
+                    <i class="fas fa-trash"></i> Remove
+                </button>
+            `;
+        } else {
+            actionButtonsHtml = `
+                <button class="action-btn edit-btn" onclick="event.stopPropagation(); editProduct(${product.id})">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                <button class="action-btn delete-btn" onclick="event.stopPropagation(); showDeleteModal(${product.id}, '${escapeHtml(product.product_name)}')">
+                    <i class="fas fa-trash"></i> Remove
+                </button>
+            `;
+        }
+        
         html += `
-            <div class="product-card" data-product-id="${product.id}" style="cursor: pointer;" onclick="viewProductDetails(${product.id})">
+            <div class="product-card" data-product-id="${product.id}" data-status="${product.status}" style="cursor: pointer;" onclick="viewProductDetails(${product.id})">
                 <div class="product-image">
                     ${product.main_image_url ? 
                         `<img src="${product.main_image_url}" alt="${escapeHtml(product.product_name)}">` : 
@@ -114,12 +136,7 @@ function displayProducts(products) {
                     </div>
                     ${variationsHtml}
                     <div class="product-actions">
-                        <button class="action-btn edit-btn" onclick="event.stopPropagation(); editProduct(${product.id})">
-                            <i class="fas fa-edit"></i> Edit
-                        </button>
-                        <button class="action-btn delete-btn" onclick="event.stopPropagation(); showDeleteModal(${product.id}, '${escapeHtml(product.product_name)}')">
-                            <i class="fas fa-trash"></i> Remove
-                        </button>
+                        ${actionButtonsHtml}
                     </div>
                 </div>
             </div>
