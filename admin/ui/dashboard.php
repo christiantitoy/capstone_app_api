@@ -134,7 +134,7 @@ require_once '../backend/session/auth_admin.php';
         </section>
 
         <!-- PENDING APPROVALS SECTION -->
-        <div class="full-width-section pending-approvals">
+        <!-- <div class="full-width-section pending-approvals">
             <div class="section-header">
                 <h2>Pending Approvals</h2>
                 <a href="#" class="view-all">View All</a>
@@ -156,7 +156,7 @@ require_once '../backend/session/auth_admin.php';
                     </tbody>
                 </table>
             </div>
-        </div>
+        </div> -->
 
         <footer class="main-footer">
             <p>© 2026 PalitOra Admin. All rights reserved.</p>
