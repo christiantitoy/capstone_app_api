@@ -15,9 +15,9 @@ try {
         exit;
     }
     
-    // Verify product belongs to seller and get current status
+    // Verify product belongs to seller and get product info
     $stmt = $conn->prepare("
-        SELECT id, status, product_name 
+        SELECT id, has_variations, product_name 
         FROM items 
         WHERE id = ? AND seller_id = ?
     ");
@@ -29,28 +29,35 @@ try {
         exit;
     }
     
-    // Check if product is already removed
-    if ($product['status'] === 'removed') {
-        echo json_encode(['success' => false, 'message' => 'Product is already removed']);
-        exit;
+    $conn->beginTransaction();
+    
+    // Delete variants first if product has variations
+    if ($product['has_variations'] == 1) {
+        $stmt = $conn->prepare("DELETE FROM item_variants WHERE item_id = ?");
+        $stmt->execute([$product_id]);
     }
     
-    // Update status to 'removed' instead of hard delete
-    $stmt = $conn->prepare("
-        UPDATE items 
-        SET status = 'removed', updated_at = CURRENT_TIMESTAMP 
-        WHERE id = ? AND seller_id = ?
-    ");
+    // Delete the main product permanently
+    $stmt = $conn->prepare("DELETE FROM items WHERE id = ? AND seller_id = ?");
     $stmt->execute([$product_id, $seller_id]);
     
-    echo json_encode([
-        'success' => true, 
-        'message' => 'Product has been removed successfully',
-        'product_name' => $product['product_name']
-    ]);
+    if ($stmt->rowCount() > 0) {
+        $conn->commit();
+        echo json_encode([
+            'success' => true, 
+            'message' => 'Product has been deleted permanently',
+            'product_name' => $product['product_name']
+        ]);
+    } else {
+        $conn->rollBack();
+        echo json_encode(['success' => false, 'message' => 'Failed to delete product']);
+    }
     exit;
     
 } catch (PDOException $e) {
+    if ($conn->inTransaction()) {
+        $conn->rollBack();
+    }
     error_log("Error: " . $e->getMessage());
     echo json_encode(['success' => false, 'message' => 'Database error occurred']);
     exit;
