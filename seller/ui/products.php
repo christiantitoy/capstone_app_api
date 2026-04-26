@@ -188,8 +188,8 @@ require_once __DIR__ . '/../backend/session/auth.php';
         <div class="modal-icon">
             <i class="fas fa-exclamation-triangle"></i>
         </div>
-        <h3 class="modal-title">Remove Product</h3>
-        <p class="modal-message" id="deleteModalMessage">Are you sure you want to remove this product?</p>
+        <h3 class="modal-title">Delete Product</h3>
+        <p class="modal-message" id="deleteModalMessage">Are you sure you want to delete this product?</p>
         <div class="modal-warning">
             <i class="fas fa-ban"></i>
             <span>This action cannot be undone!</span>
@@ -199,7 +199,7 @@ require_once __DIR__ . '/../backend/session/auth.php';
                 <i class="fas fa-times"></i> Cancel
             </button>
             <button class="modal-btn modal-btn-confirm" id="confirmDeleteBtn">
-                <i class="fas fa-trash"></i> Remove Product
+                <i class="fas fa-trash"></i> Delete Product
             </button>
         </div>
     </div>

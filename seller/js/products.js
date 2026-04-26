@@ -116,7 +116,7 @@ function displayProducts(products) {
                             <i class="fas fa-edit"></i> Edit
                         </button>
                         <button class="action-btn delete-btn" onclick="event.stopPropagation(); showDeleteModal(${product.id}, '${escapeHtml(product.product_name)}')">
-                            <i class="fas fa-trash"></i> Remove
+                            <i class="fas fa-trash"></i> Delete
                         </button>
                     </div>
                 </div>
@@ -137,7 +137,7 @@ function showDeleteModal(productId, productName) {
     
     const modal = document.getElementById('deleteModal');
     const messageElement = document.getElementById('deleteModalMessage');
-    messageElement.innerHTML = `Are you sure you want to remove "<strong>${escapeHtml(productName)}</strong>"?`;
+    messageElement.innerHTML = `Are you sure you want to delete "<strong>${escapeHtml(productName)}</strong>"?`;
     
     modal.classList.add('active');
 }
