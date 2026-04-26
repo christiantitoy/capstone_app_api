@@ -161,11 +161,7 @@ require_once '../backend/session/auth_admin.php';
         </div>
 
         <footer class="main-footer">
-            <p>© 2026 Admin Dashboard. All rights reserved.</p>
-            <div class="footer-links">
-                <a href="#">Privacy Policy</a> •
-                <a href="#">Terms of Service</a> •
-                <a href="#">Help Center</a>
+            <p>© 2026 PalitOra Admin. All rights reserved.</p>
             </div>
         </footer>
     </main>
