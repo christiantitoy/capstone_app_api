@@ -15,14 +15,26 @@ try {
 
     $rider_id = intval($_GET['rider_id']);
 
-    // 1️⃣ Revert expired locked orders to shipped
+    // 1️⃣ Revert expired locked orders back to shipped
     $updateSql = "UPDATE orders
                   SET status = 'shipped'
                   WHERE status = 'locked'
                   AND locked_at < NOW() - INTERVAL '30 seconds'";
     $conn->exec($updateSql);
 
-    // 2️⃣ Fetch all shipped orders, excluding ones cancelled by this rider
+    // 2️⃣ Promote orders to 'shipped' when ALL items are marked ready
+    $promoteSql = "UPDATE orders
+                   SET status = 'shipped'
+                   WHERE status = 'processing'
+                   AND NOT EXISTS (
+                       SELECT 1
+                       FROM order_items oi
+                       WHERE oi.order_id = orders.id
+                       AND oi.is_shipped IS DISTINCT FROM true
+                   )";
+    $conn->exec($promoteSql);
+
+    // 3️⃣ Fetch all shipped orders, excluding ones cancelled by this rider
     $sql = "SELECT
                 o.id,
                 o.buyer_id,
@@ -66,7 +78,7 @@ try {
             'paymentMethod' => $row['payment_method'],
             'subtotal' => (float)$row['subtotal'],
             'shippingFee' => (float)$row['shipping_fee'],
-            'platformFee' => (float)$row['platform_fee'], // Changed to platformFee
+            'platformFee' => (float)$row['platform_fee'],
             'totalAmount' => (float)$row['total_amount'],
             'status' => $row['status'],
             'createdAt' => $row['created_at'],
