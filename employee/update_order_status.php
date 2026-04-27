@@ -6,7 +6,6 @@ header("Access-Control-Allow-Headers: Content-Type");
 
 require_once '/var/www/html/connection/db_connection.php';
 
-// Function to call sendNotification.php internally
 function sendPushNotification($user_id, $title, $message) {
     $url = 'https://capstone-app-api-r1ux.onrender.com/connection/notif/sendNotification.php';
     
@@ -29,123 +28,106 @@ function sendPushNotification($user_id, $title, $message) {
     return json_decode($response, true);
 }
 
-// ❌ REMOVE THIS FUNCTION - It causes duplicates
-// function saveNotification($conn, $user_id, $title, $message) { ... }
-
-// Function to generate professional status messages
 function getStatusMessage($order_id, $status) {
     $messages = [
-        "packed" => "Great news! Your order #$order_id has been carefully packed and is ready for shipping. You'll receive tracking information once it's on the way.",
         "shipped" => "Your order #$order_id is on the way! It has been shipped and is now waiting for rider assignment. Track your delivery in real-time.",
-        "delivered" => "Your order #$order_id has been delivered successfully! Thank you for shopping with DaguitZone. We hope you love your purchase!",
-        "assigned" => "A rider has been assigned to your order #$order_id. They will pick up your package shortly.",
-        "complete" => "Order #$order_id has been completed. Thank you for choosing DaguitZone! Please rate your experience.",
-        "cancelled" => "Order #$order_id has been cancelled. If you have any questions, please contact our support team."
     ];
-    
     return $messages[$status] ?? "Your order #$order_id status has been updated to: $status";
 }
 
-// Function to get notification title
 function getStatusTitle($status) {
     $titles = [
-        "packed" => "📦 Order Packed & Ready",
         "shipped" => "🚚 Order On The Way",
-        "delivered" => "✅ Order Delivered",
-        "assigned" => "🛵 Rider Assigned",
-        "complete" => "🎉 Order Complete",
-        "cancelled" => "❌ Order Cancelled"
     ];
-    
     return $titles[$status] ?? "📋 Order Status Update";
 }
 
-// Statuses that should trigger notifications
-function shouldSendNotification($status) {
-    $notify_statuses = ["packed", "shipped", "delivered", "assigned", "complete", "cancelled"];
-    return in_array($status, $notify_statuses);
-}
-
 try {
-    // Get inputs
-    $buyer_id = $_POST['buyer_id'] ?? $_GET['buyer_id'] ?? null;
-    $order_id = $_POST['order_id'] ?? $_GET['order_id'] ?? null;
-    $status   = $_POST['status'] ?? $_GET['status'] ?? null;
+    $seller_id = $_POST['seller_id'] ?? $_GET['seller_id'] ?? null;
+    $order_id  = $_POST['order_id'] ?? $_GET['order_id'] ?? null;
 
-    if (!$buyer_id || !$order_id || !$status) {
+    if (!$seller_id || !$order_id) {
         echo json_encode([
             "status" => "error",
-            "message" => "buyer_id, order_id and status are required"
+            "message" => "seller_id and order_id are required"
         ]);
         exit;
     }
 
-    // Allowed statuses (match ENUM)
-    $allowed_statuses = [
-        "pending",
-        "packed",
-        "shipped",
-        "delivered",
-        "locked",
-        "assigned",
-        "reassigned",
-        "complete",
-        "cancelled"
-    ];
+    $seller_id = intval($seller_id);
+    $order_id  = intval($order_id);
 
-    if (!in_array($status, $allowed_statuses)) {
-        echo json_encode([
-            "status" => "error",
-            "message" => "Invalid status value"
-        ]);
-        exit;
-    }
+    // Update only this seller's order_items
+    $updateSql = "UPDATE order_items oi
+                  SET is_shipped = true
+                  FROM items i
+                  WHERE oi.product_id = i.id
+                  AND oi.order_id = :order_id
+                  AND i.seller_id = :seller_id
+                  AND oi.is_shipped IS DISTINCT FROM true";
 
-    $buyer_id = intval($buyer_id);
-    $order_id = intval($order_id);
-
-    // Update query
-    $sql = "UPDATE orders
-            SET status = :status, updated_at = NOW()
-            WHERE id = :order_id";
-
-    $stmt = $conn->prepare($sql);
+    $stmt = $conn->prepare($updateSql);
     $stmt->execute([
-        ':status' => $status,
-        ':order_id' => $order_id
+        ':order_id' => $order_id,
+        ':seller_id' => $seller_id
     ]);
 
-    $rowCount = $stmt->rowCount();
+    $updatedRows = $stmt->rowCount();
 
-    if ($rowCount > 0) {
-        
-        $notification_sent = false;
-        $notification_saved = false;
-        
-        // Send notification for specific statuses
-        if (shouldSendNotification($status)) {
-            $title = getStatusTitle($status);
-            $message = getStatusMessage($order_id, $status);
-            
-            // ✅ JUST call sendPushNotification - it handles saving AND sending
-            $notification_result = sendPushNotification($buyer_id, $title, $message);
-            $notification_sent = $notification_result['success'] ?? false;
-            $notification_saved = $notification_result['notification_saved'] ?? false;
-        }
-        
-        echo json_encode([
-            "status" => "success",
-            "message" => "Order status updated successfully",
-            "order_id" => $order_id,
-            "new_status" => $status,
-            "notification_saved" => $notification_saved,
-            "notification_sent" => $notification_sent
-        ]);
-        
-    } else {
+    if ($updatedRows === 0) {
         echo json_encode([
             "status" => "error",
-            "message" => "Order not found or status already the same"
+            "message" => "No items found for this seller in this order, or items already marked ready"
+        ]);
+        exit;
+    }
+
+    // Check if ALL items are ready
+    $checkSql = "SELECT COUNT(*) as pending_count
+                 FROM order_items
+                 WHERE order_id = :order_id
+                 AND is_shipped IS DISTINCT FROM true";
+
+    $checkStmt = $conn->prepare($checkSql);
+    $checkStmt->execute([':order_id' => $order_id]);
+    $result = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+    $allReady = ($result['pending_count'] == 0);
+    $notification_sent = false;
+
+    if ($allReady) {
+        // Promote order + get buyer_id
+        $promoteSql = "UPDATE orders
+                       SET status = 'shipped', updated_at = NOW()
+                       WHERE id = :order_id
+                       RETURNING buyer_id";
+
+        $promoteStmt = $conn->prepare($promoteSql);
+        $promoteStmt->execute([':order_id' => $order_id]);
+        $orderData = $promoteStmt->fetch(PDO::FETCH_ASSOC);
+
+        // Send notification
+        if ($orderData && $orderData['buyer_id']) {
+            $title = getStatusTitle('shipped');
+            $message = getStatusMessage($order_id, 'shipped');
+            $notification_result = sendPushNotification($orderData['buyer_id'], $title, $message);
+            $notification_sent = $notification_result['success'] ?? false;
+        }
+
+        echo json_encode([
+            "status" => "success",
+            "message" => "All items ready. Order has been marked as shipped.",
+            "order_id" => $order_id,
+            "order_status" => "shipped",
+            "notification_sent" => $notification_sent
+        ]);
+    } else {
+        echo json_encode([
+            "status" => "success",
+            "message" => "Seller items marked as ready. Waiting for other sellers.",
+            "order_id" => $order_id,
+            "items_updated" => $updatedRows,
+            "pending_items" => (int)$result['pending_count']
         ]);
     }
 
