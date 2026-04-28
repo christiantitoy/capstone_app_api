@@ -124,6 +124,7 @@ try {
                 'createdAt'     => $row['order_created_at'],
                 'updatedAt'     => $row['order_updated_at'],
                 'lockedAt'      => $row['locked_at'],
+                'deliveryOtp'   => $row['delivery_otp'] ?? null,
 
                 // Address fields
                 'recipientName'  => $row['recipient_name']  ?? null,
