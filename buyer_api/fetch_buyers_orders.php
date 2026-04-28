@@ -20,6 +20,7 @@ try {
     // ────────────────────────────────────────────────────────────────
     // Comprehensive query: orders → items → item_variants → stores → sellers
     // FIXED: Changed o.discount to o.platform_fee
+    // ADDED: o.delivery_otp
     // ────────────────────────────────────────────────────────────────
     $sql = "
         SELECT 
@@ -36,6 +37,7 @@ try {
             o.created_at            AS order_created_at,
             o.updated_at            AS order_updated_at,
             o.locked_at,
+            o.delivery_otp,              -- ✅ ADDED: This was missing!
 
             -- Buyer Address
             ba.recipient_name,
@@ -118,13 +120,13 @@ try {
                 'paymentMethod' => $row['payment_method'],
                 'subtotal'      => (float)$row['subtotal'],
                 'shippingFee'   => (float)$row['shipping_fee'],
-                'platformFee'   => (float)($row['platform_fee'] ?? 0),  // ✅ FIXED: Changed from discount
+                'platformFee'   => (float)($row['platform_fee'] ?? 0),
                 'totalAmount'   => (float)$row['total_amount'],
                 'status'        => $row['order_status'],
                 'createdAt'     => $row['order_created_at'],
                 'updatedAt'     => $row['order_updated_at'],
                 'lockedAt'      => $row['locked_at'],
-                'deliveryOtp'   => $row['delivery_otp'] ?? null,
+                'deliveryOtp'   => $row['delivery_otp'] ?? null,  // ✅ Now will have value
 
                 // Address fields
                 'recipientName'  => $row['recipient_name']  ?? null,
@@ -148,12 +150,10 @@ try {
         $productImageUrls = [];
         if (!empty($row['product_image_urls'])) {
             if (is_string($row['product_image_urls'])) {
-                // Try to decode as JSON first
                 $decoded = json_decode($row['product_image_urls'], true);
                 if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
                     $productImageUrls = $decoded;
                 } else {
-                    // Fallback to comma-separated
                     $productImageUrls = explode(',', $row['product_image_urls']);
                 }
             }
@@ -236,7 +236,7 @@ try {
     echo json_encode([
         'status'  => 'error',
         'message' => 'Database error occurred',
-        'debug' => $e->getMessage(),  // Remove in production
+        'debug' => $e->getMessage(),
         'code' => $e->getCode()
     ]);
 } catch (Exception $e) {
