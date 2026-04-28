@@ -122,17 +122,49 @@ try {
     $delivery_id = null;
     $rider_id = null;
     $order_id = null;
+    $otp_code = null;  // ✅ Added OTP variable
     $proof_image_path = null;
 
     // Handle multipart form data (from Android)
     $delivery_id = $_POST['delivery_id'] ?? null;
     $rider_id = $_POST['rider_id'] ?? null;
     $order_id = $_POST['order_id'] ?? null;
+    $otp_code = $_POST['otp_code'] ?? null;  // ✅ Get OTP from request
 
     if (!$delivery_id || !$rider_id || !$order_id) {
         echo json_encode([
             "success" => false,
             "message" => "Missing delivery_id, rider_id, or order_id"
+        ]);
+        exit;
+    }
+
+    // ✅ Validate OTP
+    if (!$otp_code) {
+        echo json_encode([
+            "success" => false,
+            "message" => "OTP code is required"
+        ]);
+        exit;
+    }
+
+    // ✅ Check if OTP matches the order's delivery_otp
+    $otpStmt = $conn->prepare("SELECT delivery_otp FROM orders WHERE id = ?");
+    $otpStmt->execute([$order_id]);
+    $orderData = $otpStmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$orderData) {
+        echo json_encode([
+            "success" => false,
+            "message" => "Order not found"
+        ]);
+        exit;
+    }
+
+    if ($orderData['delivery_otp'] !== $otp_code) {
+        echo json_encode([
+            "success" => false,
+            "message" => "Invalid OTP. Please check the code and try again."
         ]);
         exit;
     }
