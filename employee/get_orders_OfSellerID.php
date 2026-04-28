@@ -25,7 +25,7 @@ try {
 
     $seller_id = intval($seller_id);
 
-    // Prepare SQL with optional filters - FIXED TO MATCH YOUR ACTUAL TABLE STRUCTURE
+    // Prepare SQL with optional filters
     $sql = "SELECT
                 o.id AS order_id,
                 o.buyer_id,
@@ -53,6 +53,7 @@ try {
                 oi.unit_price,
                 oi.total_price,
                 oi.variation_id,
+                oi.is_shipped,
                 iv.options_json_value AS variation,
                 iv.sku,
                 iv.image_urls
@@ -93,12 +94,41 @@ try {
     $stmt->execute();
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    // ✅ NEW: Check which orders have ALL seller items ready
+    $readyOrders = [];
+    $orderSellerItems = [];
+
+    foreach ($rows as $row) {
+        $oid = (int)$row['order_id'];
+        if (!isset($orderSellerItems[$oid])) {
+            $orderSellerItems[$oid] = ['total' => 0, 'ready' => 0];
+        }
+        $orderSellerItems[$oid]['total']++;
+        if ($row['is_shipped'] === true) {
+            $orderSellerItems[$oid]['ready']++;
+        }
+    }
+
+    foreach ($orderSellerItems as $oid => $counts) {
+        if ($counts['total'] > 0 && $counts['total'] === $counts['ready']) {
+            $readyOrders[$oid] = true;
+        }
+    }
+
     $orders = [];
 
     foreach ($rows as $row) {
+        $oid = (int)$row['order_id'];
+
+        // ✅ Override status if all seller items are ready
+        $displayStatus = $row['status'];
+        if (isset($readyOrders[$oid]) && $row['status'] === 'packed') {
+            $displayStatus = 'shipped';
+        }
+
         // Format the order data
         $order = [
-            "order_id" => (int)$row['order_id'],
+            "order_id" => $oid,
             "buyer_id" => (int)$row['buyer_id'],
             "buyer_name" => $row['buyer_name'],
             "buyer_email" => $row['buyer_email'],
@@ -107,7 +137,7 @@ try {
             "shipping_fee" => (float)$row['shipping_fee'],
             "platform_fee" => (float)$row['platform_fee'],
             "total_amount" => (float)$row['total_amount'],
-            "status" => $row['status'],
+            "status" => $displayStatus,
             "order_date" => $row['order_date'],
             "shipping_info" => [
                 "recipient_name" => $row['recipient_name'],
