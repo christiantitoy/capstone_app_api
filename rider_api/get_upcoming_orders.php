@@ -1,77 +1,97 @@
 <?php
-header("Content-Type: application/json");
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type");
+header('Content-Type: application/json');
 
 require_once '/var/www/html/connection/db_connection.php';
 
 try {
-    $buyer_id = $_POST['buyer_id'] ?? $_GET['buyer_id'] ?? null;
-    $order_id = $_POST['order_id'] ?? $_GET['order_id'] ?? null;
-    $status   = $_POST['status'] ?? $_GET['status'] ?? null;
-
-    if (!$buyer_id || !$order_id || !$status) {
+    // Check if rider_id is provided
+    if (!isset($_GET['rider_id'])) {
         echo json_encode([
-            "status" => "error",
-            "message" => "buyer_id, order_id and status are required"
+            'status' => 'error',
+            'message' => 'Rider ID is required'
         ]);
         exit;
     }
 
-    $allowed_statuses = [
-        "pending", "packed", "shipped", "delivered", "locked",
-        "assigned", "reassigned", "complete", "cancelled"
-    ];
+    $rider_id = intval($_GET['rider_id']);
 
-    if (!in_array($status, $allowed_statuses)) {
-        echo json_encode([
-            "status" => "error",
-            "message" => "Invalid status value"
-        ]);
-        exit;
-    }
+    // 1️⃣ Revert expired locked orders to shipped
+    $updateSql = "UPDATE orders
+                  SET status = 'shipped'
+                  WHERE status = 'locked'
+                  AND locked_at < NOW() - INTERVAL '30 seconds'";
+    $conn->exec($updateSql);
 
-    $buyer_id = intval($buyer_id);
-    $order_id = intval($order_id);
-
-    $sql = "UPDATE orders
-            SET status = :status, updated_at = NOW()
-            WHERE id = :order_id";
+    // 2️⃣ Fetch all shipped orders, excluding ones cancelled by this rider
+    $sql = "SELECT
+                o.id,
+                o.buyer_id,
+                o.address_id,
+                o.payment_method,
+                o.subtotal,
+                o.shipping_fee,
+                o.platform_fee,
+                o.total_amount,
+                o.status,
+                o.created_at,
+                ba.recipient_name,
+                ba.phone_number,
+                ba.full_address,
+                ba.gps_location
+            FROM orders o
+            LEFT JOIN buyer_addresses ba ON o.address_id = ba.id
+            WHERE o.status = 'shipped'
+            AND NOT EXISTS (
+                SELECT 1
+                FROM order_deliveries od
+                WHERE od.order_id = o.id
+                AND od.rider_id = :rider_id
+                AND od.status = 'cancelled'
+            )
+            ORDER BY o.created_at ASC";
 
     $stmt = $conn->prepare($sql);
-    $stmt->execute([
-        ':status' => $status,
-        ':order_id' => $order_id
-    ]);
+    $stmt->bindParam(':rider_id', $rider_id, PDO::PARAM_INT);
+    $stmt->execute();
 
-    $rowCount = $stmt->rowCount();
+    $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    if ($rowCount > 0) {
-        echo json_encode([
-            "status" => "success",
-            "message" => "Order status updated successfully",
-            "order_id" => $order_id,
-            "new_status" => $status
-        ]);
-    } else {
-        echo json_encode([
-            "status" => "error",
-            "message" => "Order not found or status already the same"
-        ]);
+    // Format the orders array
+    $formattedOrders = [];
+    foreach ($orders as $row) {
+        $formattedOrders[] = [
+            'id' => (int)$row['id'],
+            'buyerId' => (int)$row['buyer_id'],
+            'addressId' => (int)$row['address_id'],
+            'paymentMethod' => $row['payment_method'],
+            'subtotal' => (float)$row['subtotal'],
+            'shippingFee' => (float)$row['shipping_fee'],
+            'platformFee' => (float)$row['platform_fee'], // Changed to platformFee
+            'totalAmount' => (float)$row['total_amount'],
+            'status' => $row['status'],
+            'createdAt' => $row['created_at'],
+            'recipientName' => $row['recipient_name'],
+            'phoneNumber' => $row['phone_number'],
+            'fullAddress' => $row['full_address'],
+            'gpsLocation' => $row['gps_location']
+        ];
     }
+
+    echo json_encode([
+        'status' => 'success',
+        'orders' => $formattedOrders,
+        'count' => count($formattedOrders)
+    ]);
 
 } catch (PDOException $e) {
     echo json_encode([
-        "status" => "error",
-        "message" => "Database error: " . $e->getMessage()
+        'status' => 'error',
+        'message' => 'Database error: ' . $e->getMessage()
     ]);
 } catch (Exception $e) {
     echo json_encode([
-        "status" => "error",
-        "message" => $e->getMessage()
+        'status' => 'error',
+        'message' => $e->getMessage()
     ]);
 }
-
-$conn = null;
 ?>
