@@ -45,6 +45,9 @@ try {
 
     $conn->beginTransaction();
 
+    // ✅ Generate 8-character numeric OTP
+    $deliveryOtp = str_pad(random_int(0, 99999999), 8, '0', STR_PAD_LEFT);
+
     // Insert order with status 'pending_payment' for GCash
     $orderSql = "
         INSERT INTO orders (
@@ -55,6 +58,7 @@ try {
             shipping_fee,
             platform_fee,
             total_amount,
+            delivery_otp,      -- ✅ Added delivery_otp
             status,
             created_at,
             updated_at
@@ -67,6 +71,7 @@ try {
             :shipping_fee,
             :platform_fee,
             :total_amount,
+            :delivery_otp,      -- ✅ Added delivery_otp
             'pending_payment',
             CURRENT_TIMESTAMP,
             CURRENT_TIMESTAMP
@@ -82,7 +87,8 @@ try {
         ':subtotal' => $data['subtotal'],
         ':shipping_fee' => $data['shipping_fee'],
         ':platform_fee' => $data['platform_fee'],
-        ':total_amount' => $data['total_amount']
+        ':total_amount' => $data['total_amount'],
+        ':delivery_otp' => $deliveryOtp     // ✅ Added delivery_otp
     ]);
 
     $orderId = $conn->lastInsertId();
@@ -167,7 +173,8 @@ try {
     echo json_encode([
         "status" => "success",
         "message" => "GCash order placed successfully. Awaiting payment verification.",
-        "order_id" => $orderId
+        "order_id" => $orderId,
+        "delivery_otp" => $deliveryOtp   // ✅ Return OTP in response
     ]);
 
 } catch (PDOException $e) {

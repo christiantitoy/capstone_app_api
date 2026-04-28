@@ -47,6 +47,9 @@ try {
 
     $conn->beginTransaction();
 
+    // ✅ Generate 8-character numeric OTP
+    $deliveryOtp = str_pad(random_int(0, 99999999), 8, '0', STR_PAD_LEFT);
+
     // ✅ INSERT ORDER - Changed column from 'discount' to 'platform_fee'
     $orderSql = "
         INSERT INTO orders (
@@ -57,6 +60,7 @@ try {
             shipping_fee,
             platform_fee,      -- ✅ Changed from discount
             total_amount,
+            delivery_otp,      -- ✅ Added delivery_otp
             status,
             created_at,
             updated_at
@@ -69,6 +73,7 @@ try {
             :shipping_fee,
             :platform_fee,      -- ✅ Changed from discount
             :total_amount,
+            :delivery_otp,      -- ✅ Added delivery_otp
             'pending',
             CURRENT_TIMESTAMP,
             CURRENT_TIMESTAMP
@@ -84,7 +89,8 @@ try {
         ':subtotal' => $data['subtotal'],
         ':shipping_fee' => $data['shipping_fee'],
         ':platform_fee' => $data['platform_fee'],      // ✅ Changed from discount
-        ':total_amount' => $data['total_amount']
+        ':total_amount' => $data['total_amount'],
+        ':delivery_otp' => $deliveryOtp                 // ✅ Added delivery_otp
     ]);
 
     $orderId = $conn->lastInsertId();
@@ -176,7 +182,8 @@ try {
     echo json_encode([
         "status" => "success",
         "message" => "Order placed successfully",
-        "order_id" => $orderId
+        "order_id" => $orderId,
+        "delivery_otp" => $deliveryOtp   // ✅ Return OTP in response
     ]);
 
 } catch (PDOException $e) {
