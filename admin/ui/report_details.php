@@ -341,94 +341,6 @@ $delivery = $deliveryStmt->fetch(PDO::FETCH_ASSOC);
             font-weight: 500;
         }
 
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        }
-
-        .modal-header {
-            padding: 20px 25px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-header h3 {
-            font-size: 18px;
-            color: #2c3e50;
-        }
-
-        .close-modal {
-            font-size: 24px;
-            color: #7f8c8d;
-            cursor: pointer;
-            background: none;
-            border: none;
-        }
-
-        .close-modal:hover {
-            color: #2c3e50;
-        }
-
-        .modal-body {
-            padding: 25px;
-        }
-
-        .modal-footer {
-            padding: 20px 25px;
-            border-top: 1px solid #eee;
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: #2c3e50;
-            font-size: 14px;
-        }
-
-        .form-select {
-            width: 100%;
-            padding: 10px 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 14px;
-            color: #2c3e50;
-            background: white;
-            cursor: pointer;
-        }
-
-        .form-select:focus {
-            outline: none;
-            border-color: #3498db;
-            box-shadow: 0 0 0 3px rgba(52,152,219,0.1);
-        }
-
         /* Notification */
         #notificationContainer {
             position: fixed;
@@ -529,9 +441,6 @@ $delivery = $deliveryStmt->fetch(PDO::FETCH_ASSOC);
                 </button>
             <?php endif; ?>
             
-            <button class="btn btn-primary" onclick="openStatusModal()">
-                <i class="fas fa-edit"></i> Change Status
-            </button>
             <button class="btn btn-outline" onclick="window.print()">
                 <i class="fas fa-print"></i> Print
             </button>
@@ -690,91 +599,15 @@ $delivery = $deliveryStmt->fetch(PDO::FETCH_ASSOC);
     </div>
 </div>
 
-<!-- Status Update Modal -->
-<div id="statusModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Update Report Status</h3>
-            <button class="close-modal" onclick="closeStatusModal()">&times;</button>
-        </div>
-        <div class="modal-body">
-            <p style="color: #7f8c8d; margin-bottom: 15px;">
-                Change status for Report #<?= $reportId ?>
-            </p>
-            <div class="form-group">
-                <label for="newStatusSelect">New Status</label>
-                <select id="newStatusSelect" class="form-select">
-                    <option value="pending" <?= $report['status'] === 'pending' ? 'selected' : '' ?>>Pending</option>
-                    <option value="reviewing" <?= $report['status'] === 'reviewing' ? 'selected' : '' ?>>Reviewing</option>
-                    <option value="resolved" <?= $report['status'] === 'resolved' ? 'selected' : '' ?>>Resolved</option>
-                    <option value="closed" <?= $report['status'] === 'closed' ? 'selected' : '' ?>>Closed</option>
-                </select>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-outline" onclick="closeStatusModal()">Cancel</button>
-            <button class="btn btn-primary" id="confirmStatusBtn" onclick="updateReportStatus()">
-                <i class="fas fa-check"></i> Update Status
-            </button>
-        </div>
-    </div>
-</div>
-
 <!-- Notification Container -->
 <div id="notificationContainer"></div>
 
 <script>
     const reportId = <?= $reportId ?>;
 
-    function openStatusModal() {
-        document.getElementById('statusModal').style.display = 'flex';
-    }
-
-    function closeStatusModal() {
-        document.getElementById('statusModal').style.display = 'none';
-    }
-
-    async function updateReportStatus() {
-        const newStatus = document.getElementById('newStatusSelect').value;
-        const confirmBtn = document.getElementById('confirmStatusBtn');
-        const originalHTML = confirmBtn.innerHTML;
-
-        confirmBtn.disabled = true;
-        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
-
-        try {
-            const response = await fetch('/admin/backend/reports/get_buyer_reports.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    report_id: reportId,
-                    status: newStatus
-                })
-            });
-
-            const result = await response.json();
-
-            if (result.status === 'success') {
-                closeStatusModal();
-                showNotification('success', 'Report status updated successfully!');
-                setTimeout(() => location.reload(), 1000);
-            } else {
-                showNotification('error', 'Failed to update status: ' + result.message);
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            showNotification('error', 'Network error occurred');
-        } finally {
-            confirmBtn.disabled = false;
-            confirmBtn.innerHTML = originalHTML;
-        }
-    }
-
     async function quickStatusUpdate(newStatus) {
         try {
-            const response = await fetch('/admin/backend/reports/get_buyer_reports.php', {
+            const response = await fetch('/admin/backend/reports/update_report_status.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -791,7 +624,7 @@ $delivery = $deliveryStmt->fetch(PDO::FETCH_ASSOC);
                 showNotification('success', `Report marked as ${newStatus}!`);
                 setTimeout(() => location.reload(), 1000);
             } else {
-                showNotification('error', 'Failed to update status');
+                showNotification('error', 'Failed to update status: ' + result.message);
             }
         } catch (error) {
             console.error('Error:', error);
@@ -820,21 +653,6 @@ $delivery = $deliveryStmt->fetch(PDO::FETCH_ASSOC);
             }
         }, 5000);
     }
-
-    // Close modal on outside click
-    window.onclick = function(event) {
-        const modal = document.getElementById('statusModal');
-        if (event.target === modal) {
-            closeStatusModal();
-        }
-    };
-
-    // Close modal on Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeStatusModal();
-        }
-    });
 </script>
 
 </body>
