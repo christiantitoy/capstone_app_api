@@ -6,14 +6,18 @@ header('Access-Control-Allow-Methods: POST');
 require_once '/var/www/html/connection/db_connection.php';
 
 try {
-    // ────────────────────────────────────────────────────────────────
-    // Get inputs (POST only for data creation)
-    // ────────────────────────────────────────────────────────────────
-    $delivery_id = $_POST['delivery_id'] ?? null;
-    $buyer_id    = $_POST['buyer_id']    ?? null;
-    $issue_type  = $_POST['issue_type']  ?? null;
+    // ───────────────────────────────────────────────
+    // Get inputs (supports both form-data & JSON)
+    // ───────────────────────────────────────────────
+    $data = json_decode(file_get_contents("php://input"), true);
 
-    // Validate required fields
+    $delivery_id = $data['delivery_id'] ?? $_POST['delivery_id'] ?? null;
+    $buyer_id    = $data['buyer_id']    ?? $_POST['buyer_id'] ?? null;
+    $issue_type  = $data['issue_type']  ?? $_POST['issue_type'] ?? null;
+
+    // ───────────────────────────────────────────────
+    // Validate inputs
+    // ───────────────────────────────────────────────
     if (!$delivery_id || !is_numeric($delivery_id)) {
         http_response_code(400);
         echo json_encode([
@@ -45,22 +49,22 @@ try {
     $buyer_id    = (int)$buyer_id;
     $issue_type  = trim($issue_type);
 
-    // ────────────────────────────────────────────────────────────────
-    // Verify the delivery belongs to this buyer's order
-    // ────────────────────────────────────────────────────────────────
-    $verifySql = "SELECT od.id, od.order_id, od.status
+    // ───────────────────────────────────────────────
+    // Verify delivery belongs to buyer
+    // ───────────────────────────────────────────────
+    $verifySql = "SELECT od.id
                   FROM order_deliveries od
                   JOIN orders o ON od.order_id = o.id
                   WHERE od.id = :delivery_id 
                   AND o.buyer_id = :buyer_id";
+
     $verifyStmt = $conn->prepare($verifySql);
     $verifyStmt->execute([
         ':delivery_id' => $delivery_id,
         ':buyer_id'    => $buyer_id
     ]);
-    $delivery = $verifyStmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$delivery) {
+    if (!$verifyStmt->fetch()) {
         http_response_code(404);
         echo json_encode([
             'status'  => 'error',
@@ -69,33 +73,31 @@ try {
         exit;
     }
 
-    // ────────────────────────────────────────────────────────────────
-    // Check for duplicate (same buyer, same delivery, same issue)
-    // ────────────────────────────────────────────────────────────────
+    // ───────────────────────────────────────────────
+    // STRICT DUPLICATE CHECK (ONLY delivery_id)
+    // ───────────────────────────────────────────────
     $dupSql = "SELECT id FROM buyer_reports 
-               WHERE delivery_id = :delivery_id 
-               AND buyer_id = :buyer_id 
-               AND issue_type = :issue_type
-               AND status = 'pending'";
+               WHERE delivery_id = :delivery_id";
+
     $dupStmt = $conn->prepare($dupSql);
     $dupStmt->execute([
-        ':delivery_id' => $delivery_id,
-        ':buyer_id'    => $buyer_id,
-        ':issue_type'  => $issue_type
+        ':delivery_id' => $delivery_id
     ]);
 
     if ($dupStmt->fetch()) {
         http_response_code(409);
         echo json_encode([
             'status'  => 'error',
-            'message' => 'A pending report with this issue already exists for this delivery'
+            'message' => 'A report already exists for this delivery'
         ]);
         exit;
     }
 
-    // ────────────────────────────────────────────────────────────────
-    // Insert the report
-    // ────────────────────────────────────────────────────────────────
+    // ───────────────────────────────────────────────
+    // Insert report
+    // ───────────────────────────────────────────────
+
+    // ⚠️ If PostgreSQL (RETURNING works)
     $insertSql = "INSERT INTO buyer_reports (delivery_id, buyer_id, issue_type)
                   VALUES (:delivery_id, :buyer_id, :issue_type)
                   RETURNING id, created_at";
@@ -109,9 +111,9 @@ try {
 
     $report = $insertStmt->fetch(PDO::FETCH_ASSOC);
 
-    // ────────────────────────────────────────────────────────────────
+    // ───────────────────────────────────────────────
     // Success response
-    // ────────────────────────────────────────────────────────────────
+    // ───────────────────────────────────────────────
     http_response_code(201);
     echo json_encode([
         'status'  => 'success',
@@ -127,12 +129,23 @@ try {
     ], JSON_PRETTY_PRINT);
 
 } catch (PDOException $e) {
-    http_response_code(500);
-    echo json_encode([
-        'status'  => 'error',
-        'message' => 'Database error occurred',
-        'debug'   => $e->getMessage()
-    ]);
+
+    // Handle UNIQUE constraint (extra safety)
+    if ($e->getCode() == '23505') { // PostgreSQL duplicate error
+        http_response_code(409);
+        echo json_encode([
+            'status'  => 'error',
+            'message' => 'A report already exists for this delivery'
+        ]);
+    } else {
+        http_response_code(500);
+        echo json_encode([
+            'status'  => 'error',
+            'message' => 'Database error occurred',
+            'debug'   => $e->getMessage()
+        ]);
+    }
+
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode([
