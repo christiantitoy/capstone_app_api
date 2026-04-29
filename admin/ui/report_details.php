@@ -1,12 +1,39 @@
 <?php
 // /admin/ui/report_details.php
 require_once '../backend/session/auth_admin.php';
+require_once '/var/www/html/connection/db_connection.php';
 
 $reportId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if (!$reportId) {
     header('Location: buyer_reports.php');
     exit;
 }
+
+// Fetch report details
+$reportSql = "SELECT id, delivery_id, buyer_id, issue_type, status, created_at, updated_at 
+              FROM buyer_reports WHERE id = :id";
+$reportStmt = $conn->prepare($reportSql);
+$reportStmt->execute([':id' => $reportId]);
+$report = $reportStmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$report) {
+    header('Location: buyer_reports.php');
+    exit;
+}
+
+// Fetch buyer details
+$buyerSql = "SELECT id, username, email, avatar_url FROM buyers WHERE id = :id";
+$buyerStmt = $conn->prepare($buyerSql);
+$buyerStmt->execute([':id' => $report['buyer_id']]);
+$buyer = $buyerStmt->fetch(PDO::FETCH_ASSOC);
+
+// Fetch delivery details
+$deliverySql = "SELECT id, order_id, rider_id, status, assigned_at, picked_up_at, 
+                       completed_at, abandoned_at, cancelled_at, created_at, updated_at 
+                FROM order_deliveries WHERE id = :id";
+$deliveryStmt = $conn->prepare($deliverySql);
+$deliveryStmt->execute([':id' => $report['delivery_id']]);
+$delivery = $deliveryStmt->fetch(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -143,66 +170,6 @@ if (!$reportId) {
             cursor: not-allowed;
         }
 
-        /* Loading State */
-        .loading-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 80px 20px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid #e9ecef;
-            border-top-color: #3498db;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-bottom: 20px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .loading-state p {
-            color: #7f8c8d;
-            font-size: 16px;
-        }
-
-        /* Error State */
-        .error-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 80px 20px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            text-align: center;
-        }
-
-        .error-state i {
-            font-size: 48px;
-            color: #e74c3c;
-            margin-bottom: 20px;
-        }
-
-        .error-state h3 {
-            color: #2c3e50;
-            margin-bottom: 10px;
-        }
-
-        .error-state p {
-            color: #7f8c8d;
-            margin-bottom: 20px;
-        }
-
         /* Cards */
         .card {
             background: white;
@@ -290,6 +257,32 @@ if (!$reportId) {
             border: 1px solid #ef9a9a;
         }
 
+        .status-assigned {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .status-picked_up {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .status-delivering {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .status-completed {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-abandoned,
+        .status-cancelled {
+            background: #fce4ec;
+            color: #c62828;
+        }
+
         /* Info Grid */
         .info-grid {
             display: grid;
@@ -346,64 +339,6 @@ if (!$reportId) {
             font-size: 14px;
             color: #2c3e50;
             font-weight: 500;
-        }
-
-        /* Delivery Timeline */
-        .timeline {
-            position: relative;
-            padding-left: 30px;
-        }
-
-        .timeline::before {
-            content: '';
-            position: absolute;
-            left: 8px;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background: #e9ecef;
-        }
-
-        .timeline-item {
-            position: relative;
-            margin-bottom: 25px;
-        }
-
-        .timeline-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .timeline-dot {
-            position: absolute;
-            left: -26px;
-            top: 4px;
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            background: white;
-            border: 3px solid #3498db;
-            z-index: 1;
-        }
-
-        .timeline-dot.completed {
-            background: #27ae60;
-            border-color: #27ae60;
-        }
-
-        .timeline-dot.active {
-            background: #f39c12;
-            border-color: #f39c12;
-        }
-
-        .timeline-content h4 {
-            font-size: 15px;
-            color: #2c3e50;
-            margin-bottom: 4px;
-        }
-
-        .timeline-content p {
-            font-size: 13px;
-            color: #7f8c8d;
         }
 
         /* Modal */
@@ -525,10 +460,6 @@ if (!$reportId) {
             background: #e74c3c;
         }
 
-        .notification-info {
-            background: #3498db;
-        }
-
         .notification-close {
             background: none;
             border: none;
@@ -544,47 +475,27 @@ if (!$reportId) {
         }
 
         @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
             .report-details-container {
                 padding: 15px;
             }
-
             .info-grid {
                 grid-template-columns: 1fr;
             }
-
             .report-status-header {
                 flex-direction: column;
                 align-items: flex-start;
             }
-
             .header-actions {
                 flex-direction: column;
             }
-
             .btn {
                 width: 100%;
                 justify-content: center;
-            }
-        }
-
-        @media print {
-            .header-actions,
-            .back-btn,
-            .modal,
-            #notificationContainer {
-                display: none !important;
             }
         }
     </style>
@@ -599,73 +510,183 @@ if (!$reportId) {
         </a>
         <h1>Report #<?= $reportId ?> Details</h1>
         <p class="subtitle">View and manage buyer report information</p>
-        <div class="header-actions" id="headerActions"></div>
+        <div class="header-actions">
+            <?php if ($report['status'] === 'pending'): ?>
+                <button class="btn btn-warning" onclick="quickStatusUpdate('reviewing')">
+                    <i class="fas fa-search"></i> Mark as Reviewing
+                </button>
+            <?php endif; ?>
+            
+            <?php if ($report['status'] === 'reviewing'): ?>
+                <button class="btn btn-success" onclick="quickStatusUpdate('resolved')">
+                    <i class="fas fa-check-circle"></i> Mark as Resolved
+                </button>
+            <?php endif; ?>
+            
+            <?php if ($report['status'] !== 'closed'): ?>
+                <button class="btn btn-danger" onclick="quickStatusUpdate('closed')">
+                    <i class="fas fa-times-circle"></i> Close Report
+                </button>
+            <?php endif; ?>
+            
+            <button class="btn btn-primary" onclick="openStatusModal()">
+                <i class="fas fa-edit"></i> Change Status
+            </button>
+            <button class="btn btn-outline" onclick="window.print()">
+                <i class="fas fa-print"></i> Print
+            </button>
+        </div>
     </div>
 
-    <!-- Loading State -->
-    <div id="loadingState" class="loading-state">
-        <div class="spinner"></div>
-        <p>Loading report details...</p>
+    <!-- Report Status Card -->
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-flag"></i>
+            <h3>Report Information</h3>
+        </div>
+        <div class="card-body">
+            <div class="report-status-header">
+                <div class="report-meta">
+                    <span class="report-id">Report #<?= $report['id'] ?></span>
+                    <span class="status-badge status-<?= $report['status'] ?>"><?= htmlspecialchars($report['status']) ?></span>
+                </div>
+            </div>
+            <div class="timestamps">
+                <div class="timestamp-item">
+                    <span class="timestamp-label">Submitted</span>
+                    <span class="timestamp-value"><?= date('M d, Y h:i A', strtotime($report['created_at'])) ?></span>
+                </div>
+                <div class="timestamp-item">
+                    <span class="timestamp-label">Last Updated</span>
+                    <span class="timestamp-value"><?= date('M d, Y h:i A', strtotime($report['updated_at'])) ?></span>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Content -->
-    <div id="reportContent" style="display: none;">
-        <!-- Report Status Card -->
-        <div class="card" id="reportStatusCard">
+    <!-- Info Grid -->
+    <div class="info-grid">
+        <!-- Issue Details -->
+        <div class="card">
             <div class="card-header">
-                <i class="fas fa-flag"></i>
-                <h3>Report Information</h3>
+                <i class="fas fa-info-circle"></i>
+                <h3>Issue Details</h3>
             </div>
             <div class="card-body">
-                <div class="report-status-header">
-                    <div class="report-meta">
-                        <span class="report-id">Report #<?= $reportId ?></span>
-                        <span class="status-badge" id="reportStatus">-</span>
+                <div class="info-item">
+                    <span class="info-label">Report ID</span>
+                    <span class="info-value">#<?= $report['id'] ?></span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Issue Type</span>
+                    <span class="info-value"><?= htmlspecialchars($report['issue_type']) ?></span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Status</span>
+                    <span class="info-value">
+                        <span class="status-badge status-<?= $report['status'] ?>"><?= htmlspecialchars($report['status']) ?></span>
+                    </span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Delivery ID</span>
+                    <span class="info-value">#<?= $report['delivery_id'] ?></span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Buyer ID</span>
+                    <span class="info-value">#<?= $report['buyer_id'] ?></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buyer Information -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-user"></i>
+                <h3>Buyer Information</h3>
+            </div>
+            <div class="card-body">
+                <?php if ($buyer): ?>
+                    <div class="info-item">
+                        <span class="info-label">Buyer ID</span>
+                        <span class="info-value">#<?= $buyer['id'] ?></span>
                     </div>
-                </div>
-                <div class="timestamps" id="reportTimestamps"></div>
+                    <div class="info-item">
+                        <span class="info-label">Username</span>
+                        <span class="info-value"><?= htmlspecialchars($buyer['username']) ?></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Email</span>
+                        <span class="info-value"><?= htmlspecialchars($buyer['email']) ?></span>
+                    </div>
+                <?php else: ?>
+                    <div class="info-item">
+                        <span class="info-label">Buyer ID</span>
+                        <span class="info-value">#<?= $report['buyer_id'] ?></span>
+                    </div>
+                    <p style="color: #7f8c8d; margin-top: 10px; font-style: italic;">Buyer details not available</p>
+                <?php endif; ?>
             </div>
         </div>
 
-        <!-- Info Grid -->
-        <div class="info-grid">
-            <!-- Report Details -->
-            <div class="card">
-                <div class="card-header">
-                    <i class="fas fa-info-circle"></i>
-                    <h3>Issue Details</h3>
-                </div>
-                <div class="card-body" id="issueDetails"></div>
+        <!-- Delivery Information -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-truck"></i>
+                <h3>Delivery Information</h3>
             </div>
-
-            <!-- Buyer Information -->
-            <div class="card">
-                <div class="card-header">
-                    <i class="fas fa-user"></i>
-                    <h3>Buyer Information</h3>
-                </div>
-                <div class="card-body" id="buyerInfo"></div>
-            </div>
-
-            <!-- Delivery Information -->
-            <div class="card">
-                <div class="card-header">
-                    <i class="fas fa-truck"></i>
-                    <h3>Delivery Information</h3>
-                </div>
-                <div class="card-body" id="deliveryInfo"></div>
+            <div class="card-body">
+                <?php if ($delivery): ?>
+                    <div class="info-item">
+                        <span class="info-label">Delivery ID</span>
+                        <span class="info-value">#<?= $delivery['id'] ?></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Order ID</span>
+                        <span class="info-value">#<?= $delivery['order_id'] ?></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Rider ID</span>
+                        <span class="info-value">#<?= $delivery['rider_id'] ?></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Status</span>
+                        <span class="info-value">
+                            <span class="status-badge status-<?= $delivery['status'] ?>">
+                                <?= htmlspecialchars(str_replace('_', ' ', $delivery['status'])) ?>
+                            </span>
+                        </span>
+                    </div>
+                    <?php if ($delivery['assigned_at']): ?>
+                    <div class="info-item">
+                        <span class="info-label">Assigned At</span>
+                        <span class="info-value"><?= date('M d, Y h:i A', strtotime($delivery['assigned_at'])) ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if ($delivery['picked_up_at']): ?>
+                    <div class="info-item">
+                        <span class="info-label">Picked Up At</span>
+                        <span class="info-value"><?= date('M d, Y h:i A', strtotime($delivery['picked_up_at'])) ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if ($delivery['completed_at']): ?>
+                    <div class="info-item">
+                        <span class="info-label">Completed At</span>
+                        <span class="info-value"><?= date('M d, Y h:i A', strtotime($delivery['completed_at'])) ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <div class="info-item">
+                        <span class="info-label">Created At</span>
+                        <span class="info-value"><?= date('M d, Y h:i A', strtotime($delivery['created_at'])) ?></span>
+                    </div>
+                <?php else: ?>
+                    <div class="info-item">
+                        <span class="info-label">Delivery ID</span>
+                        <span class="info-value">#<?= $report['delivery_id'] ?></span>
+                    </div>
+                    <p style="color: #7f8c8d; margin-top: 10px; font-style: italic;">Delivery details not available</p>
+                <?php endif; ?>
             </div>
         </div>
-    </div>
-
-    <!-- Error State -->
-    <div id="errorState" class="error-state" style="display: none;">
-        <i class="fas fa-exclamation-circle"></i>
-        <h3>Failed to load report details</h3>
-        <p id="errorMessage">An error occurred while loading the report information.</p>
-        <a href="buyer_reports.php" class="btn btn-primary">
-            <i class="fas fa-arrow-left"></i> Return to Reports
-        </a>
     </div>
 </div>
 
@@ -683,10 +704,10 @@ if (!$reportId) {
             <div class="form-group">
                 <label for="newStatusSelect">New Status</label>
                 <select id="newStatusSelect" class="form-select">
-                    <option value="pending">Pending</option>
-                    <option value="reviewing">Reviewing</option>
-                    <option value="resolved">Resolved</option>
-                    <option value="closed">Closed</option>
+                    <option value="pending" <?= $report['status'] === 'pending' ? 'selected' : '' ?>>Pending</option>
+                    <option value="reviewing" <?= $report['status'] === 'reviewing' ? 'selected' : '' ?>>Reviewing</option>
+                    <option value="resolved" <?= $report['status'] === 'resolved' ? 'selected' : '' ?>>Resolved</option>
+                    <option value="closed" <?= $report['status'] === 'closed' ? 'selected' : '' ?>>Closed</option>
                 </select>
             </div>
         </div>
@@ -704,237 +725,9 @@ if (!$reportId) {
 
 <script>
     const reportId = <?= $reportId ?>;
-    let currentReport = null;
-
-    // Load report details on page load
-    document.addEventListener('DOMContentLoaded', loadReportDetails);
-
-    async function loadReportDetails() {
-        const loadingState = document.getElementById('loadingState');
-        const reportContent = document.getElementById('reportContent');
-        const errorState = document.getElementById('errorState');
-
-        try {
-            // Fetch report details
-            const reportResponse = await fetch(`/admin/backend/reports/get_buyer_reports.php?page=1`);
-            const reportResult = await reportResponse.json();
-
-            if (!reportResult.success) {
-                throw new Error('Failed to load report');
-            }
-
-            // Find the specific report
-            const report = reportResult.data.reports.find(r => r.id == reportId);
-            if (!report) {
-                throw new Error('Report not found');
-            }
-
-            currentReport = report;
-
-            // Fetch buyer details
-            let buyerData = null;
-            try {
-                const buyerResponse = await fetch(`/admin/backend/buyers/get_buyer.php?id=${report.buyer_id}`);
-                const buyerResult = await buyerResponse.json();
-                if (buyerResult.success) {
-                    buyerData = buyerResult.data;
-                }
-            } catch (e) {
-                console.warn('Could not load buyer details:', e);
-            }
-
-            // Fetch delivery details
-            let deliveryData = null;
-            try {
-                const deliveryResponse = await fetch(`/admin/backend/deliveries/get_delivery.php?id=${report.delivery_id}`);
-                const deliveryResult = await deliveryResponse.json();
-                if (deliveryResult.success) {
-                    deliveryData = deliveryResult.data;
-                }
-            } catch (e) {
-                console.warn('Could not load delivery details:', e);
-            }
-
-            // Display the data
-            displayReportDetails(report, buyerData, deliveryData);
-
-            loadingState.style.display = 'none';
-            reportContent.style.display = 'block';
-            errorState.style.display = 'none';
-
-        } catch (error) {
-            console.error('Error loading report:', error);
-            loadingState.style.display = 'none';
-            reportContent.style.display = 'none';
-            errorState.style.display = 'flex';
-            document.getElementById('errorMessage').textContent = error.message;
-        }
-    }
-
-    function displayReportDetails(report, buyer, delivery) {
-        // Update status badge
-        const statusBadge = document.getElementById('reportStatus');
-        statusBadge.textContent = report.status;
-        statusBadge.className = `status-badge status-${report.status}`;
-
-        // Update timestamps
-        document.getElementById('reportTimestamps').innerHTML = `
-            <div class="timestamp-item">
-                <span class="timestamp-label">Submitted</span>
-                <span class="timestamp-value">${formatDate(report.created_at)}</span>
-            </div>
-            <div class="timestamp-item">
-                <span class="timestamp-label">Last Updated</span>
-                <span class="timestamp-value">${formatDate(report.updated_at)}</span>
-            </div>
-        `;
-
-        // Issue Details
-        document.getElementById('issueDetails').innerHTML = `
-            <div class="info-item">
-                <span class="info-label">Report ID</span>
-                <span class="info-value">#${report.id}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Issue Type</span>
-                <span class="info-value">${escapeHtml(report.issue_type)}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Status</span>
-                <span class="info-value">
-                    <span class="status-badge status-${report.status}">${report.status}</span>
-                </span>
-            </div>
-        `;
-
-        // Buyer Information
-        if (buyer) {
-            document.getElementById('buyerInfo').innerHTML = `
-                <div class="info-item">
-                    <span class="info-label">Buyer ID</span>
-                    <span class="info-value">#${buyer.id}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Username</span>
-                    <span class="info-value">${escapeHtml(buyer.username)}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Email</span>
-                    <span class="info-value">${escapeHtml(buyer.email)}</span>
-                </div>
-            `;
-        } else {
-            document.getElementById('buyerInfo').innerHTML = `
-                <div class="info-item">
-                    <span class="info-label">Buyer ID</span>
-                    <span class="info-value">#${report.buyer_id}</span>
-                </div>
-                <p style="color: #7f8c8d; margin-top: 10px; font-style: italic;">Buyer details not available</p>
-            `;
-        }
-
-        // Delivery Information
-        if (delivery) {
-            document.getElementById('deliveryInfo').innerHTML = `
-                <div class="info-item">
-                    <span class="info-label">Delivery ID</span>
-                    <span class="info-value">#${delivery.id}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Order ID</span>
-                    <span class="info-value">#${delivery.order_id}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Rider ID</span>
-                    <span class="info-value">#${delivery.rider_id}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Status</span>
-                    <span class="info-value">${formatStatus(delivery.status)}</span>
-                </div>
-                ${delivery.assigned_at ? `
-                    <div class="info-item">
-                        <span class="info-label">Assigned At</span>
-                        <span class="info-value">${formatDate(delivery.assigned_at)}</span>
-                    </div>
-                ` : ''}
-                ${delivery.picked_up_at ? `
-                    <div class="info-item">
-                        <span class="info-label">Picked Up At</span>
-                        <span class="info-value">${formatDate(delivery.picked_up_at)}</span>
-                    </div>
-                ` : ''}
-                ${delivery.completed_at ? `
-                    <div class="info-item">
-                        <span class="info-label">Completed At</span>
-                        <span class="info-value">${formatDate(delivery.completed_at)}</span>
-                    </div>
-                ` : ''}
-                ${delivery.created_at ? `
-                    <div class="info-item">
-                        <span class="info-label">Created At</span>
-                        <span class="info-value">${formatDate(delivery.created_at)}</span>
-                    </div>
-                ` : ''}
-            `;
-        } else {
-            document.getElementById('deliveryInfo').innerHTML = `
-                <div class="info-item">
-                    <span class="info-label">Delivery ID</span>
-                    <span class="info-value">#${report.delivery_id}</span>
-                </div>
-                <p style="color: #7f8c8d; margin-top: 10px; font-style: italic;">Delivery details not available</p>
-            `;
-        }
-
-        // Update header actions
-        updateHeaderActions(report);
-    }
-
-    function updateHeaderActions(report) {
-        const actionsContainer = document.getElementById('headerActions');
-        let html = '';
-
-        if (report.status === 'pending') {
-            html += `
-                <button class="btn btn-warning" onclick="quickStatusUpdate('reviewing')">
-                    <i class="fas fa-search"></i> Mark as Reviewing
-                </button>
-            `;
-        }
-
-        if (report.status === 'reviewing') {
-            html += `
-                <button class="btn btn-success" onclick="quickStatusUpdate('resolved')">
-                    <i class="fas fa-check-circle"></i> Mark as Resolved
-                </button>
-            `;
-        }
-
-        if (report.status !== 'closed') {
-            html += `
-                <button class="btn btn-danger" onclick="quickStatusUpdate('closed')">
-                    <i class="fas fa-times-circle"></i> Close Report
-                </button>
-            `;
-        }
-
-        html += `
-            <button class="btn btn-primary" onclick="openStatusModal()">
-                <i class="fas fa-edit"></i> Change Status
-            </button>
-            <button class="btn btn-outline" onclick="window.print()">
-                <i class="fas fa-print"></i> Print
-            </button>
-        `;
-
-        actionsContainer.innerHTML = html;
-    }
 
     function openStatusModal() {
-        const modal = document.getElementById('statusModal');
-        document.getElementById('newStatusSelect').value = currentReport.status;
-        modal.style.display = 'flex';
+        document.getElementById('statusModal').style.display = 'flex';
     }
 
     function closeStatusModal() {
@@ -1026,31 +819,6 @@ if (!$reportId) {
                 notification.remove();
             }
         }, 5000);
-    }
-
-    function formatDate(dateString) {
-        if (!dateString) return 'N/A';
-        const date = new Date(dateString);
-        const options = { 
-            year: 'numeric', 
-            month: 'short', 
-            day: 'numeric', 
-            hour: '2-digit', 
-            minute: '2-digit' 
-        };
-        return date.toLocaleDateString('en-US', options);
-    }
-
-    function formatStatus(status) {
-        if (!status) return 'N/A';
-        return status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ');
-    }
-
-    function escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
     }
 
     // Close modal on outside click
