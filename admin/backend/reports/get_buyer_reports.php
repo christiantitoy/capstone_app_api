@@ -22,12 +22,12 @@ try {
         $params = [];
 
         if ($status && in_array($status, ['pending', 'reviewing', 'resolved', 'closed'])) {
-            $where[] = "br.status = :status";
+            $where[] = "status = :status";
             $params[':status'] = $status;
         }
 
         if ($search) {
-            $where[] = "(br.issue_type ILIKE :search OR b.full_name ILIKE :search2 OR CAST(br.delivery_id AS TEXT) LIKE :search3)";
+            $where[] = "(issue_type ILIKE :search OR CAST(delivery_id AS TEXT) LIKE :search2 OR CAST(buyer_id AS TEXT) LIKE :search3)";
             $params[':search'] = "%$search%";
             $params[':search2'] = "%$search%";
             $params[':search3'] = "%$search%";
@@ -36,31 +36,25 @@ try {
         $whereClause = !empty($where) ? "WHERE " . implode(" AND ", $where) : "";
 
         // Get total count for pagination
-        $countSql = "SELECT COUNT(*) as total 
-                     FROM buyer_reports br
-                     LEFT JOIN buyers b ON br.buyer_id = b.id
-                     $whereClause";
+        $countSql = "SELECT COUNT(*) as total FROM buyer_reports $whereClause";
         
         $countStmt = $conn->prepare($countSql);
         $countStmt->execute($params);
         $totalCount = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
         $totalPages = ceil($totalCount / $limit);
 
-        // Fetch reports
+        // Fetch reports - only from buyer_reports table
         $sql = "SELECT 
-                    br.id,
-                    br.delivery_id,
-                    br.buyer_id,
-                    br.issue_type,
-                    br.status,
-                    br.created_at,
-                    br.updated_at,
-                    b.full_name as buyer_name,
-                    b.phone as buyer_phone
-                FROM buyer_reports br
-                LEFT JOIN buyers b ON br.buyer_id = b.id
+                    id,
+                    delivery_id,
+                    buyer_id,
+                    issue_type,
+                    status,
+                    created_at,
+                    updated_at
+                FROM buyer_reports
                 $whereClause
-                ORDER BY br.created_at DESC
+                ORDER BY created_at DESC
                 LIMIT :limit OFFSET :offset";
 
         $stmt = $conn->prepare($sql);
@@ -73,10 +67,24 @@ try {
         
         $reports = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+        // Format the data
+        $formattedReports = [];
+        foreach ($reports as $row) {
+            $formattedReports[] = [
+                'id' => (int)$row['id'],
+                'delivery_id' => (int)$row['delivery_id'],
+                'buyer_id' => (int)$row['buyer_id'],
+                'issue_type' => $row['issue_type'],
+                'status' => $row['status'],
+                'created_at' => $row['created_at'],
+                'updated_at' => $row['updated_at']
+            ];
+        }
+
         echo json_encode([
             'status' => 'success',
             'data' => [
-                'reports' => $reports,
+                'reports' => $formattedReports,
                 'pagination' => [
                     'current_page' => $page,
                     'total_pages' => $totalPages,

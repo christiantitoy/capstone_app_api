@@ -74,10 +74,7 @@ function renderReportsTable(reports) {
         <tr>
             <td><strong>#${report.id}</strong></td>
             <td>#${report.delivery_id}</td>
-            <td>
-                <div>${report.buyer_name || 'Unknown'}</div>
-                <small style="color: #7f8c8d;">${report.buyer_phone || ''}</small>
-            </td>
+            <td>Buyer #${report.buyer_id}</td>
             <td><span class="issue-type">${report.issue_type}</span></td>
             <td><span class="status-badge status-${report.status}">${report.status}</span></td>
             <td>${formatDate(report.created_at)}</td>
@@ -127,17 +124,6 @@ function updateStats(reports) {
     document.getElementById('reviewingCount').textContent = stats.reviewing;
     document.getElementById('resolvedCount').textContent = stats.resolved;
     document.getElementById('closedCount').textContent = stats.closed;
-    
-    // Fetch complete stats from API for accurate numbers
-    fetch('/admin/backend/reports/get_buyer_reports.php?page=1&limit=1')
-        .then(response => response.json())
-        .then(result => {
-            if (result.status === 'success') {
-                // This gets total counts from pagination info
-                // For more accurate per-status counts, you might want a dedicated endpoint
-            }
-        })
-        .catch(() => {});
 }
 
 // Update pagination
