@@ -34,6 +34,43 @@ $deliverySql = "SELECT id, order_id, rider_id, status, assigned_at, picked_up_at
 $deliveryStmt = $conn->prepare($deliverySql);
 $deliveryStmt->execute([':id' => $report['delivery_id']]);
 $delivery = $deliveryStmt->fetch(PDO::FETCH_ASSOC);
+
+// Fetch order items with product and store info
+$orderItems = [];
+if ($delivery) {
+    $itemsSql = "SELECT 
+                    oi.id as order_item_id,
+                    oi.order_id,
+                    oi.product_id,
+                    oi.variation_id,
+                    oi.selected_options,
+                    oi.quantity,
+                    oi.unit_price,
+                    oi.total_price,
+                    oi.is_shipped,
+                    i.product_name,
+                    i.product_description,
+                    i.category as product_category,
+                    i.price as current_price,
+                    i.stock,
+                    i.main_image_url,
+                    i.status as product_status,
+                    i.has_variations,
+                    i.sold,
+                    s.store_name,
+                    s.seller_id,
+                    s.category as store_category,
+                    s.logo_url as store_logo
+                 FROM order_items oi
+                 LEFT JOIN items i ON oi.product_id = i.id
+                 LEFT JOIN stores s ON i.seller_id = s.seller_id
+                 WHERE oi.order_id = :order_id
+                 ORDER BY oi.id ASC";
+    
+    $itemsStmt = $conn->prepare($itemsSql);
+    $itemsStmt->execute([':order_id' => $delivery['order_id']]);
+    $orderItems = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
+}
 ?>
 
 <!DOCTYPE html>
@@ -126,33 +163,25 @@ $delivery = $deliveryStmt->fetch(PDO::FETCH_ASSOC);
             background: #3498db;
             color: white;
         }
-        .btn-primary:hover {
-            background: #2980b9;
-        }
+        .btn-primary:hover { background: #2980b9; }
 
         .btn-success {
             background: #27ae60;
             color: white;
         }
-        .btn-success:hover {
-            background: #219a52;
-        }
+        .btn-success:hover { background: #219a52; }
 
         .btn-warning {
             background: #f39c12;
             color: white;
         }
-        .btn-warning:hover {
-            background: #e67e22;
-        }
+        .btn-warning:hover { background: #e67e22; }
 
         .btn-danger {
             background: #e74c3c;
             color: white;
         }
-        .btn-danger:hover {
-            background: #c0392b;
-        }
+        .btn-danger:hover { background: #c0392b; }
 
         .btn-outline {
             background: white;
@@ -257,31 +286,17 @@ $delivery = $deliveryStmt->fetch(PDO::FETCH_ASSOC);
             border: 1px solid #ef9a9a;
         }
 
-        .status-assigned {
-            background: #e3f2fd;
-            color: #1976d2;
-        }
-
-        .status-picked_up {
-            background: #fff3e0;
-            color: #f57c00;
-        }
-
-        .status-delivering {
-            background: #e8f5e9;
-            color: #388e3c;
-        }
-
-        .status-completed {
-            background: #e8f5e9;
-            color: #2e7d32;
-        }
-
+        .status-assigned { background: #e3f2fd; color: #1976d2; }
+        .status-picked_up { background: #fff3e0; color: #f57c00; }
+        .status-delivering { background: #e8f5e9; color: #388e3c; }
+        .status-completed { background: #e8f5e9; color: #2e7d32; }
         .status-abandoned,
-        .status-cancelled {
-            background: #fce4ec;
-            color: #c62828;
-        }
+        .status-cancelled { background: #fce4ec; color: #c62828; }
+
+        .status-approved { background: #e8f5e9; color: #2e7d32; }
+        .status-on_hold { background: #fff3e0; color: #e67e22; }
+        .status-removed { background: #fce4ec; color: #c62828; }
+        .status-on_review { background: #e3f2fd; color: #1976d2; }
 
         /* Info Grid */
         .info-grid {
@@ -341,6 +356,136 @@ $delivery = $deliveryStmt->fetch(PDO::FETCH_ASSOC);
             font-weight: 500;
         }
 
+        /* Product Items */
+        .product-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .product-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid #e9ecef;
+            transition: all 0.2s;
+        }
+
+        .product-item:hover {
+            border-color: #3498db;
+            box-shadow: 0 2px 8px rgba(52,152,219,0.1);
+        }
+
+        .product-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .product-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .product-store {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 2px;
+        }
+
+        .product-price {
+            font-size: 15px;
+            font-weight: 600;
+            color: #27ae60;
+        }
+
+        .product-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 8px;
+        }
+
+        .product-detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .product-detail-label {
+            font-size: 11px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+        }
+
+        .product-detail-value {
+            font-size: 13px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .shipped-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .shipped-yes {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .shipped-no {
+            background: #fff3e0;
+            color: #e67e22;
+        }
+
+        .product-image {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: #e9ecef;
+        }
+
+        .order-summary {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px solid #e9ecef;
+        }
+
+        .order-summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .order-summary-row:last-child {
+            border-bottom: none;
+            font-weight: 700;
+            font-size: 16px;
+            color: #2c3e50;
+        }
+
+        .order-summary-label {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .order-summary-value {
+            color: #2c3e50;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
         /* Notification */
         #notificationContainer {
             position: fixed;
@@ -364,13 +509,8 @@ $delivery = $deliveryStmt->fetch(PDO::FETCH_ASSOC);
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
-        .notification-success {
-            background: #27ae60;
-        }
-
-        .notification-error {
-            background: #e74c3c;
-        }
+        .notification-success { background: #27ae60; }
+        .notification-error { background: #e74c3c; }
 
         .notification-close {
             background: none;
@@ -382,9 +522,7 @@ $delivery = $deliveryStmt->fetch(PDO::FETCH_ASSOC);
             opacity: 0.8;
         }
 
-        .notification-close:hover {
-            opacity: 1;
-        }
+        .notification-close:hover { opacity: 1; }
 
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
@@ -392,23 +530,12 @@ $delivery = $deliveryStmt->fetch(PDO::FETCH_ASSOC);
         }
 
         @media (max-width: 768px) {
-            .report-details-container {
-                padding: 15px;
-            }
-            .info-grid {
-                grid-template-columns: 1fr;
-            }
-            .report-status-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .header-actions {
-                flex-direction: column;
-            }
-            .btn {
-                width: 100%;
-                justify-content: center;
-            }
+            .report-details-container { padding: 15px; }
+            .info-grid { grid-template-columns: 1fr; }
+            .report-status-header { flex-direction: column; align-items: flex-start; }
+            .header-actions { flex-direction: column; }
+            .btn { width: 100%; justify-content: center; }
+            .product-header { flex-direction: column; }
         }
     </style>
 </head>
@@ -583,10 +710,6 @@ $delivery = $deliveryStmt->fetch(PDO::FETCH_ASSOC);
                         <span class="info-value"><?= date('M d, Y h:i A', strtotime($delivery['completed_at'])) ?></span>
                     </div>
                     <?php endif; ?>
-                    <div class="info-item">
-                        <span class="info-label">Created At</span>
-                        <span class="info-value"><?= date('M d, Y h:i A', strtotime($delivery['created_at'])) ?></span>
-                    </div>
                 <?php else: ?>
                     <div class="info-item">
                         <span class="info-label">Delivery ID</span>
@@ -597,6 +720,141 @@ $delivery = $deliveryStmt->fetch(PDO::FETCH_ASSOC);
             </div>
         </div>
     </div>
+
+    <!-- Product Information Card (Full Width) -->
+    <?php if (!empty($orderItems)): ?>
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-box"></i>
+            <h3>Product Information</h3>
+            <span style="margin-left: auto; font-size: 13px; color: #7f8c8d;">
+                Order #<?= $delivery['order_id'] ?> • <?= count($orderItems) ?> item(s)
+            </span>
+        </div>
+        <div class="card-body">
+            <div class="product-list">
+                <?php foreach ($orderItems as $item): ?>
+                <div class="product-item">
+                    <div class="product-header">
+                        <div style="display: flex; gap: 12px; align-items: center;">
+                            <?php if ($item['main_image_url']): ?>
+                                <img src="<?= htmlspecialchars($item['main_image_url']) ?>" 
+                                     alt="<?= htmlspecialchars($item['product_name']) ?>" 
+                                     class="product-image"
+                                     onerror="this.style.display='none'">
+                            <?php else: ?>
+                                <div class="product-image" style="display: flex; align-items: center; justify-content: center; color: #bdc3c7;">
+                                    <i class="fas fa-box"></i>
+                                </div>
+                            <?php endif; ?>
+                            <div>
+                                <div class="product-name"><?= htmlspecialchars($item['product_name'] ?? 'Unknown Product') ?></div>
+                                <div class="product-store">
+                                    <i class="fas fa-store"></i>
+                                    <?= htmlspecialchars($item['store_name'] ?? 'Unknown Store') ?>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="product-price">₱<?= number_format($item['total_price'], 2) ?></div>
+                    </div>
+                    
+                    <div class="product-details">
+                        <div class="product-detail-item">
+                            <span class="product-detail-label">Unit Price</span>
+                            <span class="product-detail-value">₱<?= number_format($item['unit_price'], 2) ?></span>
+                        </div>
+                        <div class="product-detail-item">
+                            <span class="product-detail-label">Quantity</span>
+                            <span class="product-detail-value"><?= (int)$item['quantity'] ?></span>
+                        </div>
+                        <div class="product-detail-item">
+                            <span class="product-detail-label">Product ID</span>
+                            <span class="product-detail-value">#<?= $item['product_id'] ?></span>
+                        </div>
+                        <div class="product-detail-item">
+                            <span class="product-detail-label">Seller ID</span>
+                            <span class="product-detail-value">#<?= $item['seller_id'] ?></span>
+                        </div>
+                        <div class="product-detail-item">
+                            <span class="product-detail-label">Category</span>
+                            <span class="product-detail-value"><?= htmlspecialchars($item['product_category'] ?? 'N/A') ?></span>
+                        </div>
+                        <div class="product-detail-item">
+                            <span class="product-detail-label">Stock</span>
+                            <span class="product-detail-value"><?= (int)($item['stock'] ?? 0) ?></span>
+                        </div>
+                        <div class="product-detail-item">
+                            <span class="product-detail-label">Sold</span>
+                            <span class="product-detail-value"><?= (int)($item['sold'] ?? 0) ?></span>
+                        </div>
+                        <div class="product-detail-item">
+                            <span class="product-detail-label">Product Status</span>
+                            <span class="product-detail-value">
+                                <span class="status-badge status-<?= $item['product_status'] ?>">
+                                    <?= htmlspecialchars(str_replace('_', ' ', $item['product_status'] ?? 'unknown')) ?>
+                                </span>
+                            </span>
+                        </div>
+                        <div class="product-detail-item">
+                            <span class="product-detail-label">Shipped</span>
+                            <span class="product-detail-value">
+                                <span class="shipped-badge <?= $item['is_shipped'] ? 'shipped-yes' : 'shipped-no' ?>">
+                                    <?= $item['is_shipped'] ? 'Yes' : 'No' ?>
+                                </span>
+                            </span>
+                        </div>
+                        <?php if ($item['variation_id']): ?>
+                        <div class="product-detail-item">
+                            <span class="product-detail-label">Variation ID</span>
+                            <span class="product-detail-value">#<?= $item['variation_id'] ?></span>
+                        </div>
+                        <?php endif; ?>
+                        <?php if ($item['selected_options']): ?>
+                        <div class="product-detail-item" style="grid-column: 1 / -1;">
+                            <span class="product-detail-label">Selected Options</span>
+                            <span class="product-detail-value"><?= htmlspecialchars($item['selected_options']) ?></span>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="order-summary">
+                <div class="order-summary-row">
+                    <span class="order-summary-label">Subtotal</span>
+                    <span class="order-summary-value">
+                        ₱<?= number_format(array_sum(array_column($orderItems, 'total_price')), 2) ?>
+                    </span>
+                </div>
+                <div class="order-summary-row">
+                    <span class="order-summary-label">Total Items</span>
+                    <span class="order-summary-value"><?= count($orderItems) ?></span>
+                </div>
+                <div class="order-summary-row" style="font-weight: 700; font-size: 16px;">
+                    <span class="order-summary-label">Order Total</span>
+                    <span class="order-summary-value" style="color: #27ae60;">
+                        ₱<?= number_format(array_sum(array_column($orderItems, 'total_price')), 2) ?>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php elseif ($delivery): ?>
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-box"></i>
+            <h3>Product Information</h3>
+        </div>
+        <div class="card-body">
+            <div style="text-align: center; padding: 30px; color: #7f8c8d;">
+                <i class="fas fa-box-open" style="font-size: 48px; margin-bottom: 15px; color: #bdc3c7;"></i>
+                <p>No order items found for Order #<?= $delivery['order_id'] ?></p>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 </div>
 
 <!-- Notification Container -->
