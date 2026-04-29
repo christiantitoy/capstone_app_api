@@ -387,3 +387,39 @@ tbody tr:hover {
         flex-direction: column;
     }
 }
+
+/* /admin/css/buyer_reports.css */
+
+/* Existing styles remain... */
+
+/* Clickable Row */
+.clickable-row {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.clickable-row:hover {
+    background: #e3f2fd !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
+}
+
+.clickable-row:hover td {
+    color: #1976d2;
+}
+
+/* Make the first cell (ID) more prominent on hover */
+.clickable-row:hover td:first-child strong {
+    color: #0d47a1;
+}
+
+/* Date column styling */
+.td-date {
+    color: #7f8c8d;
+    font-size: 13px;
+}
+
+/* Remove default table row hover since we have custom */
+tbody tr.clickable-row:hover {
+    background: #e3f2fd !important;
+}

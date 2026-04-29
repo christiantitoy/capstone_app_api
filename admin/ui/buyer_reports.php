@@ -136,7 +136,7 @@ require_once '../backend/session/auth_admin.php';
                         <option value="resolved">Resolved</option>
                         <option value="closed">Closed</option>
                     </select>
-                    <input type="text" id="searchInput" class="filter-search" placeholder="Search by issue, buyer name, or delivery ID...">
+                    <input type="text" id="searchInput" class="filter-search" placeholder="Search by issue type or delivery ID...">
                     <button class="btn-refresh" onclick="fetchReports()">
                         <i class="fas fa-sync-alt"></i> Refresh
                     </button>
@@ -152,17 +152,15 @@ require_once '../backend/session/auth_admin.php';
                         <tr>
                             <th>ID</th>
                             <th>Delivery ID</th>
-                            <th>Buyer</th>
+                            <th>Buyer ID</th>
                             <th>Issue Type</th>
                             <th>Status</th>
                             <th>Submitted</th>
-                            <th>Last Updated</th>
-                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="reportsTableBody">
                         <tr>
-                            <td colspan="8" style="text-align: center;">
+                            <td colspan="6" style="text-align: center;">
                                 <i class="fas fa-spinner fa-spin"></i> Loading reports...
                             </td>
                         </tr>
@@ -186,28 +184,6 @@ require_once '../backend/session/auth_admin.php';
             <p>© 2026 PalitOra Admin. All rights reserved.</p>
         </footer>
     </main>
-</div>
-
-<!-- Status Update Modal -->
-<div id="statusModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Update Report Status</h3>
-        </div>
-        <div class="modal-body">
-            <p>Change status for report #<span id="modalReportId"></span></p>
-            <select id="newStatusSelect" class="filter-select" style="width: 100%; margin-top: 10px;">
-                <option value="pending">Pending</option>
-                <option value="reviewing">Reviewing</option>
-                <option value="resolved">Resolved</option>
-                <option value="closed">Closed</option>
-            </select>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-cancel" onclick="closeStatusModal()">Cancel</button>
-            <button class="btn btn-save" onclick="updateReportStatus()">Update Status</button>
-        </div>
-    </div>
 </div>
 
 <!-- Logout Modal -->
