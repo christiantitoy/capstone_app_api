@@ -57,6 +57,9 @@ require_once '../backend/session/auth_admin.php';
             <a href="/admin/ui/seller_subscriptions.php" class="nav-item">
                 <i class="fas fa-crown"></i><span>Seller Subscriptions</span>
             </a>
+            <a href="/admin/ui/buyer_reports.php" class="nav-item">
+                <i class="fas fa-flag"></i><span>Buyer Reports</span>
+            </a>
         </nav>
         <div class="sidebar-footer">
             <div class="user-profile">
