@@ -74,21 +74,23 @@ try {
     }
 
     // ───────────────────────────────────────────────
-    // STRICT DUPLICATE CHECK (ONLY delivery_id)
+    // DUPLICATE CHECK (delivery_id + buyer_id)
     // ───────────────────────────────────────────────
     $dupSql = "SELECT id FROM buyer_reports 
-               WHERE delivery_id = :delivery_id";
+               WHERE delivery_id = :delivery_id 
+               AND buyer_id = :buyer_id";
 
     $dupStmt = $conn->prepare($dupSql);
     $dupStmt->execute([
-        ':delivery_id' => $delivery_id
+        ':delivery_id' => $delivery_id,
+        ':buyer_id'    => $buyer_id
     ]);
 
     if ($dupStmt->fetch()) {
         http_response_code(409);
         echo json_encode([
             'status'  => 'error',
-            'message' => 'A report already exists for this delivery'
+            'message' => 'You have already submitted a report for this delivery'
         ]);
         exit;
     }
@@ -135,7 +137,7 @@ try {
         http_response_code(409);
         echo json_encode([
             'status'  => 'error',
-            'message' => 'A report already exists for this delivery'
+            'message' => 'You have already submitted a report for this delivery'
         ]);
     } else {
         http_response_code(500);
