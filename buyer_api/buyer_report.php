@@ -11,18 +11,18 @@ try {
     // ───────────────────────────────────────────────
     $data = json_decode(file_get_contents("php://input"), true);
 
-    $delivery_id = $data['delivery_id'] ?? $_POST['delivery_id'] ?? null;
+    $order_id    = $data['order_id']    ?? $_POST['order_id'] ?? null;
     $buyer_id    = $data['buyer_id']    ?? $_POST['buyer_id'] ?? null;
     $issue_type  = $data['issue_type']  ?? $_POST['issue_type'] ?? null;
 
     // ───────────────────────────────────────────────
     // Validate inputs
     // ───────────────────────────────────────────────
-    if (!$delivery_id || !is_numeric($delivery_id)) {
+    if (!$order_id || !is_numeric($order_id)) {
         http_response_code(400);
         echo json_encode([
             'status'  => 'error',
-            'message' => 'Valid delivery_id (integer) is required'
+            'message' => 'Valid order_id (integer) is required'
         ]);
         exit;
     }
@@ -45,33 +45,52 @@ try {
         exit;
     }
 
-    $delivery_id = (int)$delivery_id;
-    $buyer_id    = (int)$buyer_id;
-    $issue_type  = trim($issue_type);
+    $order_id   = (int)$order_id;
+    $buyer_id   = (int)$buyer_id;
+    $issue_type = trim($issue_type);
 
     // ───────────────────────────────────────────────
-    // Verify delivery belongs to buyer
+    // Get delivery info and verify ownership
     // ───────────────────────────────────────────────
-    $verifySql = "SELECT od.id
+    $verifySql = "SELECT od.id as delivery_id, od.status as delivery_status
                   FROM order_deliveries od
                   JOIN orders o ON od.order_id = o.id
-                  WHERE od.id = :delivery_id 
-                  AND o.buyer_id = :buyer_id";
+                  WHERE od.order_id = :order_id 
+                  AND o.buyer_id = :buyer_id
+                  LIMIT 1";
 
     $verifyStmt = $conn->prepare($verifySql);
     $verifyStmt->execute([
-        ':delivery_id' => $delivery_id,
-        ':buyer_id'    => $buyer_id
+        ':order_id' => $order_id,
+        ':buyer_id' => $buyer_id
     ]);
 
-    if (!$verifyStmt->fetch()) {
+    $delivery = $verifyStmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$delivery) {
         http_response_code(404);
         echo json_encode([
             'status'  => 'error',
-            'message' => 'Delivery not found or does not belong to this buyer'
+            'message' => 'Order not found or does not belong to this buyer'
         ]);
         exit;
     }
+
+    $delivery_id = (int)$delivery['delivery_id'];
+
+    // Optional: Check if delivery is in a reportable state
+    // Uncomment if you want to restrict based on delivery status
+    /*
+    $allowed_statuses = ['completed', 'picked_up', 'delivering'];
+    if (!in_array($delivery['delivery_status'], $allowed_statuses)) {
+        http_response_code(400);
+        echo json_encode([
+            'status'  => 'error',
+            'message' => 'Cannot report a delivery with status: ' . $delivery['delivery_status']
+        ]);
+        exit;
+    }
+    */
 
     // ───────────────────────────────────────────────
     // DUPLICATE CHECK (delivery_id + buyer_id)
@@ -90,7 +109,7 @@ try {
         http_response_code(409);
         echo json_encode([
             'status'  => 'error',
-            'message' => 'You have already submitted a report for this delivery'
+            'message' => 'You have already submitted a report for this order'
         ]);
         exit;
     }
@@ -123,6 +142,7 @@ try {
         'report'  => [
             'id'          => (int)$report['id'],
             'delivery_id' => $delivery_id,
+            'order_id'    => $order_id,
             'buyer_id'    => $buyer_id,
             'issue_type'  => $issue_type,
             'status'      => 'pending',
@@ -137,7 +157,7 @@ try {
         http_response_code(409);
         echo json_encode([
             'status'  => 'error',
-            'message' => 'You have already submitted a report for this delivery'
+            'message' => 'You have already submitted a report for this order'
         ]);
     } else {
         http_response_code(500);
