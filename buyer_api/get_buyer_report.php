@@ -9,15 +9,15 @@ try {
     // ────────────────────────────────────────────────────────────────
     // Get inputs
     // ────────────────────────────────────────────────────────────────
-    $delivery_id = $_GET['delivery_id'] ?? null;
-    $buyer_id    = $_GET['buyer_id']    ?? null;
+    $order_id  = $_GET['order_id'] ?? null;
+    $buyer_id  = $_GET['buyer_id'] ?? null;
 
     // Both parameters are required
-    if (!$delivery_id || !is_numeric($delivery_id)) {
+    if (!$order_id || !is_numeric($order_id)) {
         http_response_code(400);
         echo json_encode([
             'status'  => 'error',
-            'message' => 'Valid delivery_id (integer) is required'
+            'message' => 'Valid order_id (integer) is required'
         ]);
         exit;
     }
@@ -31,11 +31,40 @@ try {
         exit;
     }
 
-    $delivery_id = (int)$delivery_id;
-    $buyer_id    = (int)$buyer_id;
+    $order_id = (int)$order_id;
+    $buyer_id = (int)$buyer_id;
 
     // ────────────────────────────────────────────────────────────────
-    // Query — both filters required
+    // First, get delivery_id from order and verify ownership
+    // ────────────────────────────────────────────────────────────────
+    $verifySql = "SELECT od.id as delivery_id
+                  FROM order_deliveries od
+                  JOIN orders o ON od.order_id = o.id
+                  WHERE od.order_id = :order_id 
+                  AND o.buyer_id = :buyer_id
+                  LIMIT 1";
+
+    $verifyStmt = $conn->prepare($verifySql);
+    $verifyStmt->execute([
+        ':order_id' => $order_id,
+        ':buyer_id' => $buyer_id
+    ]);
+
+    $delivery = $verifyStmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$delivery) {
+        http_response_code(404);
+        echo json_encode([
+            'status'  => 'error',
+            'message' => 'Order not found or does not belong to this buyer'
+        ]);
+        exit;
+    }
+
+    $delivery_id = (int)$delivery['delivery_id'];
+
+    // ────────────────────────────────────────────────────────────────
+    // Query reports using delivery_id and buyer_id
     // ────────────────────────────────────────────────────────────────
     $sql = "SELECT 
                 id,
@@ -74,9 +103,10 @@ try {
     }
 
     echo json_encode([
-        'status'  => 'success',
-        'reports' => $formattedReports,
-        'count'   => count($formattedReports)
+        'status'   => 'success',
+        'order_id' => $order_id,        // Added for reference
+        'reports'  => $formattedReports,
+        'count'    => count($formattedReports)
     ], JSON_PRETTY_PRINT);
 
 } catch (PDOException $e) {
